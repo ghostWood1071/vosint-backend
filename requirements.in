@@ -1,0 +1,14 @@
+# dependencies
+fastapi
+uvicorn[standard]
+
+# JWT & Auth
+fastapi-jwt-auth
+passlib
+
+# database
+motor
+beanie
+
+# development (linter, formating, ...)
+yapf
