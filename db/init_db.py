@@ -1,8 +1,7 @@
 from core.config import settings
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
-import motor
+from motor.motor_asyncio import AsyncIOMotorClient
 
-db_client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGO_DETAILS)
+db_client = AsyncIOMotorClient(settings.MONGO_DETAILS)
 
 
 async def connect_db():
@@ -24,5 +23,7 @@ async def close_db():
 #     return db_client[database_name][collection_name]
 
 database = db_client[settings.DATABASE_NAME]
-def get_collection_client(table):
+
+
+def get_collection_client(table: str):
     return database.get_collection(table)
