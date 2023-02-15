@@ -19,15 +19,15 @@ async def find_newsletters_and_filter(filter_newsletters: dict):
     }
     async for topic in client.find(filter_newsletters).sort("_id"):
         topic = newsletter_to_json(topic)
-        if topic["tags"] is not None:
-            if Tags.newsletter in topic["tags"]:
-                topics["newsletters"].append(topic)
 
-            if Tags.field in topic["tags"]:
-                topics["fields"].append(topic)
+        if topic["tags"] == Tags.newsletter:
+            topics["newsletters"].append(topic)
 
-            if Tags.topic in topic["tags"]:
-                topics["topics"].append(topic)
+        if topic["tags"] == Tags.field:
+            topics["fields"].append(topic)
+
+        if topic["tags"] == Tags.topic:
+            topics["topics"].append(topic)
 
     return topics
 
