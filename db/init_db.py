@@ -2,6 +2,7 @@ from core.config import settings
 from motor.motor_asyncio import AsyncIOMotorClient
 
 db_client = AsyncIOMotorClient(settings.MONGO_DETAILS)
+database = db_client[settings.DATABASE_NAME]
 
 
 async def connect_db():
@@ -13,16 +14,6 @@ async def connect_db():
 async def close_db():
     """Close database connection."""
     db_client.close()
-
-
-# async def get_collection_client(
-#         collection_name: str,
-#         database_name: str = settings.DATABASE_NAME) -> AsyncIOMotorCollection:
-#     global db_client
-#     """Return database client instance."""
-#     return db_client[database_name][collection_name]
-
-database = db_client[settings.DATABASE_NAME]
 
 
 def get_collection_client(table: str):

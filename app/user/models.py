@@ -1,32 +1,32 @@
-from fastapi_jwt_auth.auth_jwt import uuid
+from enum import Enum
+from bson.objectid import ObjectId
 from pydantic import BaseModel, Field
 from typing import Optional
 
 
-class User(BaseModel):
-    id: str = Field(default_factory=uuid.uuid4, alias="_id")
+class Role(str, Enum):
+    admin = "admin"
+    expert = "expert"
+    leader = "leader"
+
+
+class UserModel(BaseModel):
+    id: str = Field(default_factory=ObjectId, alias="_id")
     username: str = Field(...)
-    password: str = Field(...)
-
-    class Config:
-        orm_mode = True
+    hash_password: str = Field(...)
 
 
-class UserCreate(BaseModel):
-    username: str = Field(...)
-    password: str = Field(...)
-    fullname: str = Field(...)
-    account_type: str = Field(...)
-
-    class Config:
-        orm_mode = True
+class UserCreateModel(BaseModel):
+    username: str
+    password: str
+    full_name: str
+    role: Role
 
 
-class UpdateUser(BaseModel):
-    username: Optional[str]
-    password: Optional[str]
+class UserUpdateModel(BaseModel):
     fullname: Optional[str]
-    account_type: Optional[str]
 
-    class Config:
-        orm_mode = True
+
+class UserLoginModel(BaseModel):
+    username: str
+    password: str

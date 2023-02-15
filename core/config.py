@@ -5,7 +5,7 @@ from pydantic import BaseSettings, AnyHttpUrl
 class Settings(BaseSettings):
     APP_TITLE: str = 'V-OSINT API'
     APP_ORIGINS: List[AnyHttpUrl] = [
-        "http://localhost:4200", "http://127.0.0.1:2000",
+        "http://localhost:5173", "http://127.0.0.1:2000",
         "http://118.70.48.144:2000", "http://192.168.1.101:2000",
         "http://118.70.52.237:2000"
     ]

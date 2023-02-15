@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class Tags(str, Enum):
-    newsletters = "newsletters"
-    fields = "fields"
+    newsletter = "newsletter"
+    field = "field"
     topic = "topic"
 
 
@@ -14,17 +14,16 @@ class NewsLetterModel(BaseModel):
     user_id: str = Field(default_factory=ObjectId)
     parent_id: str = Field(default_factory=ObjectId)
     title: str
-    tags: list[Tags] = [Tags.newsletters]
+    tags: list[Tags] = [Tags.newsletter]
 
 
 class NewsLetterCreateModel(BaseModel):
-    user_id: str
     parent_id: str | None
     title: str
     tags: list[Tags] | None
 
 
 class NewsLetterUpdateModel(BaseModel):
-    parent_id: str | None = Field(default_factory=ObjectId)
+    parent_id: str | None
     title: str | None
     tags: list[Tags] | None
