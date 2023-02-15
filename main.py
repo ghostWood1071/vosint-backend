@@ -1,5 +1,7 @@
+import datetime
+
 import uvicorn
-from fastapi import FastAPI, Body, Depends, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi_jwt_auth import AuthJWT
@@ -23,9 +25,12 @@ if settings.APP_ORIGINS:
 
 
 class Settings(BaseModel):
+    expires = datetime.timedelta(days=1)
     authjwt_algorithm: str = "RS512"
     authjwt_public_key: str = settings.PUBLIC_KEY
     authjwt_private_key: str = settings.PRIVATE_KEY
+    authjwt_access_token_expires: str = expires
+    authjwt_refresh_token_expires: str = expires
 
 
 @AuthJWT.load_config
@@ -34,7 +39,7 @@ def get_config():
 
 
 @app.exception_handler(AuthJWTException)
-def authjwt_exception_handler(request: Request, exc: AuthJWTException):
+def auth_exception_handler(request: Request, exc: AuthJWTException):
     return JSONResponse(status_code=exc.status_code,
                         content={"detail": exc.message})
 

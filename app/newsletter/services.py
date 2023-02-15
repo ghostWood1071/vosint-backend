@@ -1,4 +1,6 @@
 from bson.objectid import ObjectId
+
+from .models import Tags
 from .utils import newsletter_to_json
 from db.init_db import get_collection_client
 
@@ -9,15 +11,25 @@ async def find_newsletter_by_id(newsletter_id: ObjectId):
     return await client.find_one({"_id": newsletter_id})
 
 
-async def find_newsletters_by_user_id(user_id: str, skip: int, limit: int):
-    offset = (skip - 1) * limit if skip > 0 else 0
-    newsletters = []
-    async for newsletter in client.find({
-            "user_id": ObjectId(user_id)
-    }).sort("_id").skip(offset).limit(limit):
-        newsletters.append(newsletter_to_json(newsletter))
+async def find_newsletters_and_filter(filter_newsletters: dict):
+    topics = {
+        "newsletters": [],
+        "fields": [],
+        "topics": []
+    }
+    async for topic in client.find(filter_newsletters).sort("_id"):
+        topic = newsletter_to_json(topic)
+        if topic["tags"] is not None:
+            if Tags.newsletter in topic["tags"]:
+                topics["newsletters"].append(topic)
 
-    return newsletters
+            if Tags.field in topic["tags"]:
+                topics["fields"].append(topic)
+
+            if Tags.topic in topic["tags"]:
+                topics["topics"].append(topic)
+
+    return topics
 
 
 async def create_newsletter(newsletter):
