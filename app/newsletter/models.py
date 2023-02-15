@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import Optional
+
 from bson.objectid import ObjectId
 from pydantic import BaseModel, Field
 
@@ -14,16 +16,16 @@ class NewsLetterModel(BaseModel):
     user_id: str = Field(default_factory=ObjectId)
     parent_id: str = Field(default_factory=ObjectId)
     title: str
-    tags: list[Tags] = [Tags.newsletter]
+    tags: Tags = Tags.newsletter
 
 
 class NewsLetterCreateModel(BaseModel):
     parent_id: str | None
     title: str
-    tags: list[Tags] | None
+    tags: Tags
 
 
 class NewsLetterUpdateModel(BaseModel):
     parent_id: str | None
     title: str | None
-    tags: list[Tags] | None
+    tags: Optional[Tags]
