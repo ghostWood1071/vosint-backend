@@ -1,7 +1,8 @@
 from enum import Enum
+from typing import Optional
+
 from bson.objectid import ObjectId
 from pydantic import BaseModel, Field
-from typing import Optional
 
 
 class Role(str, Enum):

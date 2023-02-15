@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPBearer
+
 from app.auth.password import get_password_hash
 # from fastapi.security import HTTPBearer
 # from fastapi_jwt_auth import AuthJWT
 from app.user.models import UserCreateModel
+from app.user.services import create_user, get_all_user, get_user
 from db.init_db import get_collection_client
-from app.user.services import get_all_user, get_user, create_user
-from fastapi.security import HTTPBearer
 
 router = APIRouter()
 """

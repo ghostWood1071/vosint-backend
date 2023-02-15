@@ -1,14 +1,20 @@
+from typing import List
+
 from bson.objectid import ObjectId
 from fastapi import APIRouter, status
-from fastapi.params import Depends
+from fastapi.params import Body, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi_jwt_auth import AuthJWT
 
-from app.newsletter.utils import newsletter_to_object_id
+from app.news.services import find_news_by_filter_and_paginate
 
 from .models import NewsLetterCreateModel, NewsLetterUpdateModel
-from .services import create_newsletter, delete_newsletter, find_newsletters_and_filter, update_newsletter
+from .services import (create_news_ids_to_newsletter, create_newsletter,
+                       delete_newsletter, find_newsletter_by_id,
+                       find_newsletters_and_filter, update_newsletter,
+                       update_newsletter_news_list)
+from .utils import newsletter_to_object_id
 
 router = APIRouter()
 
@@ -29,18 +35,51 @@ async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
 async def read(authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    newsletters = await find_newsletters_and_filter({"user_id": ObjectId(user_id)})
+    newsletters = await find_newsletters_and_filter(
+        {"user_id": ObjectId(user_id)})
     return JSONResponse(status_code=status.HTTP_200_OK, content=newsletters)
+
+
+@router.get("/{newsletter_id}/news")
+async def get_news_by_newsletter_id(newsletter_id: str, skip=0, limit=20):
+    newsletter = await find_newsletter_by_id(ObjectId(newsletter_id))
+    news = await find_news_by_filter_and_paginate(
+        {"_id": {
+            "$in": newsletter["news_id"]
+        }}, int(skip), int(limit))
+    return JSONResponse(status_code=status.HTTP_200_OK, content=news)
 
 
 @router.delete("/{newsletter_id}", dependencies=[Depends(HTTPBearer())])
 async def delete(newsletter_id: str):
     await delete_newsletter(ObjectId(newsletter_id))
-    return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=None)
+    return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
+
+
+@router.delete(
+    "/{newsletter_id}/news/{news_id}", )
+async def delete_news_in_newsletter(newsletter_id: str, news_id: str):
+    # TODO: validate exists newsleter of user
+    await update_newsletter_news_list(ObjectId(newsletter_id),
+                                      ObjectId(news_id))
+    return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
 
 @router.patch("/{newsletter_id}", dependencies=[Depends(HTTPBearer())])
 async def update(newsletter_id: str, body: NewsLetterUpdateModel):
     parsed_newsletter = newsletter_to_object_id(body.dict())
     await update_newsletter(ObjectId(newsletter_id), parsed_newsletter)
-    return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=None)
+    return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
+
+
+@router.post("/{newsletter_id}/news", dependencies=[Depends(HTTPBearer())])
+async def add_news_ids_to_newsletter(newsletter_id: str,
+                                     news_ids: List[str] = Body(...)):
+    newsletter_object_id = ObjectId(newsletter_id)
+    news_object_ids = []
+    for news_id in news_ids:
+        # TODO: validate exists news
+        news_object_ids.append(ObjectId(news_id))
+
+    await create_news_ids_to_newsletter(newsletter_object_id, news_object_ids)
+    return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
