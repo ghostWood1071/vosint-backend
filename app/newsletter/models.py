@@ -6,9 +6,9 @@ from pydantic import BaseModel, Field
 
 
 class Tags(str, Enum):
-    newsletter = "newsletter"
-    field = "field"
-    topic = "topic"
+    newsletter = "newsletter"  # Giỏ tin
+    field = "field"  # Lĩnh vực tin
+    topic = "topic"  # Danh mục chủ đề
 
 
 class NewsLetterModel(BaseModel):
@@ -17,6 +17,7 @@ class NewsLetterModel(BaseModel):
     parent_id: str = Field(default_factory=ObjectId)
     title: str
     tags: Tags = Tags.newsletter
+    news_id: list[str]
 
 
 class NewsLetterCreateModel(BaseModel):

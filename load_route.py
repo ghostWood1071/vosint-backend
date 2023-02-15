@@ -1,6 +1,7 @@
 from app.auth.routers import router as AuthRouter
-from app.user.routers import router as UserRouter
+from app.news.routers import router as NewsRouter
 from app.newsletter.routers import router as NewsLetterRouter
+from app.user.routers import router as UserRouter
 
 ROUTE_LIST = [{
     'route': AuthRouter,
@@ -14,4 +15,8 @@ ROUTE_LIST = [{
     'route': NewsLetterRouter,
     'tags': ['NewsLetters'],
     'prefix': '/newsletters'
+}, {
+    'route': NewsRouter,
+    'tags': ['News'],
+    'prefix': '/news'
 }]

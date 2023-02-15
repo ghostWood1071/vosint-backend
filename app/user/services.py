@@ -1,6 +1,7 @@
-from db.init_db import get_collection_client
 from bson.objectid import ObjectId
 from fastapi import status
+
+from db.init_db import get_collection_client
 
 client = get_collection_client("users")
 

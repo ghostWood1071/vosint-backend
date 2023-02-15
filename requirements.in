@@ -3,7 +3,7 @@ fastapi
 uvicorn[standard]
 
 # JWT & Auth
-fastapi-jwt-auth
+fastapi-jwt-auth[asymmetric]
 passlib
 
 # database
