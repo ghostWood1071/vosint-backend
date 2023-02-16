@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi_jwt_auth import AuthJWT
 
-from app.news.services import find_news_by_filter_and_paginate
+from app.news.services import count_news, find_news_by_filter_and_paginate
 
 from .models import NewsLetterCreateModel, NewsLetterUpdateModel
 from .services import (create_news_ids_to_newsletter, create_newsletter,
@@ -37,17 +37,32 @@ async def read(authorize: AuthJWT = Depends()):
     user_id = authorize.get_jwt_subject()
     newsletters = await find_newsletters_and_filter(
         {"user_id": ObjectId(user_id)})
+
     return JSONResponse(status_code=status.HTTP_200_OK, content=newsletters)
 
 
 @router.get("/{newsletter_id}/news")
 async def get_news_by_newsletter_id(newsletter_id: str, skip=0, limit=20):
     newsletter = await find_newsletter_by_id(ObjectId(newsletter_id))
+    if "news_id" not in newsletter:
+        return JSONResponse(status_code=status.HTTP_200_OK,
+                            content={
+                                "result": [],
+                                "total_record": 0
+                            })
+
     news = await find_news_by_filter_and_paginate(
         {"_id": {
             "$in": newsletter["news_id"]
         }}, int(skip), int(limit))
-    return JSONResponse(status_code=status.HTTP_200_OK, content=news)
+
+    count = await count_news({"_id": {"$in": newsletter["news_id"]}})
+
+    return JSONResponse(status_code=status.HTTP_200_OK,
+                        content={
+                            "result": news,
+                            "total_record": count
+                        })
 
 
 @router.delete("/{newsletter_id}", dependencies=[Depends(HTTPBearer())])
