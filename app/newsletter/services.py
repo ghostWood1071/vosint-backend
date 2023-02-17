@@ -37,14 +37,12 @@ async def create_newsletter(newsletter):
     return await client.insert_one(newsletter)
 
 
-async def create_news_ids_to_newsletter(newsletter_id: ObjectId,
-                                        news_ids: List[ObjectId]):
-    return await client.update_one({"_id": newsletter_id},
-                                   {"$push": {
-                                       "news_id": {
-                                           "$each": news_ids
-                                       }
-                                   }})
+async def create_news_ids_to_newsletter(
+    newsletter_id: ObjectId, news_ids: List[ObjectId]
+):
+    return await client.update_one(
+        {"_id": newsletter_id}, {"$push": {"news_id": {"$each": news_ids}}}
+    )
 
 
 async def delete_newsletter(newsletter_id):
@@ -52,13 +50,10 @@ async def delete_newsletter(newsletter_id):
 
 
 async def update_newsletter(newsletter_id: ObjectId, newsletter):
-    return await client.update_one({"_id": newsletter_id},
-                                   {"$set": newsletter})
+    return await client.update_one({"_id": newsletter_id}, {"$set": newsletter})
 
 
-async def update_newsletter_news_list(newsletter_id: ObjectId,
-                                      news_id: ObjectId):
-    return await client.update_one({"_id": newsletter_id},
-                                   {"$pull": {
-                                       "news_id": news_id
-                                   }})
+async def update_newsletter_news_list(newsletter_id: ObjectId, news_id: ObjectId):
+    return await client.update_one(
+        {"_id": newsletter_id}, {"$pull": {"news_id": news_id}}
+    )

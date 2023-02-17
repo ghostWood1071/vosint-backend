@@ -29,8 +29,8 @@ class Settings(BaseModel):
     authjwt_algorithm: str = "RS512"
     authjwt_public_key: str = settings.PUBLIC_KEY
     authjwt_private_key: str = settings.PRIVATE_KEY
-    authjwt_access_token_expires: str = expires
-    authjwt_refresh_token_expires: str = expires
+    authjwt_access_token_expires: datetime.timedelta = expires
+    authjwt_refresh_token_expires: datetime.timedelta = expires
     authjwt_token_location: set = {"cookies"}
     # Disable CSRF Protection for this example. default is True
     authjwt_cookie_csrf_protect: bool = False
@@ -43,8 +43,7 @@ def get_config():
 
 @app.exception_handler(AuthJWTException)
 def auth_exception_handler(request: Request, exc: AuthJWTException):
-    return JSONResponse(status_code=exc.status_code,
-                        content={"detail": exc.message})
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
 
 @app.on_event("startup")
@@ -60,21 +59,14 @@ async def on_shutdown():
 """
     Start file server for downloading static files.
 """
-app.mount("/static",
-          StaticFiles(directory=settings.APP_STATIC_DIR),
-          name="static")
+app.mount("/static", StaticFiles(directory=settings.APP_STATIC_DIR), name="static")
 """
     Import and init route list
 """
 from load_route import ROUTE_LIST
 
 for route in ROUTE_LIST:
-    app.include_router(route['route'],
-                       tags=route['tags'],
-                       prefix=route['prefix'])
+    app.include_router(route["route"], tags=route["tags"], prefix=route["prefix"])
 
 if __name__ == "__main__":
-    uvicorn.run("main:app",
-                host=settings.APP_HOST,
-                port=settings.APP_PORT,
-                reload=True)
+    uvicorn.run("main:app", host=settings.APP_HOST, port=settings.APP_PORT, reload=True)

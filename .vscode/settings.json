@@ -1,4 +1,11 @@
 {
-  "python.formatting.provider": "yapf",
-  "editor.formatOnSave": true
+  "python.formatting.provider": "black",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true
+  },
+  "isort.args": [
+    "--profile",
+    "black"
+  ]
 }

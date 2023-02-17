@@ -11,5 +11,6 @@ motor
 beanie
 
 # development (linter, formating, ...)
-yapf
+black
+isort
 pytest

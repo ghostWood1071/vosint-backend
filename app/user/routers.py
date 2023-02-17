@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer
+from fastapi import APIRouter, HTTPException, status
 
 from app.auth.password import get_password_hash
 from db.init_db import get_collection_client
@@ -19,22 +18,17 @@ client = get_collection_client("users")
 async def add(body: UserCreateModel):
     user_dict = body.dict()
 
-    existing_user = await client.find_one({'username': user_dict['username']})
+    existing_user = await client.find_one({"username": user_dict["username"]})
 
     if existing_user:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail='User already exist')
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="User already exist"
+        )
 
-    user_dict['hashed_password'] = get_password_hash(user_dict['password'])
+    user_dict["hashed_password"] = get_password_hash(user_dict["password"])
     user_dict.pop("password")
     await create_user(user_dict)
     return HTTPException(status_code=status.HTTP_200_OK)
-
-    # return user_dict
-    # user_create.password = user_create.password
-    # user = jsonable_encoder(user_create)
-    # new_user = await add_user(user)
-    # return new_user
 
 
 @router.get("/")
@@ -42,17 +36,17 @@ async def get_all():
     users = await get_all_user()
     if users:
         return users
-    return HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                         detail='List of account users is empty')
+    return HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="List of account users is empty"
+    )
 
 
-@router.get('/{id}')
+@router.get("/{id}")
 async def get_user_id(id):
     user = await get_user(id)
     if user:
         return user
-    return HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                         detail='user not exist')
+    return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="user not exist")
 
 
 # @router.put('/{id}')
