@@ -1,5 +1,6 @@
-from app.news.utils import news_to_json
 from db.init_db import get_collection_client
+
+from .utils import news_to_json
 
 client = get_collection_client("News")
 

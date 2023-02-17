@@ -8,6 +8,8 @@ anyio==3.6.2
     # via
     #   starlette
     #   watchfiles
+attrs==22.2.0
+    # via pytest
 beanie==1.17.0
     # via -r requirements.in
 cffi==1.15.1
@@ -20,6 +22,8 @@ cryptography==3.4.8
     # via fastapi-jwt-auth
 dnspython==2.3.0
     # via pymongo
+exceptiongroup==1.1.0
+    # via pytest
 fastapi==0.89.1
     # via
     #   -r requirements.in
@@ -32,14 +36,20 @@ httptools==0.5.0
     # via uvicorn
 idna==3.4
     # via anyio
+iniconfig==2.0.0
+    # via pytest
 lazy-model==0.0.5
     # via beanie
 motor==3.1.1
     # via
     #   -r requirements.in
     #   beanie
+packaging==23.0
+    # via pytest
 passlib==1.7.4
     # via -r requirements.in
+pluggy==1.0.0
+    # via pytest
 pycparser==2.21
     # via cffi
 pydantic==1.10.4
@@ -51,6 +61,8 @@ pyjwt==1.7.1
     # via fastapi-jwt-auth
 pymongo==4.3.3
     # via motor
+pytest==7.2.1
+    # via -r requirements.in
 python-dotenv==0.21.1
     # via uvicorn
 pyyaml==6.0
@@ -61,6 +73,8 @@ starlette==0.22.0
     # via fastapi
 toml==0.10.2
     # via beanie
+tomli==2.0.1
+    # via pytest
 typing-extensions==4.4.0
     # via pydantic
 uvicorn[standard]==0.20.0

@@ -2,11 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 
 from app.auth.password import get_password_hash
-# from fastapi.security import HTTPBearer
-# from fastapi_jwt_auth import AuthJWT
-from app.user.models import UserCreateModel
-from app.user.services import create_user, get_all_user, get_user
 from db.init_db import get_collection_client
+
+from .models import UserCreateModel
+from .services import create_user, get_all_user, get_user
 
 router = APIRouter()
 """
@@ -29,7 +28,6 @@ async def add(body: UserCreateModel):
     user_dict['hashed_password'] = get_password_hash(user_dict['password'])
     user_dict.pop("password")
     created_user = await create_user(user_dict)
-    print(created_user)
 
     # return user_dict
     # user_create.password = user_create.password
@@ -47,7 +45,7 @@ async def get_all():
                          detail='List of account users is empty')
 
 
-@router.get('/{id}', dependencies=[Depends(HTTPBearer())])
+@router.get('/{id}')
 async def get_user_id(id):
     user = await get_user(id)
     if user:
@@ -56,7 +54,7 @@ async def get_user_id(id):
                          detail='user not exist')
 
 
-# @router.put('/{id}', dependencies=[Depends(HTTPBearer())])
+# @router.put('/{id}')
 # async def update_user(id: str, user_data: UserUpdateModel = Body(...)):
 #     user_data = {k: v for k, v in user_data.dict().items() if v is not None}
 #     updated_user = await update_user(id, user_data)
@@ -65,7 +63,7 @@ async def get_user_id(id):
 #     return status.HTTP_403_FORBIDDEN
 #
 
-# @router.delete('/{id}', dependencies=[Depends(HTTPBearer())])
+# @router.delete('/{id}')
 # async def delete_user(id: str):
 #     deleted_user = await delete_user(id)
 #     if deleted_user:

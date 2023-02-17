@@ -18,7 +18,6 @@ async def find_newsletters_and_filter(filter_newsletters: dict):
     topics = {"newsletters": [], "fields": [], "topics": []}
     async for topic in client.find(filter_newsletters).sort("_id"):
         topic = newsletter_to_json(topic)
-        print(topic)
         if "news_id" in topic:
             topic.pop("news_id")
 

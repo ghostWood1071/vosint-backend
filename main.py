@@ -31,6 +31,9 @@ class Settings(BaseModel):
     authjwt_private_key: str = settings.PRIVATE_KEY
     authjwt_access_token_expires: str = expires
     authjwt_refresh_token_expires: str = expires
+    authjwt_token_location: set = {"cookies"}
+    # Disable CSRF Protection for this example. default is True
+    authjwt_cookie_csrf_protect: bool = False
 
 
 @AuthJWT.load_config
