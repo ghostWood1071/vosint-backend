@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 @router.post("/login")
-async def login(body: UserLoginModel, Authorize: AuthJWT = Depends()):
+async def login(body: UserLoginModel, authorize: AuthJWT = Depends()):
     user = await read_user_by_username(body.username)
     if user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
@@ -27,30 +27,30 @@ async def login(body: UserLoginModel, Authorize: AuthJWT = Depends()):
         await update_user(user["_id"],
                           {"hashed_password": user["hashed_password"]})
 
-    access_token = Authorize.create_access_token(subject=str(user["_id"]))
-    refresh_token = Authorize.create_refresh_token(subject=str(user["_id"]))
+    access_token = authorize.create_access_token(subject=str(user["_id"]))
+    refresh_token = authorize.create_refresh_token(subject=str(user["_id"]))
 
     role = user["role"] if "role" in user else None
 
-    Authorize.set_access_cookies(access_token)
-    Authorize.set_refresh_cookies(refresh_token)
+    authorize.set_access_cookies(access_token)
+    authorize.set_refresh_cookies(refresh_token)
 
     return HTTPException(status_code=status.HTTP_200_OK, detail={"role": role})
 
 
 @router.post("/refresh")
-def refresh(Authorize: AuthJWT = Depends()):
-    Authorize.jwt_refresh_token_required()
+def refresh(authorize: AuthJWT = Depends()):
+    authorize.jwt_refresh_token_required()
 
-    current_user = Authorize.get_jwt_subject()
-    new_access_token = Authorize.create_access_token(subject=current_user)
+    current_user = authorize.get_jwt_subject()
+    new_access_token = authorize.create_access_token(subject=current_user)
 
-    Authorize.set_access_cookies(new_access_token)
+    authorize.set_access_cookies(new_access_token)
     return HTTPException(status_code=status.HTTP_200_OK)
 
 
 @router.delete('/logout')
-def logout(Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
-    Authorize.unset_jwt_cookies()
+def logout(authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    authorize.unset_jwt_cookies()
     return HTTPException(status_code=status.HTTP_200_OK)

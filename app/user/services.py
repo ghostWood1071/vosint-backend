@@ -22,14 +22,14 @@ async def update_user(user_id: ObjectId, user):
 async def get_all_user():
     users = []
     async for user in client.find():
-        users.append(userEntity(user))
+        users.append(user_entity(user))
     return users
 
 
 async def get_user(id: str) -> dict:
     users = await client.find_one({"_id": ObjectId(id)})
     if users:
-        return userEntity(users)
+        return user_entity(users)
 
 
 # async def update_user(id: str, data: dict):
@@ -52,7 +52,7 @@ async def delete_user(id: str):
         return True
 
 
-def userEntity(user) -> dict:
+def user_entity(user) -> dict:
     return {
         "_id": str(user["_id"]),
         "username": user["username"],

@@ -27,7 +27,8 @@ async def add(body: UserCreateModel):
 
     user_dict['hashed_password'] = get_password_hash(user_dict['password'])
     user_dict.pop("password")
-    created_user = await create_user(user_dict)
+    await create_user(user_dict)
+    return HTTPException(status_code=status.HTTP_200_OK)
 
     # return user_dict
     # user_create.password = user_create.password

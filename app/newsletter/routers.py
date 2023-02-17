@@ -19,9 +19,9 @@ router = APIRouter()
 
 
 @router.post("/")
-async def create(body: NewsLetterCreateModel, Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
-    user_id = Authorize.get_jwt_subject()
+async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
 
     newsletter_dict = body.dict()
     newsletter_dict["user_id"] = user_id
@@ -31,9 +31,9 @@ async def create(body: NewsLetterCreateModel, Authorize: AuthJWT = Depends()):
 
 
 @router.get("/")
-async def read(Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
-    user_id = Authorize.get_jwt_subject()
+async def read(authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
 
     newsletters = await find_newsletters_and_filter(
         {"user_id": ObjectId(user_id)})
@@ -45,8 +45,8 @@ async def read(Authorize: AuthJWT = Depends()):
 async def get_news_by_newsletter_id(newsletter_id: str,
                                     skip=0,
                                     limit=20,
-                                    Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
+                                    authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
 
     newsletter = await find_newsletter_by_id(ObjectId(newsletter_id))
     if "news_id" not in newsletter:
@@ -71,8 +71,8 @@ async def get_news_by_newsletter_id(newsletter_id: str,
 
 
 @router.delete("/{newsletter_id}")
-async def delete(newsletter_id: str, Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
+async def delete(newsletter_id: str, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
 
     await delete_newsletter(ObjectId(newsletter_id))
 
@@ -83,8 +83,8 @@ async def delete(newsletter_id: str, Authorize: AuthJWT = Depends()):
     "/{newsletter_id}/news/{news_id}", )
 async def delete_news_in_newsletter(newsletter_id: str,
                                     news_id: str,
-                                    Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
+                                    authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
 
     # TODO: validate exists newsleter of user
     await update_newsletter_news_list(ObjectId(newsletter_id),
@@ -95,8 +95,8 @@ async def delete_news_in_newsletter(newsletter_id: str,
 @router.patch("/{newsletter_id}")
 async def update(newsletter_id: str,
                  body: NewsLetterUpdateModel,
-                 Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
+                 authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
 
     parsed_newsletter = newsletter_to_object_id(body.dict())
     await update_newsletter(ObjectId(newsletter_id), parsed_newsletter)
@@ -106,8 +106,8 @@ async def update(newsletter_id: str,
 @router.post("/{newsletter_id}/news")
 async def add_news_ids_to_newsletter(newsletter_id: str,
                                      news_ids: List[str] = Body(...),
-                                     Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
+                                     authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
 
     newsletter_object_id = ObjectId(newsletter_id)
     news_object_ids = []
