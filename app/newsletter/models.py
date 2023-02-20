@@ -5,10 +5,10 @@ from bson.objectid import ObjectId
 from pydantic import BaseModel, Field
 
 
-class Tags(str, Enum):
-    newsletter = "newsletter"  # Giỏ tin
-    field = "field"  # Lĩnh vực tin
-    topic = "topic"  # Danh mục chủ đề
+class Tag(str, Enum):
+    gio_tin = "gio_tin"
+    linh_vuc = "linh_vuc"
+    chu_de = "chu_de"
 
 
 class NewsLetterModel(BaseModel):
@@ -16,17 +16,21 @@ class NewsLetterModel(BaseModel):
     user_id: str = Field(default_factory=ObjectId)
     parent_id: str = Field(default_factory=ObjectId)
     title: str
-    tags: Tags = Tags.newsletter
+    tag: Tag = Tag.gio_tin
     news_id: list[str]
 
 
 class NewsLetterCreateModel(BaseModel):
     parent_id: str | None
     title: str
-    tags: Tags
+    tag: Tag
+    required_keyword: Optional[list[str]]
+    exclusion_keyword: Optional[str]
 
 
 class NewsLetterUpdateModel(BaseModel):
     parent_id: str | None
     title: str | None
-    tags: Optional[Tags]
+    tag: Optional[Tag]
+    required_keyword: Optional[list[str]]
+    exclusion_keyword: Optional[str]

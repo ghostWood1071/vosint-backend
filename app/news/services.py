@@ -2,7 +2,7 @@ from db.init_db import get_collection_client
 
 from .utils import news_to_json
 
-client = get_collection_client("News")
+client = get_collection_client("news")
 
 
 async def find_news_by_filter_and_paginate(filter_news: dict, skip: int, limit: int):
