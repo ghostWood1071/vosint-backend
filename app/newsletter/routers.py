@@ -40,6 +40,9 @@ async def read(authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
 
+    if user_id is None:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Bad jwt")
+
     newsletters = await find_newsletters_and_filter({"user_id": ObjectId(user_id)})
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=newsletters)
@@ -52,6 +55,11 @@ async def get_news_by_newsletter_id(
     authorize.jwt_required()
 
     newsletter = await find_newsletter_by_id(ObjectId(newsletter_id))
+    if newsletter is None:
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
+        )
+
     if "news_id" not in newsletter:
         return JSONResponse(
             status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
