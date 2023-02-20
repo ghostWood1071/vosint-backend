@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from core.config import settings
 from db import init_db
 
-app = FastAPI(title=settings.APP_TITLE)
+app = FastAPI(title=settings.APP_TITLE, root_path=settings.ROOT_PATH)
 
 if settings.APP_ORIGINS:
     app.add_middleware(

@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     MONGO_DETAILS: str = "mongodb://127.0.0.1:27017"
     DATABASE_NAME: str = "v-osint"
 
+    ROOT_PATH: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
