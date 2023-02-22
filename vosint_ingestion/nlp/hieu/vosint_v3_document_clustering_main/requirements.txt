@@ -1,0 +1,9 @@
+rank_bm25==0.2.2
+underthesea==6.0.3
+pandas==1.5.3
+fastapi==0.89.1
+uvicorn==0.20.0
+sklearn==0.0.post1
+typing==3.7.4.3
+pymongo==4.3.3
+pydantic==1.10.4
