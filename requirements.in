@@ -4,6 +4,7 @@ uvicorn[standard]
 python-multipart
 
 # pipeline
+flask
 playwright
 Unidecode
 PyYAML
