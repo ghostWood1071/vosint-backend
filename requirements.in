@@ -2,6 +2,15 @@
 fastapi
 uvicorn[standard]
 
+# pipeline
+playwright
+Unidecode
+PyYAML
+happybase
+pytz
+APScheduler
+SQLAlchemy
+
 # JWT & Auth
 fastapi-jwt-auth[asymmetric]
 passlib
