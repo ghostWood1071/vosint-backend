@@ -6,6 +6,8 @@ from app.news.routers import router as NewsRouter
 from app.newsletter.routers import router as NewsLetterRouter
 from app.upload.upload_file import router as UploadFileRouter
 from app.user.routers import router as UserRouter
+from vosint_ingestion.features.job.routers import router as Job
+from vosint_ingestion.features.pipeline.routers import router as PipeLine
 
 ROUTE_LIST = [
     {"route": AuthRouter, "tags": ["Xác Thực"], "prefix": ""},
@@ -15,5 +17,7 @@ ROUTE_LIST = [
     {"route": OrganizeRouter, "tags": ["Organize"], "prefix": "/organize"},
     {"route": CountryRouter, "tags": ["Country"], "prefix": "/country"},
     {"route": UploadFileRouter, "tags": ["Upload"], "prefix": "/upload"},
-    {"route": ObjectRouter, "tags": ["Object"], "prefix": "/object"}
+    {"route": ObjectRouter, "tags": ["Object"], "prefix": "/object"},
+    {"route": Job, "tags": ["Job"], "prefix": "/Job"},
+    {"route": PipeLine, "tags": ["PipeLine"], "prefix": "/PipeLine"}
 ]

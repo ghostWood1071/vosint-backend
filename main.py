@@ -1,4 +1,7 @@
 import datetime
+import sys
+
+sys.path.insert(0,"vosint_ingestion")
 
 import uvicorn
 from fastapi import FastAPI, Request
