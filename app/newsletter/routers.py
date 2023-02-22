@@ -93,13 +93,12 @@ async def delete_news_in_newsletter(
 ):
     authorize.jwt_required()
 
-    newsletter_object_id = ObjectId(newsletter_id)
     news_object_ids = []
     for news_id in news_ids:
         # TODO: validate exists news
         news_object_ids.append(ObjectId(news_id))
 
-    await delete_news_ids_in_newsletter(newsletter_object_id, news_object_ids)
+    await delete_news_ids_in_newsletter(ObjectId(newsletter_id), news_object_ids)
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
 

@@ -16,7 +16,8 @@ async def find_newsletter_by_id(newsletter_id: ObjectId):
 
 async def find_newsletters_and_filter(filter_newsletters: dict):
     topics = {"gio_tin": [], "linh_vuc": [], "chu_de": []}
-    async for topic in client.find(filter_newsletters).sort("_id"):
+
+    async for topic in client.find(filter_newsletters).sort([("-id", -1)]):
         topic = newsletter_to_json(topic)
 
         if "news_id" in topic:
