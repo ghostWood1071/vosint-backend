@@ -12,11 +12,11 @@ from .models import NewsLetterCreateModel, NewsLetterUpdateModel
 from .services import (
     create_news_ids_to_newsletter,
     create_newsletter,
+    delete_news_ids_in_newsletter,
     delete_newsletter,
     find_newsletter_by_id,
     find_newsletters_and_filter,
     update_newsletter,
-    update_newsletter_news_list,
 )
 from .utils import newsletter_to_object_id
 
@@ -85,16 +85,21 @@ async def delete(newsletter_id: str, authorize: AuthJWT = Depends()):
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
 
-@router.delete(
-    "/{newsletter_id}/news/{news_id}",
+@router.put(
+    "/{newsletter_id}/news",
 )
 async def delete_news_in_newsletter(
-    newsletter_id: str, news_id: str, authorize: AuthJWT = Depends()
+    newsletter_id: str, news_ids: List[str] = Body(...), authorize: AuthJWT = Depends()
 ):
     authorize.jwt_required()
 
-    # TODO: validate exists newsleter of user
-    await update_newsletter_news_list(ObjectId(newsletter_id), ObjectId(news_id))
+    newsletter_object_id = ObjectId(newsletter_id)
+    news_object_ids = []
+    for news_id in news_ids:
+        # TODO: validate exists news
+        news_object_ids.append(ObjectId(news_id))
+
+    await delete_news_ids_in_newsletter(newsletter_object_id, news_object_ids)
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
 

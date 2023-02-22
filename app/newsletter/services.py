@@ -57,7 +57,9 @@ async def update_newsletter(newsletter_id: ObjectId, newsletter):
     return await client.update_one({"_id": newsletter_id}, {"$set": newsletter})
 
 
-async def update_newsletter_news_list(newsletter_id: ObjectId, news_id: ObjectId):
+async def delete_news_ids_in_newsletter(
+    newsletter_id: ObjectId, news_ids: List[ObjectId]
+):
     return await client.update_one(
-        {"_id": newsletter_id}, {"$pull": {"news_id": news_id}}
+        {"_id": newsletter_id}, {"$pull": {"news_id": {"$in": news_ids}}}
     )
