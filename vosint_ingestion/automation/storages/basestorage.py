@@ -2,7 +2,6 @@ from abc import abstractmethod
 
 
 class BaseStorage:
-
     @abstractmethod
     def put(self, tbl_name: str, record: dict, **params):
         raise NotImplementedError()

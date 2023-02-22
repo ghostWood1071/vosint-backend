@@ -1,13 +1,13 @@
 from .baseaction import BaseAction
-from .inputs import *
-from .foreachaction import ForeachAction, get_action_class
-from .gotoaction import GotoAction
-from .geturlsaction import GetUrlsAction
-from .getnewsinfoaction import GetNewsInfoAction
-from .selectaction import SelectAction
-from .getattraction import GetAttrAction
 from .clickaction import ClickAction
-from .scrollaction import ScrollAction
-from .sendkeyaction import SendKeyAction
+from .foreachaction import ForeachAction, get_action_class
+from .getattraction import GetAttrAction
+from .getnewsinfoaction import GetNewsInfoAction
+from .geturlsaction import GetUrlsAction
+from .gotoaction import GotoAction
+from .inputs import *
 from .login import LoginAction
+from .scrollaction import ScrollAction
+from .selectaction import SelectAction
+from .sendkeyaction import SendKeyAction
 from .test import TestAction

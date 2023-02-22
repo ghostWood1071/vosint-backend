@@ -1,6 +1,6 @@
 class ActionStatus:
-    INITIALIZING = 'initializing'
-    INITIALIZED = 'initialized'
-    RUNNING = 'running'
-    COMPLETED = 'completed'
-    ERROR = 'error'
+    INITIALIZING = "initializing"
+    INITIALIZED = "initialized"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    ERROR = "error"

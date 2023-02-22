@@ -1,25 +1,26 @@
 import pymongo
 from bson.objectid import ObjectId
-
-from utils import get_time_now_string
 from common.internalerror import *
+from utils import get_time_now_string
 
 
 class MongoRepository:
     def __init__(self):
-        self.__host = 'localhost'
+        self.__host = "localhost"
         self.__port = 27017
-        self.__username = 'vosint'
-        self.__passwd = 'vosint_2022'
-        self.__db_name = 'vosint_db'
+        self.__username = "vosint"
+        self.__passwd = "vosint_2022"
+        self.__db_name = "vosint_db"
         self.__client = None
         self.__db = None
 
     def __connect(self):
-        self.__client = pymongo.MongoClient(host=self.__host,
-                                            port=self.__port,
-                                            username=self.__username,
-                                            password=self.__passwd)
+        self.__client = pymongo.MongoClient(
+            host=self.__host,
+            port=self.__port,
+            username=self.__username,
+            password=self.__passwd,
+        )
         self.__db = self.__client[self.__db_name]
 
     def __close(self):
@@ -30,22 +31,20 @@ class MongoRepository:
 
     def get_one(self, collection_name: str, filter_spec: dict):
         if not collection_name:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['COLLECTION_NAME'],
-                                    'msg': ['Collection name']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
 
         if not filter_spec:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['FILTER_CONDITION'],
-                                    'msg': ['Filter condition']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["FILTER_CONDITION"], "msg": ["Filter condition"]},
+            )
 
         # Normalize _id field
-        if '_id' in filter_spec and filter_spec['_id']:
-            filter_spec['_id'] = ObjectId(filter_spec['_id'])
+        if "_id" in filter_spec and filter_spec["_id"]:
+            filter_spec["_id"] = ObjectId(filter_spec["_id"])
 
         doc = None
         try:
@@ -57,13 +56,18 @@ class MongoRepository:
 
         return doc
 
-    def get_many(self, collection_name: str, filter_spec: dict = {}, order_spec: list[tuple] = [], pagination_spec: dict = {}) -> tuple[list, int]:
+    def get_many(
+        self,
+        collection_name: str,
+        filter_spec: dict = {},
+        order_spec: list[tuple] = [],
+        pagination_spec: dict = {},
+    ) -> tuple[list, int]:
         if not collection_name:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['COLLECTION_NAME'],
-                                    'msg': ['Collection name']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
 
         docs = []
         total_docs = 0
@@ -79,49 +83,48 @@ class MongoRepository:
 
             # Apply sort
             if not order_spec:
-                order_spec = [('modified_at', 1)]
+                order_spec = [("modified_at", 1)]
             else:
+
                 def __map_order(o):
                     # Split order information to get by and direction
-                    terms = o.split('-')
+                    terms = o.split("-")
                     by = terms[0]
-                    direction = -1 if len(terms) > 1 and terms[1] == 'desc' \
-                        else 1  # 1: asc; -1: desc
+                    direction = (
+                        -1 if len(terms) > 1 and terms[1] == "desc" else 1
+                    )  # 1: asc; -1: desc
                     return by, direction
+
                 order_spec = list(map(lambda o: __map_order(o), order_spec))
             query = query.sort(order_spec)
 
             # Apply pagination
             if pagination_spec:
-                if 'skip' in pagination_spec:
-                    if not isinstance(pagination_spec['skip'], int):
-                        raise InternalError(ERROR_NOT_INTEGER,
-                                            params={
-                                                'code': ['SKIP_VALUE'],
-                                                'msg': ['Skip value']
-                                            })
-                    if pagination_spec['skip'] < 0:
-                        raise InternalError(ERROR_NOT_LESS_THAN_0,
-                                            params={
-                                                'code': ['SKIP_VALUE'],
-                                                'msg': ['Skip value']
-                                            })
-                    query = query.skip(pagination_spec['skip'])
+                if "skip" in pagination_spec:
+                    if not isinstance(pagination_spec["skip"], int):
+                        raise InternalError(
+                            ERROR_NOT_INTEGER,
+                            params={"code": ["SKIP_VALUE"], "msg": ["Skip value"]},
+                        )
+                    if pagination_spec["skip"] < 0:
+                        raise InternalError(
+                            ERROR_NOT_LESS_THAN_0,
+                            params={"code": ["SKIP_VALUE"], "msg": ["Skip value"]},
+                        )
+                    query = query.skip(pagination_spec["skip"])
 
-                if 'limit' in pagination_spec:
-                    if not isinstance(pagination_spec['limit'], int):
-                        raise InternalError(ERROR_NOT_INTEGER,
-                                            params={
-                                                'code': ['LIMIT_VALUE'],
-                                                'msg': ['Limit value']
-                                            })
-                    if pagination_spec['limit'] < 0:
-                        raise InternalError(ERROR_NOT_LESS_THAN_0,
-                                            params={
-                                                'code': ['LIMIT_VALUE'],
-                                                'msg': ['Limit value']
-                                            })
-                    query = query.limit(pagination_spec['limit'])
+                if "limit" in pagination_spec:
+                    if not isinstance(pagination_spec["limit"], int):
+                        raise InternalError(
+                            ERROR_NOT_INTEGER,
+                            params={"code": ["LIMIT_VALUE"], "msg": ["Limit value"]},
+                        )
+                    if pagination_spec["limit"] < 0:
+                        raise InternalError(
+                            ERROR_NOT_LESS_THAN_0,
+                            params={"code": ["LIMIT_VALUE"], "msg": ["Limit value"]},
+                        )
+                    query = query.limit(pagination_spec["limit"])
 
             # Execute query
             docs = [doc for doc in query]
@@ -130,13 +133,19 @@ class MongoRepository:
 
         return docs, total_docs
 
-    def get_many_d(self, collection_name: str, filter_spec: dict = {},filter_other = None, order_spec: list[tuple] = [], pagination_spec: dict = {}) -> tuple[list, int]:
+    def get_many_d(
+        self,
+        collection_name: str,
+        filter_spec: dict = {},
+        filter_other=None,
+        order_spec: list[tuple] = [],
+        pagination_spec: dict = {},
+    ) -> tuple[list, int]:
         if not collection_name:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['COLLECTION_NAME'],
-                                    'msg': ['Collection name']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
 
         docs = []
         total_docs = 0
@@ -148,54 +157,57 @@ class MongoRepository:
             total_docs = collection.count_documents(filter_spec)
 
             # Apply filter conditions
-            
-            query = collection.find(filter_spec) if filter_other == None else collection.find(filter_spec,filter_other)
+
+            query = (
+                collection.find(filter_spec)
+                if filter_other == None
+                else collection.find(filter_spec, filter_other)
+            )
 
             # Apply sort
             if not order_spec:
-                order_spec = [('modified_at', 1)]
+                order_spec = [("modified_at", 1)]
             else:
+
                 def __map_order(o):
                     # Split order information to get by and direction
-                    terms = o.split('-')
+                    terms = o.split("-")
                     by = terms[0]
-                    direction = -1 if len(terms) > 1 and terms[1] == 'desc' \
-                        else 1  # 1: asc; -1: desc
+                    direction = (
+                        -1 if len(terms) > 1 and terms[1] == "desc" else 1
+                    )  # 1: asc; -1: desc
                     return by, direction
+
                 order_spec = list(map(lambda o: __map_order(o), order_spec))
             query = query.sort(order_spec)
 
             # Apply pagination
             if pagination_spec:
-                if 'skip' in pagination_spec:
-                    if not isinstance(pagination_spec['skip'], int):
-                        raise InternalError(ERROR_NOT_INTEGER,
-                                            params={
-                                                'code': ['SKIP_VALUE'],
-                                                'msg': ['Skip value']
-                                            })
-                    if pagination_spec['skip'] < 0:
-                        raise InternalError(ERROR_NOT_LESS_THAN_0,
-                                            params={
-                                                'code': ['SKIP_VALUE'],
-                                                'msg': ['Skip value']
-                                            })
-                    query = query.skip(pagination_spec['skip'])
+                if "skip" in pagination_spec:
+                    if not isinstance(pagination_spec["skip"], int):
+                        raise InternalError(
+                            ERROR_NOT_INTEGER,
+                            params={"code": ["SKIP_VALUE"], "msg": ["Skip value"]},
+                        )
+                    if pagination_spec["skip"] < 0:
+                        raise InternalError(
+                            ERROR_NOT_LESS_THAN_0,
+                            params={"code": ["SKIP_VALUE"], "msg": ["Skip value"]},
+                        )
+                    query = query.skip(pagination_spec["skip"])
 
-                if 'limit' in pagination_spec:
-                    if not isinstance(pagination_spec['limit'], int):
-                        raise InternalError(ERROR_NOT_INTEGER,
-                                            params={
-                                                'code': ['LIMIT_VALUE'],
-                                                'msg': ['Limit value']
-                                            })
-                    if pagination_spec['limit'] < 0:
-                        raise InternalError(ERROR_NOT_LESS_THAN_0,
-                                            params={
-                                                'code': ['LIMIT_VALUE'],
-                                                'msg': ['Limit value']
-                                            })
-                    query = query.limit(pagination_spec['limit'])
+                if "limit" in pagination_spec:
+                    if not isinstance(pagination_spec["limit"], int):
+                        raise InternalError(
+                            ERROR_NOT_INTEGER,
+                            params={"code": ["LIMIT_VALUE"], "msg": ["Limit value"]},
+                        )
+                    if pagination_spec["limit"] < 0:
+                        raise InternalError(
+                            ERROR_NOT_LESS_THAN_0,
+                            params={"code": ["LIMIT_VALUE"], "msg": ["Limit value"]},
+                        )
+                    query = query.limit(pagination_spec["limit"])
 
             # Execute query
             docs = [doc for doc in query]
@@ -204,13 +216,18 @@ class MongoRepository:
 
         return docs, total_docs
 
-    def get_many_News(self, collection_name: str, filter_spec: dict = {}, order_spec: list[tuple] = [], pagination_spec: dict = {}) -> tuple[list, int]:
+    def get_many_News(
+        self,
+        collection_name: str,
+        filter_spec: dict = {},
+        order_spec: list[tuple] = [],
+        pagination_spec: dict = {},
+    ) -> tuple[list, int]:
         if not collection_name:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['COLLECTION_NAME'],
-                                    'msg': ['Collection name']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
 
         docs = []
         total_docs = 0
@@ -222,53 +239,52 @@ class MongoRepository:
             total_docs = collection.count_documents(filter_spec)
 
             # Apply filter conditions
-            query = collection.find(filter_spec,{})
+            query = collection.find(filter_spec, {})
 
             # Apply sort
             if not order_spec:
-                order_spec = [('modified_at', 1)]
+                order_spec = [("modified_at", 1)]
             else:
+
                 def __map_order(o):
                     # Split order information to get by and direction
-                    terms = o.split('-')
+                    terms = o.split("-")
                     by = terms[0]
-                    direction = -1 if len(terms) > 1 and terms[1] == 'desc' \
-                        else 1  # 1: asc; -1: desc
+                    direction = (
+                        -1 if len(terms) > 1 and terms[1] == "desc" else 1
+                    )  # 1: asc; -1: desc
                     return by, direction
+
                 order_spec = list(map(lambda o: __map_order(o), order_spec))
             query = query.sort(order_spec)
 
             # Apply pagination
             if pagination_spec:
-                if 'skip' in pagination_spec:
-                    if not isinstance(pagination_spec['skip'], int):
-                        raise InternalError(ERROR_NOT_INTEGER,
-                                            params={
-                                                'code': ['SKIP_VALUE'],
-                                                'msg': ['Skip value']
-                                            })
-                    if pagination_spec['skip'] < 0:
-                        raise InternalError(ERROR_NOT_LESS_THAN_0,
-                                            params={
-                                                'code': ['SKIP_VALUE'],
-                                                'msg': ['Skip value']
-                                            })
-                    query = query.skip(pagination_spec['skip'])
+                if "skip" in pagination_spec:
+                    if not isinstance(pagination_spec["skip"], int):
+                        raise InternalError(
+                            ERROR_NOT_INTEGER,
+                            params={"code": ["SKIP_VALUE"], "msg": ["Skip value"]},
+                        )
+                    if pagination_spec["skip"] < 0:
+                        raise InternalError(
+                            ERROR_NOT_LESS_THAN_0,
+                            params={"code": ["SKIP_VALUE"], "msg": ["Skip value"]},
+                        )
+                    query = query.skip(pagination_spec["skip"])
 
-                if 'limit' in pagination_spec:
-                    if not isinstance(pagination_spec['limit'], int):
-                        raise InternalError(ERROR_NOT_INTEGER,
-                                            params={
-                                                'code': ['LIMIT_VALUE'],
-                                                'msg': ['Limit value']
-                                            })
-                    if pagination_spec['limit'] < 0:
-                        raise InternalError(ERROR_NOT_LESS_THAN_0,
-                                            params={
-                                                'code': ['LIMIT_VALUE'],
-                                                'msg': ['Limit value']
-                                            })
-                    query = query.limit(pagination_spec['limit'])
+                if "limit" in pagination_spec:
+                    if not isinstance(pagination_spec["limit"], int):
+                        raise InternalError(
+                            ERROR_NOT_INTEGER,
+                            params={"code": ["LIMIT_VALUE"], "msg": ["Limit value"]},
+                        )
+                    if pagination_spec["limit"] < 0:
+                        raise InternalError(
+                            ERROR_NOT_LESS_THAN_0,
+                            params={"code": ["LIMIT_VALUE"], "msg": ["Limit value"]},
+                        )
+                    query = query.limit(pagination_spec["limit"])
 
             # Execute query
             docs = [doc for doc in query]
@@ -277,13 +293,18 @@ class MongoRepository:
 
         return docs, total_docs
 
-    def get_many_his_log(self, collection_name: str, filter_spec: dict = {}, order_spec: list[tuple] = [], pagination_spec: dict = {}) -> tuple[list, int]:
+    def get_many_his_log(
+        self,
+        collection_name: str,
+        filter_spec: dict = {},
+        order_spec: list[tuple] = [],
+        pagination_spec: dict = {},
+    ) -> tuple[list, int]:
         if not collection_name:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['COLLECTION_NAME'],
-                                    'msg': ['Collection name']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
 
         docs = []
         total_docs = 0
@@ -295,53 +316,52 @@ class MongoRepository:
             total_docs = collection.count_documents(filter_spec)
 
             # Apply filter conditions
-            query = collection.find(filter_spec,{"_id":0,"pipeline_id":0})
+            query = collection.find(filter_spec, {"_id": 0, "pipeline_id": 0})
 
             # Apply sort
             if not order_spec:
-                order_spec = [('modified_at', 1)]
+                order_spec = [("modified_at", 1)]
             else:
+
                 def __map_order(o):
                     # Split order information to get by and direction
-                    terms = o.split('-')
+                    terms = o.split("-")
                     by = terms[0]
-                    direction = -1 if len(terms) > 1 and terms[1] == 'desc' \
-                        else 1  # 1: asc; -1: desc
+                    direction = (
+                        -1 if len(terms) > 1 and terms[1] == "desc" else 1
+                    )  # 1: asc; -1: desc
                     return by, direction
+
                 order_spec = list(map(lambda o: __map_order(o), order_spec))
             query = query.sort(order_spec)
 
             # Apply pagination
             if pagination_spec:
-                if 'skip' in pagination_spec:
-                    if not isinstance(pagination_spec['skip'], int):
-                        raise InternalError(ERROR_NOT_INTEGER,
-                                            params={
-                                                'code': ['SKIP_VALUE'],
-                                                'msg': ['Skip value']
-                                            })
-                    if pagination_spec['skip'] < 0:
-                        raise InternalError(ERROR_NOT_LESS_THAN_0,
-                                            params={
-                                                'code': ['SKIP_VALUE'],
-                                                'msg': ['Skip value']
-                                            })
-                    query = query.skip(pagination_spec['skip'])
+                if "skip" in pagination_spec:
+                    if not isinstance(pagination_spec["skip"], int):
+                        raise InternalError(
+                            ERROR_NOT_INTEGER,
+                            params={"code": ["SKIP_VALUE"], "msg": ["Skip value"]},
+                        )
+                    if pagination_spec["skip"] < 0:
+                        raise InternalError(
+                            ERROR_NOT_LESS_THAN_0,
+                            params={"code": ["SKIP_VALUE"], "msg": ["Skip value"]},
+                        )
+                    query = query.skip(pagination_spec["skip"])
 
-                if 'limit' in pagination_spec:
-                    if not isinstance(pagination_spec['limit'], int):
-                        raise InternalError(ERROR_NOT_INTEGER,
-                                            params={
-                                                'code': ['LIMIT_VALUE'],
-                                                'msg': ['Limit value']
-                                            })
-                    if pagination_spec['limit'] < 0:
-                        raise InternalError(ERROR_NOT_LESS_THAN_0,
-                                            params={
-                                                'code': ['LIMIT_VALUE'],
-                                                'msg': ['Limit value']
-                                            })
-                    query = query.limit(pagination_spec['limit'])
+                if "limit" in pagination_spec:
+                    if not isinstance(pagination_spec["limit"], int):
+                        raise InternalError(
+                            ERROR_NOT_INTEGER,
+                            params={"code": ["LIMIT_VALUE"], "msg": ["Limit value"]},
+                        )
+                    if pagination_spec["limit"] < 0:
+                        raise InternalError(
+                            ERROR_NOT_LESS_THAN_0,
+                            params={"code": ["LIMIT_VALUE"], "msg": ["Limit value"]},
+                        )
+                    query = query.limit(pagination_spec["limit"])
 
             # Execute query
             docs = [doc for doc in query]
@@ -352,25 +372,21 @@ class MongoRepository:
 
     def insert_one(self, collection_name: str, doc: dict) -> str:
         if not collection_name:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['COLLECTION_NAME'],
-                                    'msg': ['Collection name']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
 
         if not doc:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['DOCUMENT'],
-                                    'msg': ['Document']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED, params={"code": ["DOCUMENT"], "msg": ["Document"]}
+            )
 
-        if '_id' in doc:
-            raise InternalError(ERROR_NOT_ALLOW_SPECIFY,
-                                params={
-                                    'code': ['DOCUMENT_ID'],
-                                    'msg': ['Document id']
-                                })
+        if "_id" in doc:
+            raise InternalError(
+                ERROR_NOT_ALLOW_SPECIFY,
+                params={"code": ["DOCUMENT_ID"], "msg": ["Document id"]},
+            )
 
         doc_id = None
         try:
@@ -378,8 +394,8 @@ class MongoRepository:
             collection = self.__db[collection_name]
 
             # Insert
-            doc['created_at'] = get_time_now_string()
-            doc['modified_at'] = doc['created_at']
+            doc["created_at"] = get_time_now_string()
+            doc["modified_at"] = doc["created_at"]
             insert_res = collection.insert_one(doc)
             doc_id = str(insert_res.inserted_id)
         finally:
@@ -389,25 +405,20 @@ class MongoRepository:
 
     def update_one(self, collection_name: str, doc: dict) -> bool:
         if not collection_name:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['COLLECTION_NAME'],
-                                    'msg': ['Collection name']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
 
         if not doc:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['DOCUMENT'],
-                                    'msg': ['Document']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED, params={"code": ["DOCUMENT"], "msg": ["Document"]}
+            )
 
-        if '_id' not in doc or not doc['_id']:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['DOCUMENT_ID'],
-                                    'msg': ['Document id']
-                                })
+        if "_id" not in doc or not doc["_id"]:
+            raise InternalError(
+                ERROR_REQUIRED, params={"code": ["DOCUMENT_ID"], "msg": ["Document id"]}
+            )
 
         success = False
         try:
@@ -415,11 +426,10 @@ class MongoRepository:
             collection = self.__db[collection_name]
 
             # Update
-            doc['modified_at'] = get_time_now_string()
-            filter_spec = {'_id': ObjectId(doc['_id'])}
-            del doc['_id']
-            update_res = collection.update_one(filter_spec,
-                                               {"$set": doc})
+            doc["modified_at"] = get_time_now_string()
+            filter_spec = {"_id": ObjectId(doc["_id"])}
+            del doc["_id"]
+            update_res = collection.update_one(filter_spec, {"$set": doc})
             success = update_res.modified_count > 0
         finally:
             self.__close()
@@ -428,22 +438,20 @@ class MongoRepository:
 
     def delete_one(self, collection_name: str, filter_spec: dict) -> bool:
         if not collection_name:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['COLLECTION_NAME'],
-                                    'msg': ['Collection name']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
 
         if not filter_spec:
-            raise InternalError(ERROR_REQUIRED,
-                                params={
-                                    'code': ['FILTER_CONDITION'],
-                                    'msg': ['Filter condition']
-                                })
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["FILTER_CONDITION"], "msg": ["Filter condition"]},
+            )
 
         # Normalize _id field
-        if '_id' in filter_spec and filter_spec['_id']:
-            filter_spec['_id'] = ObjectId(filter_spec['_id'])
+        if "_id" in filter_spec and filter_spec["_id"]:
+            filter_spec["_id"] = ObjectId(filter_spec["_id"])
 
         success = False
         try:

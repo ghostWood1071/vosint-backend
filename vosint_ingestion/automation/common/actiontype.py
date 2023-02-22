@@ -1,3 +1,3 @@
 class ActionType:
-    INPUT = 'input'
-    COMMON = 'common'
+    INPUT = "input"
+    COMMON = "common"

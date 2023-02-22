@@ -5,10 +5,12 @@ from db.init_db import get_collection_client
 
 db = get_collection_client("organize")
 
+
 async def create_organize(organize):
     created_organize = await db.insert_one(organize)
     new = await db.find_one({"id": created_organize.inserted_id})
-    return HTTPException(status_code=status.HTTP_200_OK, detail='OK')
+    return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
+
 
 async def get_all_organize():
     organizes = []
@@ -16,27 +18,28 @@ async def get_all_organize():
         organizes.append(Entity(organ))
     return organizes
 
+
 async def get_one_organize(organize_name: str) -> dict:
     organize = await db.find_one({"organize_name": organize_name})
-    if organize: 
+    if organize:
         return Entity(organize)
-    
+
+
 async def update_organize(id: str, data: dict):
     organize = await db.find_one({"_id": ObjectId(id)})
     if organize:
-        updated_organize = await db.update_one(
-            {"_id": ObjectId(id)},
-            {"$set": data}
-        )
+        updated_organize = await db.update_one({"_id": ObjectId(id)}, {"$set": data})
         if updated_organize:
             return status.HTTP_200_OK
         return False
 
+
 async def delete_organize(id: str):
     organize = await db.find_one({"_id": ObjectId(id)})
-    if organize: 
+    if organize:
         await db.delete_one({"_id": ObjectId(id)})
         return status.HTTP_200_OK
+
 
 def Entity(organize) -> dict:
     return {
@@ -48,5 +51,5 @@ def Entity(organize) -> dict:
         "avatar_url": organize["avatar_url"],
         "profile": organize["profile"],
         "keywords": organize["keywords"],
-        "status": organize["status"]
+        "status": organize["status"],
     }

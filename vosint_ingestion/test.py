@@ -1,2 +1,2 @@
 def abc():
-    return 'abc'
+    return "abc"

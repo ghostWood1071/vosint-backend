@@ -1,8 +1,8 @@
 class StorageType:
-    HBASE = 'hbase'
+    HBASE = "hbase"
 
     def to_list() -> list[str]:
         return [StorageType.HBASE]
 
     def to_string() -> str:
-        return f'{StorageType.HBASE}'
+        return f"{StorageType.HBASE}"

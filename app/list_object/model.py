@@ -5,14 +5,17 @@ from pydantic import BaseModel, Field
 
 
 class Status(str, Enum):
-    enable = 'enable'
-    disable = 'disable'
+    enable = "enable"
+    disable = "disable"
+
 
 class Keyword(BaseModel):
     vi: str = Field(...)
     en: str = Field(...)
     ru: str = Field(...)
     cn: str = Field(...)
+
+
 class CreateObject(BaseModel):
     object_name: str = Field(...)
     facebook_link: str = Field(...)
@@ -22,10 +25,11 @@ class CreateObject(BaseModel):
     profile: str = Field(...)
     keywords: Keyword
     status: Status
-    
-    class config: 
+
+    class config:
         orm_mode = True
-        
+
+
 class UpdateObject(BaseModel):
     object_name: Optional[str]
     facebook_link: Optional[str]
@@ -35,7 +39,6 @@ class UpdateObject(BaseModel):
     profile: Optional[str]
     keywords: Keyword
     status: Optional[str]
-    
+
     class config:
         orm_mode = True
-    

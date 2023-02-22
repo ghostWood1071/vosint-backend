@@ -1,10 +1,13 @@
-from datetime import datetime
-import pytz
 import uuid
+from datetime import datetime
+
+import pytz
 import unidecode
 
 
-def get_time_now_string(tz: str = 'Asia/Ho_Chi_Minh', fmt: str = '%Y/%m/%d %H:%M:%S') -> str:
+def get_time_now_string(
+    tz: str = "Asia/Ho_Chi_Minh", fmt: str = "%Y/%m/%d %H:%M:%S"
+) -> str:
     return datetime.now(pytz.timezone(tz)).strftime(fmt)
 
 
