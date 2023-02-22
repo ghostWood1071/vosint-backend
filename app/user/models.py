@@ -11,14 +11,13 @@ class Role(str, Enum):
     expert = "expert"
     leader = "leader"
 
-class BookMarkBase(BaseModel):
-    id: str = Field(...)
 
 class UserCreateModel(BaseModel):
     username: str
     password: str
     full_name: str
     role: Role
+
 
 class UserUpdateModel(BaseModel):
     username: str

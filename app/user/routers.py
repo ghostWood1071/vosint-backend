@@ -9,7 +9,7 @@ from fastapi_jwt_auth import AuthJWT
 from app.auth.password import get_password_hash
 from db.init_db import get_collection_client
 
-from .models import BookMarkBase, UserCreateModel, UserUpdateModel
+from .models import UserCreateModel
 from .services import (
     create_user,
     delete_bookmark_user,
@@ -77,22 +77,28 @@ async def get_user_id(id):
 #         return status.HTTP_200_OK
 #     return status.HTTP_403_FORBIDDEN
 
-@router.put('/add_bookmark')
-async def Update_bookmark_user(bookmarks:List[str] = Body(...),authorize: AuthJWT = Depends()):
+
+@router.put("/add_bookmark")
+async def Update_bookmark_user(
+    bookmarks: List[str] = Body(...), authorize: AuthJWT = Depends()
+):
     authorize.jwt_required()
     id_obj = ObjectId(authorize.get_jwt_subject())
     list_bookmark_news = []
     for bookmark in bookmarks:
         list_bookmark_news.append(ObjectId(bookmark))
-    await update_bookmark_user(id_obj,list_bookmark_news)
+    await update_bookmark_user(id_obj, list_bookmark_news)
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
-@router.put('/delete_bookmark')
-async def Delete_bookmark_user(id_bookmarks:List[str] = Body(...),authorize: AuthJWT = Depends()):
+
+@router.put("/delete_bookmark")
+async def Delete_bookmark_user(
+    id_bookmarks: List[str] = Body(...), authorize: AuthJWT = Depends()
+):
     authorize.jwt_required()
     id_obj = ObjectId(authorize.get_jwt_subject())
     list_bookmark_news = []
     for id_bookmark in id_bookmarks:
         list_bookmark_news.append(ObjectId(id_bookmark))
-    await delete_bookmark_user(id_obj,list_bookmark_news)
+    await delete_bookmark_user(id_obj, list_bookmark_news)
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
