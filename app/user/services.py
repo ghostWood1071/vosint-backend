@@ -1,9 +1,9 @@
+from typing import List
+
 from bson.objectid import ObjectId
 
+from app.user.models import BookMarkBase
 from db.init_db import get_collection_client
-
-# from fastapi import status
-
 
 client = get_collection_client("users")
 
@@ -34,17 +34,15 @@ async def get_user(id: str) -> dict:
         return user_entity(users)
 
 
-# async def update_user(id: str, data: dict):
-#     if len(data) < 1:
-#         return False
-#     user = await client.find_one({"_id": ObjectId(id)})
-#     if user:
-#         updated_user = await client.update_one({"_id": ObjectId(id)},
-#                                                {"$set": data})
-#         if updated_user:
-#             return status.HTTP_200_OK
-#         return False
-#
+async def update_bookmark_user(id: ObjectId,datas:List[ObjectId]):
+    return await client.update_one(
+        {"_id": id}, {"$push": {"bookmark_list": { "$each": datas }}}
+    )
+
+async def delete_bookmark_user(id: ObjectId,id_bookmarks:List[ObjectId]):
+    return await client.update_one(
+        {"_id": id}, {"$pull": {"bookmark_list":{ "$in": id_bookmarks}}}
+    )   
 
 
 async def delete_user(id: str):
@@ -60,4 +58,5 @@ def user_entity(user) -> dict:
         "username": user["username"],
         "full_name": user["full_name"],
         "role": user["role"],
+        "bookmark_list":user["bookmark_list"]
     }
