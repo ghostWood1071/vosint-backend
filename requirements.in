@@ -1,6 +1,7 @@
 # dependencies
 fastapi
 uvicorn[standard]
+python-multipart
 
 # pipeline
 playwright
