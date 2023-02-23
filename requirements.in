@@ -25,3 +25,4 @@ beanie
 black
 isort
 pytest
+pytest-asyncio
