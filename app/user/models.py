@@ -1,4 +1,3 @@
-# from ast import List
 from enum import Enum
 from typing import List, Optional
 
@@ -17,6 +16,7 @@ class UserCreateModel(BaseModel):
     password: str
     full_name: str
     role: Role
+    vital_list: Optional[list[str]]
 
 
 class UserUpdateModel(BaseModel):
@@ -28,3 +28,7 @@ class UserUpdateModel(BaseModel):
 class UserLoginModel(BaseModel):
     username: str
     password: str
+
+class VitalModel(BaseModel):
+    vital_id: str = Field(...)
+    vital_title: str = Field(...)
