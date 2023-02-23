@@ -4,8 +4,6 @@ from bson.objectid import ObjectId
 
 from db.init_db import get_collection_client
 
-from .utils import news_to_json
-
 client = get_collection_client("users")
 
 
@@ -35,15 +33,19 @@ async def get_user(id: str) -> dict:
         return user_entity(users)
 
 
+async def find_user_by_id(user_id: str):
+    return await client.find_one({"_id": user_id})
+
+
 async def update_bookmark_user(id: ObjectId, datas: List[ObjectId]):
     return await client.update_one(
-        {"_id": id}, {"$push": {"bookmark_list": {"$each": datas}}}
+        {"_id": id}, {"$push": {"news_bookmarks": {"$each": datas}}}
     )
 
 
 async def delete_bookmark_user(id: ObjectId, id_bookmarks: List[ObjectId]):
     return await client.update_one(
-        {"_id": id}, {"$pull": {"bookmark_list": {"$in": id_bookmarks}}}
+        {"_id": id}, {"$pull": {"news_bookmarks": {"$in": id_bookmarks}}}
     )
 
 
@@ -65,6 +67,7 @@ async def delete_user(id: str):
         await client.delete_one({"_id": ObjectId(id)})
         return True
 
+
 async def get_vital_ids(id: ObjectId):
     user = await client.find_one({"_id": ObjectId(id)})
     vital_ids = [str(vital_id) for vital_id in user["vital_list"]]
@@ -72,14 +75,22 @@ async def get_vital_ids(id: ObjectId):
 
 
 def user_entity(user) -> dict:
+    news_bookmarks = []
+    vital_list = []
+
+    if "vital_list" in user:
+        for news_id in user["vital_list"]:
+            vital_list.append(str(news_id))
+
+    if "news_bookmarks" in user:
+        for news_id in user["news_bookmarks"]:
+            news_bookmarks.append(str(news_id))
+
     return {
         "_id": str(user["_id"]),
         "username": user["username"],
         "full_name": user["full_name"],
         "role": user["role"],
-        "vital_list": user["vital_list"]
+        "news_bookmarks": news_bookmarks,
+        "vital_list": vital_list,
     }
-
-def news_to_json(user) -> dict:
-    user["_id"] = str(user["_id"])
-    return user

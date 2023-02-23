@@ -11,12 +11,20 @@ class Role(str, Enum):
     leader = "leader"
 
 
+class UserModal(BaseModel):
+    username: str
+    password: str
+    full_name: str
+    role: Role
+    news_bookmarks: list[str]
+    vital_list: list[str]
+
+
 class UserCreateModel(BaseModel):
     username: str
     password: str
     full_name: str
     role: Role
-    vital_list: Optional[list[str]]
 
 
 class UserUpdateModel(BaseModel):
@@ -28,7 +36,3 @@ class UserUpdateModel(BaseModel):
 class UserLoginModel(BaseModel):
     username: str
     password: str
-
-class VitalModel(BaseModel):
-    vital_id: str = Field(...)
-    vital_title: str = Field(...)
