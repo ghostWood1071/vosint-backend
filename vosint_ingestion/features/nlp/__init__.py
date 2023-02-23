@@ -1,3 +1,3 @@
-from .router import *
 from .nlpcontroller import *
+from .router import *
 from .services import *

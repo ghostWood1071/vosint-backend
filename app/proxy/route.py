@@ -13,6 +13,7 @@ from db.init_db import get_collection_client
 router = APIRouter()
 proxy_collect = get_collection_client("proxy")
 
+
 @router.post("/")
 async def add_proxy(payload: CreateProxy):
     proxy = payload.dict()
@@ -24,12 +25,14 @@ async def add_proxy(payload: CreateProxy):
     new_proxy = await create_proxy(proxy)
     return new_proxy
 
+
 @router.get("/")
 async def get_all():
     list_proxy = await get_all_proxy()
-    if list_proxy: 
+    if list_proxy:
         return list_proxy
     return None
+
 
 @router.get("/{proxy_name}")
 async def search(proxy_name):
@@ -39,7 +42,8 @@ async def search(proxy_name):
     return HTTPException(
         status_code=status.HTTP_403_FORBIDDEN, detail="proxy not exist"
     )
-    
+
+
 @router.put("/{id}")
 async def update(id, data: UpdateProxy = Body(...)):
     data = {k: v for k, v in data.dict().items() if v is not None}
@@ -47,6 +51,7 @@ async def update(id, data: UpdateProxy = Body(...)):
     if updated_proxy:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
+
 
 @router.delete("/{id}")
 async def delete(id):
