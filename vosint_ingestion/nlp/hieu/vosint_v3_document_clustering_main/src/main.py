@@ -13,7 +13,7 @@ class Inference:
         Các tham số mặc định
         """
         # self.corpus_tst = []
-        self.filename = "D:/Aiacademy/VOSINT3_document_clustering/thu_nghiem_bm25/stopwords/stopwords.txt"
+        self.filename = "../stopwords/stopwords.txt"
         self.create_corpus = Create_corpus()
         self.create_corpus.Create_corpus_final()
         self.top_n = 10
