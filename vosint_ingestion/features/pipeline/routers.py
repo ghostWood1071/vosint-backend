@@ -17,9 +17,9 @@ def get_pipeline_by_id(id: str):
     return JSONResponse(pipeline_controller.get_pipeline_by_id(id))
 
 
-@router.get("/api/get_pipelines")
-def get_pipelines():
-    return JSONResponse(pipeline_controller.get_pipelines())
+@router.get('/api/get_pipelines')
+def get_pipelines(text_search = None, enabled = None, actived = None, order = None, page_number = None, page_size = None):
+    return JSONResponse(pipeline_controller.get_pipelines(text_search, enabled, actived, order, page_number, page_size))
 
 
 @router.post("/api/put_pipeline")
