@@ -100,6 +100,10 @@ pyjwt==1.7.1
 pymongo==4.3.3
     # via motor
 pytest==7.2.1
+    # via
+    #   -r requirements.in
+    #   pytest-asyncio
+pytest-asyncio==0.20.3
     # via -r requirements.in
 python-dotenv==0.21.1
     # via uvicorn

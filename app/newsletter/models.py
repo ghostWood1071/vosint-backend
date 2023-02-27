@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from bson.objectid import ObjectId
 from pydantic import BaseModel, Field
@@ -17,7 +17,9 @@ class NewsLetterModel(BaseModel):
     parent_id: str = Field(default_factory=ObjectId)
     title: str
     tag: Tag = Tag.gio_tin
-    news_id: list[str]
+    news_id: List[str]
+    required_keyword: List[str]
+    exclusion_keyword: str
 
 
 class NewsLetterCreateModel(BaseModel):

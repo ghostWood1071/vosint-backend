@@ -13,6 +13,7 @@ from db.init_db import get_collection_client
 router = APIRouter()
 infor_collect = get_collection_client("infor")
 
+
 @router.post("/")
 async def add_infor(payload: CreateInfor):
     infor = payload.dict()
@@ -24,12 +25,14 @@ async def add_infor(payload: CreateInfor):
     new_infor = await create_infor(infor)
     return new_infor
 
+
 @router.get("/")
 async def get_all():
     list_infor = await get_all_infor()
-    if list_infor: 
+    if list_infor:
         return list_infor
     return None
+
 
 @router.get("/{name}")
 async def search(name):
@@ -42,15 +45,13 @@ async def search(name):
         }
         
     if name == infor["host_name"]:
-        return {
-            "message": "Your search math the host name",
-            "result": infor
-        }
-        
+        return {"message": "Your search math the host name", "result": infor}
+
     return HTTPException(
         status_code=status.HTTP_403_FORBIDDEN, detail="infor not exist"
     )
-    
+
+
 @router.put("/{id}")
 async def update(id, data: UpdateInfor = Body(...)):
     data = {k: v for k, v in data.dict().items() if v is not None}
@@ -60,6 +61,7 @@ async def update(id, data: UpdateInfor = Body(...)):
     return HTTPException(
         status_code=status.HTTP_403_FORBIDDEN, detail="update unsuccessful"
     )
+
 
 @router.delete("/{id}")
 async def delete(id):

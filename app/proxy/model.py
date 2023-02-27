@@ -1,4 +1,3 @@
-
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -9,15 +8,16 @@ class CreateProxy(BaseModel):
     ip_address: str
     port: str
     note: str
-    
-    class config: 
+
+    class config:
         orm_mode = True
-        
+
+
 class UpdateProxy(BaseModel):
     name: Optional[str]
     ip_address: Optional[str]
     port: Optional[str]
     note: Optional[str]
-    
-    class config: 
+
+    class config:
         orm_mode = True

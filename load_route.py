@@ -22,7 +22,7 @@ ROUTE_LIST = [
     {"route": UploadFileRouter, "tags": ["Upload"], "prefix": "/upload"},
     {"route": ObjectRouter, "tags": ["Object"], "prefix": "/object"},
     {"route": Job, "tags": ["Job"], "prefix": "/Job"},
-    {"route": PipeLine, "tags": ["PipeLine"], "prefix": "/PipeLine"},
+    {"route": PipeLine, "tags": ["Pipeline"], "prefix": "/Pipeline"},
     {"route": Nlp, "tags": ["Nlp"], "prefix": "/Nlp"},
     {"route": ProxyRouter, "tags": ["Proxy"], "prefix": "/Proxy"},
     {"route": InformationRouter, "tags": ["Infor"], "prefix": "/Infor"},
