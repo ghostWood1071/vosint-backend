@@ -17,7 +17,7 @@ async def get_all_proxy():
     return list_proxy
 
 async def search_proxy(key: str) -> dict:
-    proxy = await proxy_collect.find_one({"proxy_name": key})
+    proxy = await proxy_collect.find_one({"name": key})
     if proxy:
         return Entity(proxy)
     
@@ -38,7 +38,7 @@ async def delete_proxy(id: str):
 def Entity(proxy) -> dict:
     return {
         "_id": str(proxy["_id"]),
-        "proxy_name": proxy["proxy_name"],
+        "name": proxy["name"],
         "ip_address": proxy["ip_address"],
         "port": proxy["port"],
         "note": proxy["note"],

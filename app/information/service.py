@@ -20,7 +20,7 @@ async def search_infor(keyword: str) -> dict:
     infor = await infor_collect.find_one(
         {
             "$or": [
-                {"infor_name": keyword},
+                {"name": keyword},
                 {"host_name": keyword}
             ]
         }
@@ -46,7 +46,7 @@ async def delete_infor(id: str):
 def Entity(infor) -> dict:
     return {
         "_id": str(infor["_id"]),
-        "infor_name": infor["infor_name"],
+        "name": infor["name"],
         "host_name": infor["host_name"],
         "language": infor["language"],
         "publishing_country": infor["publishing_country"],

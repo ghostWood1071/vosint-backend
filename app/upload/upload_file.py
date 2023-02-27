@@ -13,6 +13,6 @@ async def upload(file: UploadFile = File(...)):
         return {"message": "There was an error when uploading the file"}
     finally:
         await file.close()
-    return {"file_url": "http://0.0.0.0:6082/static/" + file.filename}, 200
-    # return "0.0.0.0:8085/static/" + file.filename
+    #return {"file_url": "http://0.0.0.0:6082/static/" + file.filename}, 200
+    return {"file_url": f"static/{file.filename}"}, 200
     
