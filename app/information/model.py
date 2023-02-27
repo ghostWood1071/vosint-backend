@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class CreateInfor(BaseModel):
-    infor_name: str
+    name: str
     host_name: str
     language: str
     publishing_country: str
@@ -15,7 +15,7 @@ class CreateInfor(BaseModel):
 
 
 class UpdateInfor(BaseModel):
-    infor_name: Optional[str]
+    name: Optional[str]
     host_name: Optional[str]
     language: Optional[str]
     publishing_country: Optional[str]
