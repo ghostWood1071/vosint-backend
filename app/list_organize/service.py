@@ -19,8 +19,8 @@ async def get_all_organize():
     return organizes
 
 
-async def get_one_organize(organize_name: str) -> dict:
-    organize = await db.find_one({"organize_name": organize_name})
+async def get_one_organize(name: str) -> dict:
+    organize = await db.find_one({"name": name})
     if organize:
         return Entity(organize)
 
@@ -44,7 +44,7 @@ async def delete_organize(id: str):
 def Entity(organize) -> dict:
     return {
         "_id": str(organize["_id"]),
-        "organize_name": organize["organize_name"],
+        "name": organize["name"],
         "facebook_link": organize["facebook_link"],
         "twitter_link": organize["twitter_link"],
         "profile_link": organize["profile_link"],
