@@ -17,7 +17,7 @@ infor_collect = get_collection_client("infor")
 @router.post("/")
 async def add_infor(payload: CreateInfor):
     infor = payload.dict()
-    exist_infor = await infor_collect.find_one({"infor_name": infor["infor_name"]})
+    exist_infor = await infor_collect.find_one({"name": infor["name"]})
     if exist_infor:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="infor already exist"
@@ -37,10 +37,13 @@ async def get_all():
 @router.get("/{name}")
 async def search(name):
     infor = await search_infor(name)
-
-    if name == infor["infor_name"]:
-        return {"message": "Your search math the name", "result": infor}
-
+    
+    if name == infor["name"]:
+        return {
+            "message": "Your search math the name",
+            "result": infor
+        }
+        
     if name == infor["host_name"]:
         return {"message": "Your search math the host name", "result": infor}
 
@@ -55,7 +58,9 @@ async def update(id, data: UpdateInfor = Body(...)):
     updated_infor = await update_infor(id, data)
     if updated_infor:
         return status.HTTP_200_OK
-    return status.HTTP_403_FORBIDDEN
+    return HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="update unsuccessful"
+    )
 
 
 @router.delete("/{id}")
