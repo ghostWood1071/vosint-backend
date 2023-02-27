@@ -18,7 +18,7 @@ db = get_collection_client("organize")
 @router.post("/")
 async def add_organize(payload: CreateOrganize):
     organize = payload.dict()
-    exist_organize = await db.find_one({"organize_name": organize["organize_name"]})
+    exist_organize = await db.find_one({"name": organize["name"]})
     if exist_organize:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Organize already exist"

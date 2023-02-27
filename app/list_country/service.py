@@ -20,7 +20,7 @@ async def get_all_country():
 
 
 async def get_one_country(name: str) -> dict:
-    country = await db.find_one({"country_name": name})
+    country = await db.find_one({"name": name})
     if country:
         return Entity(country)
 
@@ -44,7 +44,7 @@ async def delete_country(id: str):
 def Entity(country) -> dict:
     return {
         "_id": str(country["_id"]),
-        "country_name": country["country_name"],
+        "name": country["name"],
         "facebook_link": country["facebook_link"],
         "twitter_link": country["twitter_link"],
         "profile_link": country["profile_link"],

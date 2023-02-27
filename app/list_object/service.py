@@ -19,8 +19,8 @@ async def get_all_object():
     return countries
 
 
-async def get_one_object(id: str) -> dict:
-    object = await db.find_one({"_id": ObjectId(id)})
+async def get_one_object(name: str) -> dict:
+    object = await db.find_one({"name": name})
     if object:
         return Entity(object)
 
@@ -44,7 +44,7 @@ async def delete_object(id: str):
 def Entity(object) -> dict:
     return {
         "_id": str(object["_id"]),
-        "object_name": object["object_name"],
+        "name": object["name"],
         "facebook_link": object["facebook_link"],
         "twitter_link": object["twitter_link"],
         "profile_link": object["profile_link"],
