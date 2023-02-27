@@ -20,11 +20,18 @@ async def update_user(user_id: ObjectId, user):
     return await client.update_one({"_id": user_id}, {"$set": user})
 
 
-async def get_all_user():
+async def get_users(filter_spec, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
     users = []
-    async for user in client.find():
-        users.append(user_entity(user))
+    async for new in client.find(filter_spec).sort("_id").skip(offset).limit(limit):
+        new = user_entity(new)
+        users.append(new)
+
     return users
+
+
+async def count_users(filter_spec):
+    return await client.count_documents(filter_spec)
 
 
 async def get_user(id: str) -> dict:
