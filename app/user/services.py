@@ -20,11 +20,18 @@ async def update_user(user_id: ObjectId, user):
     return await client.update_one({"_id": user_id}, {"$set": user})
 
 
-async def get_all_user():
+async def get_users(filter_spec, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
     users = []
-    async for user in client.find():
-        users.append(user_entity(user))
+    async for new in client.find(filter_spec).sort("_id").skip(offset).limit(limit):
+        new = user_entity(new)
+        users.append(new)
+
     return users
+
+
+async def count_users(filter_spec):
+    return await client.count_documents(filter_spec)
 
 
 async def get_user(id: str) -> dict:
@@ -33,15 +40,31 @@ async def get_user(id: str) -> dict:
         return user_entity(users)
 
 
+async def find_user_by_id(user_id: str):
+    return await client.find_one({"_id": user_id})
+
+
 async def update_bookmark_user(id: ObjectId, datas: List[ObjectId]):
     return await client.update_one(
-        {"_id": id}, {"$push": {"bookmark_list": {"$each": datas}}}
+        {"_id": id}, {"$push": {"news_bookmarks": {"$each": datas}}}
     )
 
 
 async def delete_bookmark_user(id: ObjectId, id_bookmarks: List[ObjectId]):
     return await client.update_one(
-        {"_id": id}, {"$pull": {"bookmark_list": {"$in": id_bookmarks}}}
+        {"_id": id}, {"$pull": {"news_bookmarks": {"$in": id_bookmarks}}}
+    )
+
+
+async def update_vital_user(id: ObjectId, vitals: List[ObjectId]):
+    return await client.update_one(
+        {"_id": id}, {"$push": {"vital_list": {"$each": vitals}}}
+    )
+
+
+async def delete_vital_user(id: ObjectId, id_vitals: List[ObjectId]):
+    return await client.update_one(
+        {"_id": id}, {"$pull": {"vital_list": {"$in": id_vitals}}}
     )
 
 
@@ -52,11 +75,29 @@ async def delete_user(id: str):
         return True
 
 
+async def get_vital_ids(id: ObjectId):
+    user = await client.find_one({"_id": ObjectId(id)})
+    vital_ids = [str(vital_id) for vital_id in user["vital_list"]]
+    return vital_ids
+
+
 def user_entity(user) -> dict:
+    news_bookmarks = []
+    vital_list = []
+
+    if "vital_list" in user:
+        for news_id in user["vital_list"]:
+            vital_list.append(str(news_id))
+
+    if "news_bookmarks" in user:
+        for news_id in user["news_bookmarks"]:
+            news_bookmarks.append(str(news_id))
+
     return {
         "_id": str(user["_id"]),
         "username": user["username"],
         "full_name": user["full_name"],
         "role": user["role"],
-        "bookmark_list": user["bookmark_list"],
+        "news_bookmarks": news_bookmarks,
+        "vital_list": vital_list,
     }

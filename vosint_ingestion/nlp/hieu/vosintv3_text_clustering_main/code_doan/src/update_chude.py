@@ -28,14 +28,16 @@ def update_chude():
         # class_title = []
         # for class_id in class_text_clustering:
         #     class_title.append(mongo.get_one(collection_name="class_chude",filter_spec = {"class_name":class_id})['title'])
-            
-        doc['data:class_chude'] = class_text_clustering
-        mongo.update_one('News', doc)
-        #print(class_text_clustering)
-        
+
+        doc["data:class_chude"] = class_text_clustering
+        mongo.update_one("News", doc)
+        # print(class_text_clustering)
+
     return True
 
 
 def test():
-    a = text_clustering("Trên đông,nước,trung quốc,bóng đá,cá độ,thể thao",class_name="class_chude")
+    a = text_clustering(
+        "Trên đông,nước,trung quốc,bóng đá,cá độ,thể thao", class_name="class_chude"
+    )
     print(a)

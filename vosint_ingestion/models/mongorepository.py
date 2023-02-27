@@ -6,7 +6,7 @@ from utils import get_time_now_string
 
 class MongoRepository:
     def __init__(self):
-        self.__host = '192.168.1.100'
+        self.__host = "192.168.1.100"
         self.__port = 27017
         self.__username = "vosint"
         self.__passwd = "vosint_2022"
@@ -29,7 +29,7 @@ class MongoRepository:
             self.__client = None
             self.__db = None
 
-    def get_one(self, collection_name: str, filter_spec: dict, filter_other: dict ={}):
+    def get_one(self, collection_name: str, filter_spec: dict, filter_other: dict = {}):
         if not collection_name:
             raise InternalError(
                 ERROR_REQUIRED,
@@ -50,7 +50,7 @@ class MongoRepository:
         try:
             self.__connect()
             collection = self.__db[collection_name]
-            doc = collection.find_one(filter_spec,filter_other)
+            doc = collection.find_one(filter_spec, filter_other)
         finally:
             self.__close()
 
