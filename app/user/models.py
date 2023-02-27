@@ -1,8 +1,7 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
-from bson.objectid import ObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class Role(str, Enum):
@@ -28,9 +27,10 @@ class UserCreateModel(BaseModel):
 
 
 class UserUpdateModel(BaseModel):
-    username: str
-    password: str
-    full_name: str
+    username: Optional[str]
+    password: Optional[str]
+    full_name: Optional[str]
+    role: Optional[Role]
 
 
 class UserLoginModel(BaseModel):

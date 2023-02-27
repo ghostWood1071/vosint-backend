@@ -10,16 +10,19 @@ from app.auth.password import get_password_hash
 from app.news.services import count_news, find_news_by_filter_and_paginate
 from db.init_db import get_collection_client
 
-from .models import UserCreateModel
+from .models import UserCreateModel, UserUpdateModel
 from .services import (
+    count_users,
     create_user,
     delete_bookmark_user,
+    delete_user,
     delete_vital_user,
     find_user_by_id,
-    get_all_user,
     get_user,
+    get_users,
     get_vital_ids,
     update_bookmark_user,
+    update_user,
     update_vital_user,
     user_entity,
 )
@@ -100,15 +103,6 @@ async def get_vital_by_user(skip=0, limit=20, authorize: AuthJWT = Depends()):
 #     if user:
 #         return user
 #     return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="user not exist")
-
-
-# @router.put('/{id}')
-# async def update_user(id: str, user_data: UserUpdateModel = Body(...)):
-#     user_data = {k: v for k, v in user_data.dict().items() if v is not None}
-#     updated_user = await update_user(id, user_data)
-#     if updated_user:
-#         return updated_user
-#     return status.HTTP_403_FORBIDDEN
 
 
 # @router.delete('/{id}')
@@ -220,3 +214,32 @@ async def delete_vital(
 #     return JSONResponse(
 #         status_code=status.HTTP_200_OK, content={"result": news}
 #     )
+
+
+@router.get("/")
+async def get_all(skip=0, limit=20, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    users = await get_users({}, int(skip), int(limit))
+    count = await count_users({})
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"result": users, "total_record": count}
+    )
+
+
+@router.put("/{id}")
+async def update(id: str, user_data: UserUpdateModel = Body(...)):
+    user_data = {k: v for k, v in user_data.dict().items() if v is not None}
+    updated_user = await update_user(ObjectId(id), user_data)
+    if updated_user is None:
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=None)
+
+    return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
+
+
+@router.delete("/{id}")
+async def delete(id: str):
+    deleted = await delete_user(id)
+    if deleted is not True:
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=None)
+    return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
