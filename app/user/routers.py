@@ -18,9 +18,7 @@ from .services import (
     delete_user,
     delete_vital_user,
     find_user_by_id,
-    get_user,
     get_users,
-    get_vital_ids,
     update_bookmark_user,
     update_user,
     update_vital_user,
@@ -63,54 +61,30 @@ async def get_me(authorize: AuthJWT = Depends()):
     return JSONResponse(status_code=status.HTTP_200_OK, content=user_entity(user))
 
 
-@router.get("/get_vital_ids")
-async def get_vital_ids_by_user(authorize: AuthJWT = Depends()):
-    authorize.jwt_required()
-    user_id = authorize.get_jwt_subject()
-    user = await get_user(user_id)
-    if user is None:
-        return JSONResponse(status_code=status.HTTP_200_OK, content={"result": []})
-
-    if "vital_list" not in user:
-        return JSONResponse(status_code=status.HTTP_200_OK, content={"result": []})
-
-    vital_ids = await get_vital_ids(user_id)
-
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": vital_ids})
-
-
-@router.get("/get_vital_list")
+@router.get("/vital")
 async def get_vital_by_user(skip=0, limit=20, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    user = await get_user(user_id)
+    user = await find_user_by_id(ObjectId(user_id))
     if user is None:
-        return JSONResponse(status_code=status.HTTP_200_OK, content={"result": []})
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
+        )
 
     if "vital_list" not in user:
-        return JSONResponse(status_code=status.HTTP_200_OK, content={"result": []})
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
+        )
 
     news = await find_news_by_filter_and_paginate(
         {"_id": {"$in": user["vital_list"]}}, int(skip), int(limit)
     )
 
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": news})
+    count = await count_news({"_id": {"$in": user["vital_list"]}})
 
-
-# @router.get("/{id}")
-# async def get_user_id(id):
-#     user = await get_user(id)
-#     if user:
-#         return user
-#     return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="user not exist")
-
-
-# @router.delete('/{id}')
-# async def delete_user(id: str):
-#     deleted_user = await delete_user(id)
-#     if deleted_user:
-#         return status.HTTP_200_OK
-#     return status.HTTP_403_FORBIDDEN
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"result": news, "total_record": count}
+    )
 
 
 @router.get("/bookmarks")
@@ -166,7 +140,7 @@ async def delete_news_in_bookmarks(
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
 
-@router.post("/add_vital")
+@router.post("/vital")
 async def add_vital(vitals: List[str] = Body(...), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = ObjectId(authorize.get_jwt_subject())
@@ -177,7 +151,7 @@ async def add_vital(vitals: List[str] = Body(...), authorize: AuthJWT = Depends(
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
 
-@router.put("/delete_vital")
+@router.put("/vital")
 async def delete_vital(
     id_vitals: List[str] = Body(...), authorize: AuthJWT = Depends()
 ):
@@ -190,30 +164,15 @@ async def delete_vital(
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
 
-# @router.get("/{id}/get_vital_list")
-# async def get_vital_by_user(
-#     skip=0, limit=20, authorize: AuthJWT = Depends()
-# ):
-#     authorize.jwt_required()
-#     user_id = authorize.get_jwt_subject()
-#     user = await get_user(user_id)
-#     if user is None:
-#         return JSONResponse(
-#             status_code=status.HTTP_200_OK, content={"result": []}
-#         )
+@router.get("/")
+async def get_all(skip=0, limit=20, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
 
-#     if "vital_list" not in user:
-#         return JSONResponse(
-#             status_code=status.HTTP_200_OK, content={"result": []}
-#         )
-
-#     news = await find_news_by_filter_and_paginate(
-#         {"_id": {"$in": user["vital_list"]}}, int(skip), int(limit)
-#     )
-
-#     return JSONResponse(
-#         status_code=status.HTTP_200_OK, content={"result": news}
-#     )
+    users = await get_users({}, int(skip), int(limit))
+    count = await count_users({})
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"result": users, "total_record": count}
+    )
 
 
 @router.get("/")

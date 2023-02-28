@@ -7,6 +7,7 @@ from app.news.routers import router as NewsRouter
 from app.newsletter.routers import router as NewsLetterRouter
 from app.proxy.route import router as ProxyRouter
 from app.social.routers import router as SocialRouter
+from app.social_media.routers import router as SocialMediaRouter
 from app.upload.upload_file import router as UploadFileRouter
 from app.user.routers import router as UserRouter
 from vosint_ingestion.features.job.routers import router as Job
@@ -28,4 +29,5 @@ ROUTE_LIST = [
     {"route": ProxyRouter, "tags": ["Proxy"], "prefix": "/Proxy"},
     {"route": InformationRouter, "tags": ["Infor"], "prefix": "/Infor"},
     {"route": SocialRouter, "tags": ["Social"], "prefix": "/social"},
+    {"route": SocialMediaRouter, "tags": ["Social Media"], "prefix": "/social-media"},
 ]
