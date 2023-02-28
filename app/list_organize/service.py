@@ -20,9 +20,16 @@ async def get_all_organize():
 
 
 async def get_one_organize(name: str) -> dict:
-    organize = await db.find_one({"name": name})
-    if organize:
-        return Entity(organize)
+    list_organize = []
+    async for item in db.find(
+        {
+            "$or": [
+                {"name": {"$regex": name}},
+            ]
+        }
+    ):
+        list_organize.append(Entity(item))
+    return list_organize
 
 
 async def update_organize(id: str, data: dict):

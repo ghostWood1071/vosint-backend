@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class CreateProxy(BaseModel):
-    name: str 
+    name: str
     ip_address: str
     port: str
     note: str

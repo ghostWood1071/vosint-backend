@@ -17,10 +17,10 @@ proxy_collect = get_collection_client("proxy")
 @router.post("/")
 async def add_proxy(payload: CreateProxy):
     proxy = payload.dict()
-    exist_proxy = await proxy_collect.find_one({"name": proxy["name"]})
+    exist_proxy = await proxy_collect.find_one({"ip_address": proxy["ip_address"]})
     if exist_proxy:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="proxy already exist"
+            status_code=status.HTTP_409_CONFLICT, detail="ip address already exist"
         )
     new_proxy = await create_proxy(proxy)
     return new_proxy
@@ -32,6 +32,7 @@ async def get_all():
     if list_proxy:
         return list_proxy
     return None
+
 
 @router.get("/{name}")
 async def search(name):

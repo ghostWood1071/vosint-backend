@@ -19,10 +19,17 @@ async def get_all_country():
     return countries
 
 
-async def get_one_country(name: str) -> dict:
-    country = await db.find_one({"name": name})
-    if country:
-        return Entity(country)
+async def get_one_country(name: str):
+    list_country = []
+    async for item in db.find(
+        {
+            "$or": [
+                {"name": {"$regex": name}},
+            ]
+        }
+    ):
+        list_country.append(Entity(item))
+    return list_country
 
 
 async def update_country(id: str, data: dict):

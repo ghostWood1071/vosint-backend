@@ -3,6 +3,7 @@ from app.information.route import router as InformationRouter
 from app.list_country.route import router as CountryRouter
 from app.list_object.route import router as ObjectRouter
 from app.list_organize.route import router as OrganizeRouter
+from app.manage_news.route import router as ManageNewsRouter
 from app.news.routers import router as NewsRouter
 from app.newsletter.routers import router as NewsLetterRouter
 from app.proxy.route import router as ProxyRouter
@@ -28,6 +29,5 @@ ROUTE_LIST = [
     {"route": Nlp, "tags": ["Nlp"], "prefix": "/Nlp"},
     {"route": ProxyRouter, "tags": ["Proxy"], "prefix": "/Proxy"},
     {"route": InformationRouter, "tags": ["Infor"], "prefix": "/Infor"},
-    {"route": SocialRouter, "tags": ["Social"], "prefix": "/social"},
-    {"route": SocialMediaRouter, "tags": ["Social Media"], "prefix": "/social-media"},
+    {"route": ManageNewsRouter, "tags": ["Source-group"], "prefix": "/Source-group"},
 ]

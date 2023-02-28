@@ -20,9 +20,16 @@ async def get_all_object():
 
 
 async def get_one_object(name: str) -> dict:
-    object = await db.find_one({"name": name})
-    if object:
-        return Entity(object)
+    list_object = []
+    async for item in db.find(
+        {
+            "$or": [
+                {"name": {"$regex": name}},
+            ]
+        }
+    ):
+        list_object.append(Entity(item))
+    return list_object
 
 
 async def update_object(id: str, data: dict):

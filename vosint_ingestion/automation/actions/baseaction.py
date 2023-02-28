@@ -2,6 +2,7 @@ import time
 from abc import abstractmethod
 
 from common.internalerror import *
+
 from models import HBaseRepository, MongoRepository
 
 from ..common import ActionInfo, ActionStatus

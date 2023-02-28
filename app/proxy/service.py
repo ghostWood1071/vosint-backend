@@ -20,9 +20,12 @@ async def get_all_proxy():
 
 
 async def search_proxy(key: str) -> dict:
-    proxy = await proxy_collect.find_one({"name": key})
-    if proxy:
-        return Entity(proxy)
+    list_proxy = []
+    async for item in proxy_collect.find(
+        {"$or": [{"name": {"$regex": key}}, {"ip_address": {"$regex": key}}]}
+    ):
+        list_proxy.append(Entity(item))
+    return list_proxy
 
 
 async def update_proxy(id: str, data: dict):
