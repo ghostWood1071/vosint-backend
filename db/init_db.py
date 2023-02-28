@@ -11,7 +11,6 @@ async def connect_db():
     global db_client
     db_client = AsyncIOMotorClient(settings.MONGO_DETAILS)
 
-
 async def close_db():
     """Close database connection."""
     db_client.close()

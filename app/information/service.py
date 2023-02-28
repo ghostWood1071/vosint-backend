@@ -1,16 +1,17 @@
+from typing import List
+
 from bson.objectid import ObjectId
 from fastapi import HTTPException, status
 
 from db.init_db import get_collection_client
 
 infor_collect = get_collection_client("infor")
-
+db = get_collection_client("Source")
 
 async def create_infor(infor):
     created = await infor_collect.insert_one(infor)
     new = await infor_collect.find_one({"id": created.inserted_id})
     return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
-
 
 async def get_all_infor():
     list_infor = []
@@ -20,16 +21,15 @@ async def get_all_infor():
 
 
 async def search_infor(keyword: str) -> dict:
-    infor = await infor_collect.find_one(
-        {
-            "$or": [
-                {"name": keyword},
-                {"host_name": keyword}
-            ]
-        }
-    )
-    if infor:
-        return Entity(infor)
+    list_infor = []
+    async for item in infor_collect.find({
+        "$or": [
+            {"name": {"$regex": keyword}},
+            {"host_name": {"$regex": keyword}}
+        ]
+    }):
+        list_infor.append(Entity(item))
+    return list_infor
 
 
 async def update_infor(id: str, data: dict):

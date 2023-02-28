@@ -17,7 +17,7 @@ class Keyword(BaseModel):
 
 
 class CreateOrganize(BaseModel):
-    organize_name: str = Field(...)
+    name: str = Field(...)
     facebook_link: str = Field(...)
     twitter_link: str = Field(...)
     profile_link: str = Field(...)
@@ -31,7 +31,7 @@ class CreateOrganize(BaseModel):
 
 
 class UpdateOrganize(BaseModel):
-    organize_name: Optional[str]
+    name: Optional[str]
     facebook_link: Optional[str]
     twitter_link: Optional[str]
     profile_link: Optional[str]

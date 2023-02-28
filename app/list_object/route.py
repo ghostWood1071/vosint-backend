@@ -18,7 +18,7 @@ db = get_collection_client("object")
 @router.post("/")
 async def add_object(payload: CreateObject):
     object = payload.dict()
-    exist_object = await db.find_one({"object_name": object["object_name"]})
+    exist_object = await db.find_one({"name": object["name"]})
     if exist_object:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="object already exist"
@@ -35,9 +35,9 @@ async def get_all():
     return []
 
 
-@router.get("/{id}")
-async def get_one(id):
-    object = await get_one_object(id)
+@router.get("/{name}")
+async def get_one(name):
+    object = await get_one_object(name)
     if object:
         return object
     return HTTPException(

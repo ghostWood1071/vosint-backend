@@ -18,7 +18,7 @@ db = get_collection_client("country")
 @router.post("/")
 async def add_country(payload: CreateCountry):
     country = payload.dict()
-    exist_country = await db.find_one({"country_name": country["country_name"]})
+    exist_country = await db.find_one({"name": country["name"]})
     if exist_country:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="country already exist"

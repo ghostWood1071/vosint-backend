@@ -1,3 +1,6 @@
+from typing import List
+
+from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, HTTPException, status
 
 from app.information.model import CreateInfor, UpdateInfor
@@ -25,6 +28,11 @@ async def add_infor(payload: CreateInfor):
     new_infor = await create_infor(infor)
     return new_infor
 
+# @router.post("/add-infor/{name}")
+# async def add_news(name: str, payload: CreateInfor = Body(...)):
+#     Payload = payload.dict()
+#     await add_list_infor(name, Payload)
+#     return status.HTTP_201_CREATED
 
 @router.get("/")
 async def get_all():
@@ -37,16 +45,8 @@ async def get_all():
 @router.get("/{name}")
 async def search(name):
     infor = await search_infor(name)
-    
-    if name == infor["name"]:
-        return {
-            "message": "Your search math the name",
-            "result": infor
-        }
-        
-    if name == infor["host_name"]:
-        return {"message": "Your search math the host name", "result": infor}
-
+    if infor:
+        return infor
     return HTTPException(
         status_code=status.HTTP_403_FORBIDDEN, detail="infor not exist"
     )
