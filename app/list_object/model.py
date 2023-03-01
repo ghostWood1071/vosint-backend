@@ -8,6 +8,10 @@ class Status(str, Enum):
     enable = "enable"
     disable = "disable"
 
+# class Type(str, Enum):
+#     object = "Đối tượng"
+#     organization = "Tổ chức"
+#     nation = "Quốc gia"
 
 class Keyword(BaseModel):
     vi: str = Field(...)
@@ -24,8 +28,8 @@ class CreateObject(BaseModel):
     avatar_url: str = Field(...)
     profile: str = Field(...)
     keywords: Keyword
+    type: str = Field(...)
     status: Status
-
     class config:
         orm_mode = True
 
@@ -38,6 +42,7 @@ class UpdateObject(BaseModel):
     avatar_url: Optional[str]
     profile: Optional[str]
     keywords: Keyword
+    type: Optional[str]
     status: Optional[str]
 
     class config:

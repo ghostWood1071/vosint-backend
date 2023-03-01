@@ -26,7 +26,7 @@ async def add_social(
     _p: Optional[str] = Query("Type", enum=["Đối tượng", "Nhóm", "Fanpage"]),
 ):
     social_dict = body.dict()
-    existing_user = await client.find_one({"username": social_dict["social_name"]})
+    existing_user = await client.find_one({"social_name": social_dict["social_name"]})
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Account already exist"
