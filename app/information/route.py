@@ -2,12 +2,17 @@ from typing import List
 
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, HTTPException, status
+from fastapi.responses import JSONResponse
 
 from app.information.model import CreateInfor, UpdateInfor
 from app.information.service import (
+    count_infor,
+    count_search_infor,
     create_infor,
     delete_infor,
+    find_by_filter_and_paginate,
     get_all_infor,
+    search_by_filter_and_paginate,
     search_infor,
     update_infor,
 )
@@ -37,22 +42,20 @@ async def add_infor(payload: CreateInfor):
 
 
 @router.get("/")
-async def get_all():
-    list_infor = await get_all_infor()
-    if list_infor:
-        return list_infor
-    return None
-
-
-@router.get("/{name}")
-async def search(name):
-    infor = await search_infor(name)
-    if infor:
-        return infor
-    return HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN, detail="infor not exist"
+async def get_all(skip = 0, limit = 10):
+    list_infor = await find_by_filter_and_paginate({}, int(skip), int(limit))
+    count = await count_infor({})
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"data": list_infor, "total_record": count}
     )
 
+@router.get("/{name}")
+async def search(name, skip = 0, limit = 10):
+    list_infor = await search_by_filter_and_paginate(name, int(skip), int(limit))
+    count = await count_search_infor(name)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"data": list_infor, "total_record": count}
+    )
 
 @router.put("/{id}")
 async def update(id, data: UpdateInfor = Body(...)):

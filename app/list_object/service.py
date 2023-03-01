@@ -5,6 +5,19 @@ from db.init_db import get_collection_client
 
 db = get_collection_client("object")
 
+async def search_by_filter_and_paginate(name, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
+    list_Object = []
+    async for item in db.find({"$or": [{"name": {"$regex": name}}, {"type": {"$regex": name}}]}).sort("name").skip(offset).limit(limit):
+        item = object_to_json(item)
+        list_Object.append(item)
+    return list_Object
+
+async def count_search_object(name: str):
+    name_filter = {"name": {"$regex": name}}
+    return await db.count_documents(name_filter)
+
+
 
 async def create_object(object):
     created_object = await db.insert_one(object)
@@ -12,11 +25,36 @@ async def create_object(object):
     return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
 
 
-async def get_all_object():
-    countries = []
-    async for organ in db.find():
-        countries.append(Entity(organ))
-    return countries
+async def get_all_object(filter, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
+    list_Object = []
+    async for item in db.find(filter).sort("_id").skip(offset).limit(limit):
+        item = object_to_json(item)
+        list_Object.append(item)
+    return list_Object
+
+async def count_all_object(filter):
+    return await db.count_documents(filter)
+
+
+async def find_by_filter_and_paginate(type: str, skip: int, limit: int):
+    query = {"type": type}
+    if type:
+        query["type"] = type
+    offset = (skip - 1) * limit if skip > 0 else 0
+    list_object = []
+    async for item in db.find(query).sort("_id").skip(offset).limit(limit):
+        item = object_to_json(item)
+        list_object.append(item)
+    return list_object
+        
+def object_to_json(object) -> dict:
+    object["_id"] = str(object["_id"])
+    return object
+
+async def count_object(type):
+    query = {"type": type}
+    return await db.count_documents(query)
 
 
 async def get_one_object(name: str) -> dict:
@@ -58,5 +96,6 @@ def Entity(object) -> dict:
         "avatar_url": object["avatar_url"],
         "profile": object["profile"],
         "keywords": object["keywords"],
+        "type": object["type"],
         "status": object["status"],
     }
