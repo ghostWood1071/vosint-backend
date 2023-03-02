@@ -6,7 +6,11 @@ from fastapi.params import Body, Depends
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 
-from app.news.services import count_news, find_news_by_filter_and_paginate
+from app.news.services import (
+    count_news,
+    find_news_by_filter,
+    find_news_by_filter_and_paginate,
+)
 
 from .models import NewsLetterCreateModel, NewsLetterUpdateModel
 from .services import (
@@ -18,7 +22,7 @@ from .services import (
     find_newsletters_and_filter,
     update_newsletter,
 )
-from .utils import newsletter_to_object_id
+from .utils import newsletter_to_json, newsletter_to_object_id
 
 router = APIRouter()
 
@@ -30,6 +34,7 @@ async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
 
     newsletter_dict = body.dict()
     newsletter_dict["user_id"] = user_id
+
     await create_newsletter(newsletter_to_object_id(newsletter_dict))
 
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
@@ -73,6 +78,30 @@ async def get_news_by_newsletter_id(
 
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"result": news, "total_record": count}
+    )
+
+
+@router.get("/{newsletter_id}")
+async def get_details_newsletter(newsletter_id: str, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    newsletter = await find_newsletter_by_id(ObjectId(newsletter_id))
+
+    if newsletter is None:
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
+        )
+
+    news_samples = []
+    if "news_samples" in newsletter:
+        news_samples = await find_news_by_filter(
+            {"_id": {"$in": newsletter["news_samples"]}}
+        )
+
+        newsletter["news_samples"] = news_samples
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content=newsletter_to_json(newsletter)
     )
 
 

@@ -28,6 +28,7 @@ class NewsLetterCreateModel(BaseModel):
     tag: Tag
     required_keyword: Optional[list[str]]
     exclusion_keyword: Optional[str]
+    news_samples: Optional[list[str]]
 
 
 class NewsLetterUpdateModel(BaseModel):
@@ -36,3 +37,4 @@ class NewsLetterUpdateModel(BaseModel):
     tag: Optional[Tag]
     required_keyword: Optional[list[str]]
     exclusion_keyword: Optional[str]
+    news_samples: Optional[list[str]]
