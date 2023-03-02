@@ -18,6 +18,7 @@ async def get_all_proxy():
         list_proxy.append(Entity(item))
     return list_proxy
 
+
 async def find_by_filter_and_paginate(filter, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_proxy = []
@@ -25,10 +26,12 @@ async def find_by_filter_and_paginate(filter, skip: int, limit: int):
         item = proxy_to_json(item)
         list_proxy.append(item)
     return list_proxy
-        
+
+
 def proxy_to_json(proxy) -> dict:
     proxy["_id"] = str(proxy["_id"])
     return proxy
+
 
 async def count_proxy(filter):
     return await proxy_collect.count_documents(filter)
@@ -37,14 +40,18 @@ async def count_proxy(filter):
 async def search_by_filter_and_paginate(name, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_proxy = []
-    async for item in proxy_collect.find({"$or": [{"name": {"$regex": name}}, {"ip_address": {"$regex": name}}]}).sort("_id").skip(offset).limit(limit):
+    async for item in proxy_collect.find(
+        {"$or": [{"name": {"$regex": name}}, {"ip_address": {"$regex": name}}]}
+    ).sort("_id").skip(offset).limit(limit):
         item = Proxy_to_json(item)
         list_proxy.append(item)
     return list_proxy
-        
+
+
 def Proxy_to_json(proxy) -> dict:
     proxy["_id"] = str(proxy["_id"])
     return proxy
+
 
 async def count_search_proxy(filter):
     return await proxy_collect.count_documents(filter)

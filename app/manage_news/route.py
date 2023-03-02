@@ -35,12 +35,14 @@ async def add_source(payload: CreateSourceGroup):
 
 
 @router.get("/")
-async def get_all(skip = 0, limit = 10):
+async def get_all(skip=0, limit=10):
     list_source_group = await find_by_filter_and_paginate({}, int(skip), int(limit))
     count = await count_source({})
     return JSONResponse(
-        status_code=status.HTTP_200_OK, content={"data": list_source_group, "total_record": count}
+        status_code=status.HTTP_200_OK,
+        content={"data": list_source_group, "total_record": count},
     )
+
 
 # @router.post("/add-infor/{name}")
 # async def add_news(name: str, payload: CreateSourceNew = Body(...)):
@@ -65,6 +67,7 @@ async def delete_infor(name: str, list_id_infor: List[str] = Body(...)):
         list_infor.append(ObjectId(item))
     await delete_list_infor(name, list_id_infor)
     return status.HTTP_201_CREATED
+
 
 @router.delete("/{id}")
 async def delete_source(id):
