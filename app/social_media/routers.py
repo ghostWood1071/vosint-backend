@@ -22,8 +22,8 @@ router = APIRouter()
 @router.post("/")
 async def add_social(
     body: CreateSocialModel,
-    _q: str = Query("Social", enum=["Facebook", "Twitter", "Tiktok"]),
-    _p: Optional[str] = Query("Type", enum=["Đối tượng", "Nhóm", "Fanpage"]),
+    # _q: str = Query("Social", enum=["Facebook", "Twitter", "Tiktok"]),
+    # _p: Optional[str] = Query("Type", enum=["Đối tượng", "Nhóm", "Fanpage"]),
 ):
     social_dict = body.dict()
     existing_user = await client.find_one({"social_name": social_dict["social_name"]})
@@ -31,15 +31,15 @@ async def add_social(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Account already exist"
         )
-    social_dict["social_media"] = _q
-    if _q == "Facebook":
-        if not _p:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Missing social type"
-            )
-        social_dict["social_type"] = _p
-    else:
-        social_dict["social_type"] = None
+    # social_dict["social_media"] = _q
+    # if _q == "Facebook":
+    #     if not _p:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_400_BAD_REQUEST, detail="Missing social type"
+    #         )
+    #     social_dict["social_type"] = _p
+    # else:
+    #     social_dict["social_type"] = None
     await create_user(social_dict)
     return HTTPException(status_code=status.HTTP_200_OK)
 
