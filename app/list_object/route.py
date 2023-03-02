@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from fastapi.responses import JSONResponse
 
@@ -22,8 +24,9 @@ db = get_collection_client("object")
 
 @router.post("/")
 async def add_object(
-    payload: CreateObject,
-    type: str = Query("Type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]),
+    payload: CreateObject, 
+    type: str = Query("Type", enum = ["Đối tượng", "Tổ chức", "Quốc gia"]),
+    Status: str = Query(..., enum = ["enable", "disable"])
 ):
     object = payload.dict()
     exist_object = await db.find_one({"name": object["name"]})
@@ -31,18 +34,20 @@ async def add_object(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="object already exist"
         )
+        
     object["type"] = type
+    object["status"] = Status
+    
     new_object = await create_object(object)
     return new_object
 
-
-# @router.get("/{name}")
-# async def get_search(name: str, skip = 0, limit = 10):
-#     search_object = await search_by_filter_and_paginate(name, int(skip), int(limit))
-#     Count = await count_search_object(name)
-#     return JSONResponse(
-#         status_code=status.HTTP_200_OK, content={"data": search_object, "total": Count}
-#     )
+@router.get("/{name}")
+async def get_search(name: str, skip = 0, limit = 10):
+    search_object = await search_by_filter_and_paginate(name, int(skip), int(limit))
+    Count = await count_search_object(name)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"data": search_object, "total": Count}
+    )
 
 
 @router.get("/")
@@ -51,16 +56,14 @@ async def get_all(skip=0, limit=10):
     all = await count_all_object({})
     return {"result": list, "total": all}
 
-
-@router.get("/{type}")
-async def get_type(
-    type: str = Path(
-        ..., title="Object type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]
-    ),
-    skip=0,
-    limit=10,
+@router.get("/filter/{type}/{name}")
+async def get_type_and_name(
+    name: str,
+    type: str = Path(..., title="Object type", enum = ["Đối tượng", "Tổ chức", "Quốc gia"]), 
+    skip = 0, 
+    limit = 10
 ):
-    list_obj = await find_by_filter_and_paginate(type, int(skip), int(limit))
+    list_obj = await find_by_filter_and_paginate(name, type, int(skip), int(limit))
     count = await count_object(type)
     return {"data": list_obj, "total": count}
 

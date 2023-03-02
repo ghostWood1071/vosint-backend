@@ -31,8 +31,7 @@ class CreateObject(BaseModel):
     profile: str = Field(...)
     keywords: Keyword
     type: str = Field(...)
-    status: Status
-
+    status: str = Field(...)
     class config:
         orm_mode = True
 
