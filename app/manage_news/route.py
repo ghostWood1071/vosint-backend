@@ -8,12 +8,14 @@ from fastapi_jwt_auth import AuthJWT
 from app.manage_news.model import CreateSourceGroup, CreateSourceNew
 from app.manage_news.service import (
     add_list_infor,
+    count_search_source_group,
     count_source,
     create_source_group,
     delete_list_infor,
     delete_source_group,
     find_by_filter_and_paginate,
     get_all_source,
+    search_by_filter_and_paginate,
 )
 from db.init_db import get_collection_client
 
@@ -42,6 +44,14 @@ async def get_all(skip=0, limit=10):
         status_code=status.HTTP_200_OK,
         content={"data": list_source_group, "total_record": count},
     )
+    
+@router.get("/{name}")
+async def search(name, skip = 0, limit = 10):
+    search_source_group = await search_by_filter_and_paginate(name, int(skip), int(limit))
+    Count = await count_search_source_group({})
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"data": search_source_group, "total_record": Count}
+    )
 
 
 # @router.post("/add-infor/{name}")
@@ -51,7 +61,7 @@ async def get_all(skip=0, limit=10):
 #     return status.HTTP_201_CREATED
 
 
-@router.post("/add-infor/{name}")
+@router.post("/add-source/{name}")
 async def add_infor(name: str, list_id_infor: List[str] = Body(...)):
     list_infor = []
     for item in list_id_infor:

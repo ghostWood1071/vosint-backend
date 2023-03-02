@@ -39,6 +39,22 @@ async def count_source(filter):
     return await db.count_documents(filter)
 
 
+async def search_by_filter_and_paginate(name, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
+    list_source_group = []
+    async for item in db.find({"$or": [{"source_name": {"$regex": name}}]}).sort("_id").skip(offset).limit(limit):
+        item = source_group_to_json(item)
+        list_source_group.append(item)
+    return list_source_group
+        
+def source_group_to_json(source_group) -> dict:
+    source_group["_id"] = str(source_group["_id"])
+    return source_group
+
+async def count_search_source_group(filter):
+    return await db.count_documents(filter)
+
+
 async def add_list_infor(source_name: str, id_infor: List[ObjectId]):
     return await db.update_one(
         {"source_name": source_name}, {"$push": {"news": {"$each": id_infor}}}
