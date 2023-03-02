@@ -4,9 +4,8 @@ from fastapi.params import Depends
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 
-from app.user.services import find_user_by_id
-
 from .services import count_news, find_news_by_filter_and_paginate, find_news_by_id
+from .utils import news_to_json
 
 router = APIRouter()
 
@@ -27,4 +26,4 @@ async def get_news_detail(id: str, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
     news = await find_news_by_id(ObjectId(id))
-    return JSONResponse(status_code=status.HTTP_200_OK, content=news)
+    return JSONResponse(status_code=status.HTTP_200_OK, content=news_to_json(news))
