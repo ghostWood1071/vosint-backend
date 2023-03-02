@@ -22,8 +22,8 @@ db = get_collection_client("object")
 
 @router.post("/")
 async def add_object(
-    payload: CreateObject, 
-    type: str = Query("Type", enum = ["Đối tượng", "Tổ chức", "Quốc gia"])
+    payload: CreateObject,
+    type: str = Query("Type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]),
 ):
     object = payload.dict()
     exist_object = await db.find_one({"name": object["name"]})
@@ -35,6 +35,7 @@ async def add_object(
     new_object = await create_object(object)
     return new_object
 
+
 # @router.get("/{name}")
 # async def get_search(name: str, skip = 0, limit = 10):
 #     search_object = await search_by_filter_and_paginate(name, int(skip), int(limit))
@@ -45,22 +46,25 @@ async def add_object(
 
 
 @router.get("/")
-async def get_all(skip = 0, limit = 10):
+async def get_all(skip=0, limit=10):
     list = await get_all_object({}, int(skip), int(limit))
     all = await count_all_object({})
     return {"result": list, "total": all}
 
+
 @router.get("/{type}")
 async def get_type(
-    type: str = Path(..., title="Object type", enum = ["Đối tượng", "Tổ chức", "Quốc gia"]), 
-    skip = 0, 
-    limit = 10
+    type: str = Path(
+        ..., title="Object type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]
+    ),
+    skip=0,
+    limit=10,
 ):
     list_obj = await find_by_filter_and_paginate(type, int(skip), int(limit))
     count = await count_object(type)
     return {"data": list_obj, "total": count}
-    
-    
+
+
 @router.put("/{id}")
 async def update_one(id, data: UpdateObject = Body(...)):
     data = {k: v for k, v in data.dict().items() if v is not None}

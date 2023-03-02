@@ -20,6 +20,7 @@ async def get_all_source():
         source_group.append(Entity(item))
     return source_group
 
+
 async def find_by_filter_and_paginate(filter, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_source = []
@@ -27,10 +28,12 @@ async def find_by_filter_and_paginate(filter, skip: int, limit: int):
         item = source_to_json(item)
         list_source.append(item)
     return list_source
-        
+
+
 def source_to_json(source) -> dict:
     source["_id"] = str(source["_id"])
     return source
+
 
 async def count_source(filter):
     return await db.count_documents(filter)
@@ -41,16 +44,19 @@ async def add_list_infor(source_name: str, id_infor: List[ObjectId]):
         {"source_name": source_name}, {"$push": {"news": {"$each": id_infor}}}
     )
 
+
 async def delete_list_infor(source_name: str, id_infor: List[ObjectId]):
     return await db.update_one(
         {"source_name": source_name}, {"$pull": {"news": {"$in": id_infor}}}
     )
+
 
 async def delete_source_group(id: str):
     group = await db.find_one({"_id": ObjectId(id)})
     if group:
         await db.delete_one({"_id": ObjectId(id)})
         return status.HTTP_200_OK
+
 
 # async def update_news(source_name: str, news):
 #     return await db.update_one(
