@@ -6,9 +6,16 @@ from db.init_db import get_collection_client
 client = get_collection_client("social_media")
 
 
-async def create_user(user):
+async def create_social_media(user):
     created_user = await client.insert_one(user)
     return await client.find_one({"id": created_user.inserted_id})
+
+
+async def delete_social_media(id: str):
+    user = await client.find_one({"_id": ObjectId(id)})
+    if user:
+        await client.delete_one({"_id": ObjectId(id)})
+        return True
 
 
 async def get_social_by_media(social_media: str, page: int = 1, limit: int = 10):
