@@ -60,11 +60,12 @@ async def add_list_infor(source_name: str, id_infor: List[ObjectId]):
         {"source_name": source_name}, {"$push": {"news": {"$each": id_infor}}}
     )
 
-
-async def delete_list_infor(source_name: str, id_infor: List[ObjectId]):
-    return await db.update_one(
-        {"source_name": source_name}, {"$pull": {"news": {"$in": id_infor}}}
-    )
+async def delete_list_infor(id: str, source):
+    group = await db.find_one({"_id": ObjectId(id)})
+    if group:
+        return await db.update_one(
+            group, {"$pull": {"news": {"name": source}}}
+        )
 
 
 async def delete_source_group(id: str):
@@ -74,22 +75,50 @@ async def delete_source_group(id: str):
         return status.HTTP_200_OK
 
 
-# async def update_news(source_name: str, news):
-#     return await db.update_one(
-#         {"source_name": source_name},
-#         {"$push": {"news": news}}
-#     )
+async def update_news(id_group: str, source):
+    group = await db.find_one({"_id": ObjectId(id_group)})
+    if group:
+        return await db.update_one(
+            group,
+            {"$push": {"news": source}}
+        )
+
+
+async def update_source_group(id: str, data: dict):
+    source_group = await db.find_one({"_id": ObjectId(id)})
+    if source_group:
+        updated_source_group = await db.update_one({"_id": ObjectId(id)}, {"$set": data})
+        if updated_source_group:
+            return status.HTTP_200_OK
+        return False
+
+
+async def hide_show(id: str, run):
+    run = await db.find_one({"_id": ObjectId(id)})
+    if run["is_hide"] == True:
+        return await db.update_one({"_id": ObjectId(id)}, {"$set": {"is_hide": False}})
+    elif run["is_hide"] == False:
+        return await db.update_one({"_id": ObjectId(id)}, {"$set": {"is_hide": True}})
 
 
 def Entity(source) -> dict:
     infor_list = []
-    if "news" in source:
-        for infor_id in source["news"]:
-            infor_list.append(str(infor_id))
-
+    
+    infor_list.append(Entity_source(source))
     return {
         "_id": str(source["_id"]),
         "user_id": source["user_id"],
         "source_name": source["source_name"],
         "news": infor_list,
+    }
+    
+
+def Entity_source(infor) -> dict:
+    return {
+        "_id": str(infor["_id"]),
+        "name": infor["name"],
+        "host_name": infor["host_name"],
+        "language": infor["language"],
+        "publishing_country": infor["publishing_country"],
+        "source_type": infor["source_type"],
     }

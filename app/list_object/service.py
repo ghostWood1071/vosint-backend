@@ -6,20 +6,21 @@ from db.init_db import get_collection_client
 db = get_collection_client("object")
 
 
-async def search_by_filter_and_paginate(name, skip: int, limit: int):
+async def search_by_filter_and_paginate(type, skip: int, limit: int):
+    query = {"type": type}
+    if type:
+        query["type"] = type
     offset = (skip - 1) * limit if skip > 0 else 0
-    list_Object = []
-    async for item in db.find(
-        {"$or": [{"name": {"$regex": name}}, {"type": {"$regex": name}}]}
-    ).sort("name").skip(offset).limit(limit):
+    list_object = []
+    async for item in db.find(query).sort("_id").skip(offset).limit(limit):
         item = object_to_json(item)
-        list_Object.append(item)
-    return list_Object
+        list_object.append(item)
+    return list_object
 
 
-async def count_search_object(name: str):
-    name_filter = {"name": {"$regex": name}}
-    return await db.count_documents(name_filter)
+async def count_search_object(type: str):
+    type_filter = {"name": type}
+    return await db.count_documents(type_filter)
 
 
 async def create_object(object):
