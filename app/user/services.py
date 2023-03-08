@@ -33,6 +33,8 @@ async def get_users(filter_spec, skip: int, limit: int):
 async def count_users(filter_spec):
     return await client.count_documents(filter_spec)
 
+async def get_user_by_id(id: ObjectId):
+    return await client.find_one({"_id": id})
 
 async def get_user(id: str) -> dict:
     users = await client.find_one({"_id": ObjectId(id)})

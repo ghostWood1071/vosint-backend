@@ -7,6 +7,15 @@ from .utils import news_to_json
 client = get_collection_client("news")
 
 
+async def find_news_by_filter(filter_news):
+    news = []
+    async for new in client.find(filter_news).sort("_id"):
+        new = news_to_json(new)
+        news.append(new)
+
+    return news
+
+
 async def find_news_by_filter_and_paginate(filter_news, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     news = []

@@ -6,7 +6,7 @@ from db.init_db import get_collection_client
 client = get_collection_client("social_media")
 
 
-async def create_user(user):
+async def create_social_media(user):
     created_user = await client.insert_one(user)
     return await client.find_one({"id": created_user.inserted_id})
 

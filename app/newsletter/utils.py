@@ -14,6 +14,15 @@ def newsletter_to_json(newsletter) -> dict:
 
 
 def newsletter_to_object_id(newsletter):
+    news_samples = []
+    if "news_samples" in newsletter:
+        if newsletter["news_samples"] is None:
+            newsletter.pop("news_samples")
+        else:
+            for news in newsletter["news_samples"]:
+                news_samples.append(ObjectId(news))
+            newsletter["news_samples"] = news_samples
+
     if "user_id" in newsletter:
         if newsletter["user_id"] is None:
             newsletter.pop("user_id")
