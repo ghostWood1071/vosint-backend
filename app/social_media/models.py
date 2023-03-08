@@ -17,6 +17,7 @@ class CreateSocialModel(BaseModel):
 
 
 class UpdateSocial(BaseModel):
+    id: Optional[str] = Field(...)
     social_name: Optional[str] = Field(...)
     social_media: Optional[str] = Field(...)
     social_type: Optional[str] = Field(...)
@@ -27,4 +28,5 @@ class UpdateSocial(BaseModel):
 
 
 class UpdateStatus(BaseModel):
+    id: Optional[str] = Field(...)
     is_active: bool = True
