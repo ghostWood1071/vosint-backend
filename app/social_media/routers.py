@@ -1,13 +1,11 @@
-from typing import Optional
-
-from fastapi import APIRouter, Body, HTTPException, Path, Query, status
+from fastapi import APIRouter, Body, HTTPException, Path, status
 from fastapi.responses import JSONResponse
 
 from db.init_db import get_collection_client
 
 from .models import CreateSocialModel, UpdateSocial, UpdateStatus
 from .services import (
-    create_user,
+    create_social_media,
     delete_user_by_id,
     get_social_by_media,
     get_social_facebook,
@@ -31,7 +29,7 @@ async def add_social(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Account already exist"
         )
-    await create_user(social_dict)
+    await create_social_media(social_dict)
     return HTTPException(status_code=status.HTTP_200_OK)
 
 

@@ -8,6 +8,7 @@ from fastapi_jwt_auth import AuthJWT
 from app.manage_news.model import (
     CreateSource,
     CreateSourceGroup,
+    SourceGroupSchema,
     UpdateSourceGroup,
     UpdateState,
 )
@@ -43,8 +44,9 @@ db = get_collection_client("Source")
 #     new_source = await create_source_group(source)
 #     return new_source
 
+
 @router.post("/")
-async def create(data: SourceGroupSchema= Body(...), authorize: AuthJWT = Depends()):
+async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     source = data.dict()
@@ -66,29 +68,34 @@ async def get_all(skip=0, limit=10):
         status_code=status.HTTP_200_OK,
         content={"data": list_source_group, "total_record": count},
     )
-    
+
+
 @router.get("/{name}")
-async def search(name, skip = 0, limit = 10):
-    search_source_group = await search_by_filter_and_paginate(name, int(skip), int(limit))
+async def search(name, skip=0, limit=10):
+    search_source_group = await search_by_filter_and_paginate(
+        name, int(skip), int(limit)
+    )
     Count = await count_search_source_group({})
     return JSONResponse(
-        status_code=status.HTTP_200_OK, content={"data": search_source_group, "total_record": Count}
+        status_code=status.HTTP_200_OK,
+        content={"data": search_source_group, "total_record": Count},
     )
 
 
 @router.post("/add-source/{id}")
 async def add_news(id: str, payload: CreateSource = Body(...)):
-    Payload = payload.dict()    
+    Payload = payload.dict()
     await update_news(id, Payload)
     payload.id_source = ObjectId()
     return status.HTTP_201_CREATED
 
+
 @router.post("/run-hide-show/{id}")
 async def hide_and_show(id: str, payload: UpdateState = Body(...)):
-    
     data = payload.dict()
     await hide_show(id, data)
     return 200
+
 
 # @router.post("/add-source/{name}")
 # async def add_infor(name: str, list_id_infor: List[str] = Body(...)):
@@ -107,6 +114,7 @@ async def delete_infor(id: str, list_source: str):
     await delete_list_infor(id, list_source)
     return status.HTTP_201_CREATED
 
+
 @router.put("/update-source-group/{id}")
 async def update_all(id: str, data: UpdateSourceGroup = Body(...)):
     data = {k: v for k, v in data.dict().items() if v is not None}
@@ -114,6 +122,7 @@ async def update_all(id: str, data: UpdateSourceGroup = Body(...)):
     if updated_source_group:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
+
 
 @router.delete("/{id}")
 async def delete_source(id):
