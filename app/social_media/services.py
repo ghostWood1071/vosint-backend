@@ -11,7 +11,7 @@ async def create_social_media(user):
     return await client.find_one({"id": created_user.inserted_id})
 
 
-async def delete_social_media(id: str):
+async def delete_user_by_id(id: str):
     user = await client.find_one({"_id": ObjectId(id)})
     if user:
         await client.delete_one({"_id": ObjectId(id)})
@@ -26,8 +26,6 @@ async def get_social_by_media(social_media: str, page: int = 1, limit: int = 10)
         .to_list(length=limit)
     )
     return [social_entity(media) for media in media_list]
-    # if media:
-    #     return social_entity(media)
 
 
 async def get_social_name(social_name: str) -> dict:
@@ -39,9 +37,6 @@ async def get_social_name(social_name: str) -> dict:
     ):
         name_list.append(social_entity(item))
     return name_list
-    # name_list = await client.find({"social_name": {"$regex": social_name}})
-    # if name_list:
-    #     return social_entity(name_list)
 
 
 async def get_social_facebook(social_type: str, page: int = 1, limit: int = 10):
@@ -57,7 +52,9 @@ async def get_social_facebook(social_type: str, page: int = 1, limit: int = 10):
     return [social_entity(types) for types in type_list]
 
 
-async def update_social_account(id: str, data: dict):
+async def update_social_account(data: dict):
+    print(data)
+    id = data["id"]
     socials = await client.find_one({"_id": ObjectId(id)})
     if socials:
         updated_social = await client.update_one({"_id": ObjectId(id)}, {"$set": data})
@@ -66,7 +63,8 @@ async def update_social_account(id: str, data: dict):
         return False
 
 
-async def update_status_account(id: str, data: dict):
+async def update_status_account(data: dict):
+    id = data["id"]
     socials = await client.find_one({"_id": ObjectId(id)})
     if socials:
         updated_status = await client.update_one({"_id": ObjectId(id)}, {"$set": data})
