@@ -50,7 +50,7 @@ async def get_social_by_medias(
     return socials
 
 
-@router.delete("/{id}")
+@router.delete("/Social/{id}")
 async def Delete_user(id: str):
     deleted_user = await delete_user(id)
     if deleted_user:
@@ -78,19 +78,19 @@ async def get_social_by_name(social_name: str):
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="name not exist")
 
 
-@router.put("/edit_social/{social_id}")
-async def update_social(id: str, data: UpdateSocial = Body(...)):
+@router.put("/edit_social")
+async def update_social(data: UpdateSocial = Body(...)):
     data = {k: v for k, v in data.dict().items() if v is not None}
-    updated_social = await update_social_account(id, data)
+    updated_social = await update_social_account(data)
     if updated_social:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
 
 
-@router.put("/edit_status/{social_id}")
-async def update_status(id: str, data: UpdateStatus = Body(...)):
+@router.put("/edit_status")
+async def update_status(data: UpdateStatus = Body(...)):
     data = {k: v for k, v in data.dict().items() if v is not None}
-    updated_status = await update_status_account(id, data)
+    updated_status = await update_status_account(data)
     if updated_status:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
