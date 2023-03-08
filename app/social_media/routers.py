@@ -7,7 +7,7 @@ from db.init_db import get_collection_client
 from .models import CreateSocialModel, UpdateSocial, UpdateStatus
 from .services import (
     create_user,
-    delete_user,
+    delete_user_by_id,
     get_social_by_media,
     get_social_facebook,
     get_social_name,
@@ -51,8 +51,8 @@ async def get_social_by_medias(
 
 
 @router.delete("/Social/{id}")
-async def Delete_user(id: str):
-    deleted_user = await delete_user(id)
+async def delete_user(id: str):
+    deleted_user = await delete_user_by_id(id)
     if deleted_user:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
