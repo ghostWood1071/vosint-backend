@@ -1,6 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Body, HTTPException, Path, Query, status
+from fastapi.responses import JSONResponse
 
 from db.init_db import get_collection_client
 
@@ -40,14 +41,18 @@ async def get_social_by_medias(
         "Media", title="Social Media", enum=["Facebook", "Twitter", "Tiktok"]
     ),
     page: int = 1,
-    limit: int = 10,
+    limit: int = 20,
 ):
     if social_media not in ["Facebook", "Twitter", "Tiktok"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid social media"
         )
     socials = await get_social_by_media(social_media, page, limit)
-    return socials
+    count = len(socials)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"result": socials, "total_record": count},
+    )
 
 
 @router.delete("/delete_social/{id}")
@@ -64,10 +69,14 @@ async def get_social_by_types(
         ..., title="Social Type", enum=["Object", "Group", "Fanpage"]
     ),
     page: int = 1,
-    limit: int = 10,
+    limit: int = 20,
 ):
     types = await get_social_facebook(social_type, page, limit)
-    return types
+    count = len(types)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"result": types, "total_record": count},
+    )
 
 
 @router.get("/social_name/{social_name}")
