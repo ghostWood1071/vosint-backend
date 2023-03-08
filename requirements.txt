@@ -93,6 +93,8 @@ pydantic==1.10.4
     #   beanie
     #   fastapi
     #   lazy-model
+pydash==6.0.2
+    # via -r requirements.in
 pyee==8.1.0
     # via playwright
 pyjwt==1.7.1
