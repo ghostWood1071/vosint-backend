@@ -8,6 +8,16 @@ class Status(str, Enum):
     enable = "enable"
     disable = "disable"
 
+class Type(str, Enum):
+    object = "Đối tượng"
+    organization = "Tổ chức"
+    nation = "Quốc gia"
+
+# class Type(str, Enum):
+#     object = "Đối tượng"
+#     organization = "Tổ chức"
+#     nation = "Quốc gia"
+
 
 # class Type(str, Enum):
 #     object = "Đối tượng"
