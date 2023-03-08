@@ -33,3 +33,17 @@ class UpdateState(BaseModel):
     
     class config:
         orm_mode = True
+
+
+class SourceSchema(BaseModel):
+    id: Optional[str]
+    name: str
+    host_name: Optional[str]
+
+class SourceGroupSchema(BaseModel):
+    user_id: str
+    source_name: str
+    news: list[SourceSchema] = []
+    is_hide: bool
+    class config:
+        orm_mode = True

@@ -5,7 +5,12 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 
-from app.manage_news.model import CreateSource, CreateSourceGroup, UpdateSourceGroup, UpdateState
+from app.manage_news.model import (
+    CreateSource,
+    CreateSourceGroup,
+    UpdateSourceGroup,
+    UpdateState,
+)
 from app.manage_news.service import (
     add_list_infor,
     count_search_source_group,
@@ -15,10 +20,10 @@ from app.manage_news.service import (
     delete_source_group,
     find_by_filter_and_paginate,
     get_all_source,
+    hide_show,
     search_by_filter_and_paginate,
     update_news,
     update_source_group,
-    hide_show
 )
 from db.init_db import get_collection_client
 
@@ -27,9 +32,23 @@ router = APIRouter()
 db = get_collection_client("Source")
 
 
+# @router.post("/")
+# async def add_source(payload: CreateSourceGroup):
+#     source = payload.dict()
+#     exist_source = await db.find_one({"source_name": source["source_name"]})
+#     if exist_source:
+#         raise HTTPException(
+#             status_code=status.HTTP_409_CONFLICT, detail="source already exist"
+#         )
+#     new_source = await create_source_group(source)
+#     return new_source
+
 @router.post("/")
-async def add_source(payload: CreateSourceGroup):
-    source = payload.dict()
+async def create(data: SourceGroupSchema= Body(...), authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    source = data.dict()
+    source["user_id"] = user_id
     exist_source = await db.find_one({"source_name": source["source_name"]})
     if exist_source:
         raise HTTPException(
