@@ -9,10 +9,7 @@ db = get_collection_client("Source")
 
 
 async def create_source_group(source):
-    created_source = await db.insert_one(source)
-    new = await db.find_one({"id": created_source.inserted_id})
-    return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
-
+    return await db.insert_one(source)
 
 async def get_all_source():
     source_group = []

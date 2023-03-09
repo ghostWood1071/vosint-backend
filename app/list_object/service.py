@@ -59,8 +59,9 @@ def object_to_json(object) -> dict:
     return object
 
 
-async def count_object(type):
-    query = {"type": type}
+async def count_object(type, name):
+    print(type)
+    query = {"type": type, "name": {"$regex": name}}
     return await db.count_documents(query)
 
 

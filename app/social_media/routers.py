@@ -29,7 +29,7 @@ async def add_social(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Account already exist"
         )
-    await create_user(social_dict)
+    await create_social_media(social_dict)
     return HTTPException(status_code=status.HTTP_200_OK)
 
 
