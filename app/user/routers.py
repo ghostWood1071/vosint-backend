@@ -15,11 +15,13 @@ from .services import (
     count_users,
     create_user,
     delete_bookmark_user,
+    delete_interested_object,
     delete_user,
     delete_vital_user,
     find_user_by_id,
     get_users,
     update_bookmark_user,
+    update_interested_object,
     update_user,
     update_vital_user,
     user_entity,
@@ -162,6 +164,37 @@ async def delete_vital(
         list_vitals_news.append(ObjectId(id_vital))
     await delete_vital_user(user_id, list_vitals_news)
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
+
+
+@router.post("/interested")
+async def add_interested(
+    interesteds: List[str] = Body(...), authorize: AuthJWT = Depends()
+):
+    authorize.jwt_required()
+    user_id = ObjectId(authorize.get_jwt_subject())
+    list_interested_objects = []
+    for interested in interesteds:
+        list_interested_objects.append(ObjectId(interested))
+    await update_interested_object(user_id, list_interested_objects)
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED, content="Successful add interested objects"
+    )
+
+
+@router.put("/interested")
+async def delete_interested(
+    id_interesteds: List[str] = Body(...), authorize: AuthJWT = Depends()
+):
+    authorize.jwt_required()
+    user_id = ObjectId(authorize.get_jwt_subject())
+    list_interested_objects = []
+    for id_interested in id_interesteds:
+        list_interested_objects.append(ObjectId(id_interested))
+    await delete_interested_object(user_id, list_interested_objects)
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content="Successful delete interested objects",
+    )
 
 
 @router.get("/")
