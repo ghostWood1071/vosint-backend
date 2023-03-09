@@ -33,8 +33,10 @@ async def get_users(filter_spec, skip: int, limit: int):
 async def count_users(filter_spec):
     return await client.count_documents(filter_spec)
 
+
 async def get_user_by_id(id: ObjectId):
     return await client.find_one({"_id": id})
+
 
 async def get_user(id: str) -> dict:
     users = await client.find_one({"_id": ObjectId(id)})
@@ -70,6 +72,18 @@ async def delete_vital_user(id: ObjectId, id_vitals: List[ObjectId]):
     )
 
 
+async def update_interested_object(id: ObjectId, interested_objects: List[ObjectId]):
+    return await client.update_one(
+        {"_id": id}, {"$push": {"interested_list": {"$each": interested_objects}}}
+    )
+
+
+async def delete_interested_object(id: ObjectId, id_interested: List[ObjectId]):
+    return await client.update_one(
+        {"_id": id}, {"$pull": {"interested_list": {"$in": id_interested}}}
+    )
+
+
 async def delete_user(id: str):
     user = await client.find_one({"_id": ObjectId(id)})
     if user:
@@ -86,6 +100,7 @@ async def get_vital_ids(id: ObjectId):
 def user_entity(user) -> dict:
     news_bookmarks = []
     vital_list = []
+    interested_list = []
 
     if "vital_list" in user:
         for news_id in user["vital_list"]:
@@ -95,6 +110,10 @@ def user_entity(user) -> dict:
         for news_id in user["news_bookmarks"]:
             news_bookmarks.append(str(news_id))
 
+    if "interested_list" in user:
+        for object_id in user["interested_list"]:
+            interested_list.append(str(object_id))
+
     return {
         "_id": str(user["_id"]),
         "username": user["username"],
@@ -102,4 +121,5 @@ def user_entity(user) -> dict:
         "role": user["role"],
         "news_bookmarks": news_bookmarks,
         "vital_list": vital_list,
+        "interested_list": interested_list,
     }
