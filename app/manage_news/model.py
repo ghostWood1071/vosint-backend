@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 class CreateSourceGroup(BaseModel):
-    user_id: str
+    # user_id: str = Field(default_factory=ObjectId)
     source_name: str
     news: list[str] = []
     is_hide: bool = False

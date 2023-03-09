@@ -64,7 +64,7 @@ async def get_type_and_name(
     limit = 10
 ):
     list_obj = await find_by_filter_and_paginate(name, type, int(skip), int(limit))
-    count = await count_object(type)
+    count = await count_object(type, name)
     return {"data": list_obj, "total": count}
 
 

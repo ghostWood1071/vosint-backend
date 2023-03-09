@@ -56,9 +56,8 @@ async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depen
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="source already exist"
         )
-    new_source = await create_source_group(source)
-    return new_source
-
+    await create_source_group(source)
+    return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
 @router.get("/")
 async def get_all(skip=0, limit=10):
