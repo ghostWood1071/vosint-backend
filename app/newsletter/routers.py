@@ -41,14 +41,21 @@ async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
 
 
 @router.get("/")
-async def read(authorize: AuthJWT = Depends()):
+async def read(title: str = "", authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
 
     if user_id is None:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Bad jwt")
 
-    newsletters = await find_newsletters_and_filter({"user_id": ObjectId(user_id)})
+    query = {
+        "$or": [
+            {"title": {"$regex": f"\\b{title}\\b", "$options": "i"}},
+            {"title": {"$regex": title, "$options": "i"}},
+        ],
+        "user_id": ObjectId(user_id),
+    }
+    newsletters = await find_newsletters_and_filter(query)
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=newsletters)
 
@@ -85,7 +92,9 @@ async def get_news_by_newsletter_id(
 async def get_details_newsletter(newsletter_id: str, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    newsletter = await find_newsletter_by_id(ObjectId(newsletter_id))
+    newsletter = await find_newsletter_by_id(
+        ObjectId(newsletter_id), {"news_id": False}
+    )
 
     if newsletter is None:
         return JSONResponse(

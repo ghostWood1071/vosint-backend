@@ -10,8 +10,10 @@ class CreateSourceGroup(BaseModel):
     source_name: str
     news: list[str] = []
     is_hide: bool = False
+
     class config:
         orm_mode = True
+
 
 class CreateSource(BaseModel):
     id_source: str
@@ -22,15 +24,17 @@ class CreateSource(BaseModel):
     is_hide: bool = False
     # source_type: Optional[str]
 
+
 class UpdateSourceGroup(BaseModel):
     source_name: Optional[str]
     news: list[str] = []
     is_hide: Optional[bool]
+
     class config:
         orm_mode = True
 
+
 class UpdateState(BaseModel):
-    
     class config:
         orm_mode = True
 
@@ -40,10 +44,12 @@ class SourceSchema(BaseModel):
     name: str
     host_name: Optional[str]
 
+
 class SourceGroupSchema(BaseModel):
     user_id: str
     source_name: str
     news: list[SourceSchema] = []
     is_hide: bool
+
     class config:
         orm_mode = True
