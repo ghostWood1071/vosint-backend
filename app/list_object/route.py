@@ -24,9 +24,9 @@ db = get_collection_client("object")
 
 @router.post("/")
 async def add_object(
-    payload: CreateObject, 
-    type: Optional[str] = Query("Type", enum = ["Đối tượng", "Tổ chức", "Quốc gia"]),
-    Status: Optional[str] = Query("Status", enum = ["enable", "disable"])
+    payload: CreateObject,
+    type: Optional[str] = Query("Type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]),
+    Status: Optional[str] = Query("Status", enum=["enable", "disable"]),
 ):
     object = payload.dict()
     exist_object = await db.find_one({"name": object["name"]})
@@ -34,12 +34,13 @@ async def add_object(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="object already exist"
         )
-        
+
     object["type"] = type
     object["status"] = Status
-    
+
     new_object = await create_object(object)
     return new_object
+
 
 # @router.get("/{type}")
 # async def get_search(type: str = Path(..., title="Object type", enum = ["Đối tượng", "Tổ chức", "Quốc gia"]), skip = 0, limit = 10):
@@ -56,12 +57,15 @@ async def add_object(
 #     all = await count_all_object({})
 #     return {"result": list, "total": all}
 
+
 @router.get("/{type}")
 async def get_type_and_name(
     name: str = "",
-    type: Optional[str] = Path(..., title="Object type", enum = ["Đối tượng", "Tổ chức", "Quốc gia"]), 
-    skip = 0, 
-    limit = 10
+    type: Optional[str] = Path(
+        ..., title="Object type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]
+    ),
+    skip=0,
+    limit=10,
 ):
     list_obj = await find_by_filter_and_paginate(name, type, int(skip), int(limit))
     count = await count_object(type, name)

@@ -10,8 +10,8 @@ from .utils import newsletter_to_json
 client = get_collection_client("newsletter")
 
 
-async def find_newsletter_by_id(newsletter_id: ObjectId):
-    return await client.find_one({"_id": newsletter_id})
+async def find_newsletter_by_id(newsletter_id: ObjectId, projection=None):
+    return await client.find_one(filter={"_id": newsletter_id}, projection=projection)
 
 
 async def find_newsletters_and_filter(filter_newsletters: dict):
