@@ -1,7 +1,7 @@
-from typing import List
+from typing import List, Union
 
 from bson import ObjectId
-from fastapi import APIRouter, Body, HTTPException, Path, status
+from fastapi import APIRouter, Body, File, HTTPException, Path, UploadFile, status
 from fastapi.params import Depends
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
@@ -11,7 +11,7 @@ from app.news.services import count_news, find_news_by_filter_and_paginate
 from app.social_media.services import count_object, find_object_by_filter_and_paginate
 from db.init_db import get_collection_client
 
-from .models import UserCreateModel, UserUpdateModel
+from .models import Role, UserCreateModel, UserUpdateModel
 from .services import (
     count_users,
     create_user,
@@ -271,25 +271,47 @@ async def delete_interested(
 
 
 @router.get("/")
-async def get_all(skip=0, limit=20, authorize: AuthJWT = Depends()):
+async def get_all(
+    skip=0,
+    limit=20,
+    name="",
+    role: Union[Role, None] = None,
+    authorize: AuthJWT = Depends(),
+):
     authorize.jwt_required()
 
-    users = await get_users({}, int(skip), int(limit))
-    count = await count_users({})
+    query = {
+        "$or": [
+            {"full_name": {"$regex": f"\\b{name}\\b", "$options": "i"}},
+            {"full_name": {"$regex": name, "$options": "i"}},
+            {"username": {"$regex": f"\\b{name}\\b", "$options": "i"}},
+            {"username": {"$regex": name, "$options": "i"}},
+        ]
+    }
+
+    if role is not None:
+        query["$and"] = [{"role": role}]
+
+    users = await get_users(query, int(skip), int(limit))
+    count = await count_users(query)
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"result": users, "total_record": count}
     )
 
 
-@router.get("/")
-async def get_all(skip=0, limit=20, authorize: AuthJWT = Depends()):
+@router.put("/me")
+async def update_me(
+    user_data: UserUpdateModel = Body(...), authorize: AuthJWT = Depends()
+):
     authorize.jwt_required()
+    user_id = ObjectId(authorize.get_jwt_subject())
 
-    users = await get_users({}, int(skip), int(limit))
-    count = await count_users({})
-    return JSONResponse(
-        status_code=status.HTTP_200_OK, content={"result": users, "total_record": count}
-    )
+    user_data = {k: v for k, v in user_data.dict().items() if v is not None}
+    updated_user = await update_user(user_id, user_data)
+    if updated_user is None:
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=None)
+
+    return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
 
 @router.put("/{id}")
@@ -308,3 +330,26 @@ async def delete(id: str):
     if deleted is not True:
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=None)
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
+
+
+@router.post("/avatar")
+async def upload_avatar(file: UploadFile = File(...), authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = ObjectId(authorize.get_jwt_subject())
+
+    try:
+        content = await file.read()
+        with open(f"static/{file.filename}", "wb") as f:
+            f.write(content)
+    except Exception as error:
+        return HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="There was an error when uploading the file",
+        )
+    finally:
+        await file.close()
+
+    await update_user(user_id, {"avatar_url": f"static/{file.filename}"})
+    return JSONResponse(
+        status_code=status.HTTP_202_ACCEPTED, content=f"static/{file.filename}"
+    )

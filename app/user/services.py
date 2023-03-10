@@ -122,4 +122,5 @@ def user_entity(user) -> dict:
         "news_bookmarks": news_bookmarks,
         "vital_list": vital_list,
         "interested_list": interested_list,
+        "avatar_url": user["avatar_url"] if "avatar_url" in user else None,
     }

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     PUBLIC_KEY: str
 
     MONGO_DETAILS: str = "mongodb://127.0.0.1:27017"
-    DATABASE_NAME: str = "v-osint"
+    DATABASE_NAME: str = "vosint_db"
 
     ROOT_PATH: str = ""
 
