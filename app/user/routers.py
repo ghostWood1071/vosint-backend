@@ -1,13 +1,14 @@
 from typing import List
 
 from bson import ObjectId
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, Body, HTTPException, Path, status
 from fastapi.params import Depends
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 
 from app.auth.password import get_password_hash
 from app.news.services import count_news, find_news_by_filter_and_paginate
+from app.social_media.services import count_object, find_object_by_filter_and_paginate
 from db.init_db import get_collection_client
 
 from .models import UserCreateModel, UserUpdateModel
@@ -116,6 +117,74 @@ async def get_news_bookmarks(skip=0, limit=20, authorize: AuthJWT = Depends()):
     )
 
 
+@router.get("/interested")
+async def get_interested_objects(skip=0, limit=20, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    user = await find_user_by_id(ObjectId(user_id))
+
+    if user is None:
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
+        )
+    if "interested_list" not in user:
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
+        )
+    objects = await find_object_by_filter_and_paginate(
+        {"_id": {"$in": user["interested_list"]}}, int(skip), int(limit)
+    )
+
+    count = await count_object({"_id": {"$in": user["interested_list"]}})
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"result": objects, "total_record": count},
+    )
+
+
+@router.get("/interested/{social_media}/{social_type}")
+async def get_interested_by_type(
+    social_media: str = Path(
+        "Media", title="Social Media", enum=["Facebook", "Twitter", "Tiktok"]
+    ),
+    social_type: str = Path(
+        ...,
+        title="Social Type",
+        description="Facebook chọn cả 3 trường, Twitter và Tiktok chỉ chọn Object",
+        enum=["Object", "Group", "Fanpage"],
+    ),
+    skip: int = 1,
+    limit: int = 20,
+    authorize: AuthJWT = Depends(),
+):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    user = await find_user_by_id(ObjectId(user_id))
+    if user is None:
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
+        )
+    if "interested_list" not in user:
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
+        )
+    filter_object = {
+        "_id": {"$in": user["interested_list"]},
+        "social_media": social_media,
+        "social_type": social_type,
+    }
+
+    objects = await find_object_by_filter_and_paginate(
+        filter_object, int(skip), int(limit)
+    )
+    count = len(objects)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"result": objects, "total_record": count},
+    )
+
+
 @router.post("/bookmarks")
 async def add_news_to_bookmarks(
     bookmarks: List[str] = Body(...), authorize: AuthJWT = Depends()
@@ -150,7 +219,9 @@ async def add_vital(vitals: List[str] = Body(...), authorize: AuthJWT = Depends(
     for vital in vitals:
         list_vitals_news.append(ObjectId(vital))
     await update_vital_user(user_id, list_vitals_news)
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED, content="Successful add vital news"
+    )
 
 
 @router.put("/vital")
@@ -163,7 +234,9 @@ async def delete_vital(
     for id_vital in id_vitals:
         list_vitals_news.append(ObjectId(id_vital))
     await delete_vital_user(user_id, list_vitals_news)
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED, content="Successful delete vital news"
+    )
 
 
 @router.post("/interested")
