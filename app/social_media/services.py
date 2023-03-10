@@ -1,6 +1,7 @@
 from bson import ObjectId
 from fastapi import status
 
+from app.social_media.utils import object_to_json
 from db.init_db import get_collection_client
 
 client = get_collection_client("social_media")
@@ -18,7 +19,7 @@ async def delete_user_by_id(id: str):
         return True
 
 
-async def get_social_by_media(social_media: str, page: int = 1, limit: int = 10):
+async def get_social_by_media(social_media: str, page: int = 1, limit: int = 20):
     media_list = (
         await client.find({"social_media": social_media})
         .skip((page - 1) * limit)
@@ -39,9 +40,10 @@ async def get_social_name(social_name: str) -> dict:
     return name_list
 
 
-async def get_social_facebook(social_type: str, page: int = 1, limit: int = 10):
+async def get_social_facebook(social_type: str, page: int = 1, limit: int = 20):
+    accepted_types = ["Object", "Group", "Fanpage"]
     query = {"social_media": "Facebook"}
-    if social_type:
+    if social_type in accepted_types:
         query["social_type"] = social_type
     type_list = (
         await client.find(query)
@@ -53,7 +55,6 @@ async def get_social_facebook(social_type: str, page: int = 1, limit: int = 10):
 
 
 async def update_social_account(data: dict):
-    print(data)
     id = data["id"]
     socials = await client.find_one({"_id": ObjectId(id)})
     if socials:
@@ -71,6 +72,20 @@ async def update_status_account(data: dict):
         if updated_status:
             return status.HTTP_200_OK
         return False
+
+
+async def find_object_by_filter_and_paginate(filter_object, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
+    objects = []
+    async for new in client.find(filter_object).sort("_id").skip(offset).limit(limit):
+        new = object_to_json(new)
+        objects.append(new)
+
+    return objects
+
+
+async def count_object(filter_object):
+    return await client.count_documents(filter_object)
 
 
 def social_entity(socials) -> dict:
