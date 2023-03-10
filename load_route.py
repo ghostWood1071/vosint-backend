@@ -1,8 +1,6 @@
 from app.auth.routers import router as AuthRouter
 from app.information.route import router as InformationRouter
-from app.list_country.route import router as CountryRouter
 from app.list_object.route import router as ObjectRouter
-from app.list_organize.route import router as OrganizeRouter
 from app.manage_news.route import router as ManageNewsRouter
 from app.news.routers import router as NewsRouter
 from app.newsletter.routers import router as NewsLetterRouter
