@@ -6,6 +6,18 @@ from db.init_db import get_collection_client
 db = get_collection_client("object")
 
 
+# async def aggregate_object(pipeline):
+#     items = []
+#     async for item in db.aggregate(pipeline):
+#         items.append(item)
+
+#     return items
+
+
+async def find_by_id(id: ObjectId, projection=None):
+    return await db.find_one(filter={"_id": id}, projection=projection)
+
+
 async def search_by_filter_and_paginate(type, skip: int, limit: int):
     query = {"type": type}
     if type:
@@ -42,13 +54,17 @@ async def count_all_object(filter):
     return await db.count_documents(filter)
 
 
-async def find_by_filter_and_paginate(name: str, type: str, skip: int, limit: int):
+async def find_by_filter_and_paginate(
+    name: str, type: str, skip: int, limit: int, projection=None
+):
     query = {"name": {"$regex": name}, "type": type}
     if type:
         query["type"] = type
     offset = (skip - 1) * limit if skip > 0 else 0
     list_object = []
-    async for item in db.find(query).sort("_id").skip(offset).limit(limit):
+    async for item in db.find(filter=query, projection=projection).sort("_id").skip(
+        offset
+    ).limit(limit):
         item = object_to_json(item)
         list_object.append(item)
     return list_object
@@ -60,7 +76,6 @@ def object_to_json(object) -> dict:
 
 
 async def count_object(type, name):
-    print(type)
     query = {"type": type, "name": {"$regex": name}}
     return await db.count_documents(query)
 
