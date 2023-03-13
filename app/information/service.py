@@ -14,6 +14,14 @@ async def create_infor(infor):
     return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
 
 
+async def aggregate_infor(pipeline):
+    items = []
+    async for item in infor_collect.aggregate(pipeline):
+        items.append(item)
+
+    return items
+
+
 async def get_all_infor():
     list_infor = []
     async for item in infor_collect.find():
