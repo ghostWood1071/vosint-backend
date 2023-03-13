@@ -1,19 +1,15 @@
-from typing import List
-
-from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, HTTPException, status
 from fastapi.responses import JSONResponse
 
 from app.information.model import CreateInfor, UpdateInfor
 from app.information.service import (
+    aggregate_infor,
     count_infor,
     count_search_infor,
     create_infor,
     delete_infor,
     find_by_filter_and_paginate,
-    get_all_infor,
     search_by_filter_and_paginate,
-    search_infor,
     update_infor,
 )
 from db.init_db import get_collection_client
@@ -49,6 +45,21 @@ async def get_all(skip=0, limit=10):
         status_code=status.HTTP_200_OK,
         content={"data": list_infor, "total_record": count},
     )
+
+
+@router.get("/pipeline-options")
+async def get_options_pipeline():
+    pipeline = [
+        {
+            "$addFields": {
+                "label": {"$concat": ["$name", " (", "$host_name", ")"]},
+                "value": {"$convert": {"input": "$_id", "to": "string"}},
+            }
+        },
+        {"$project": {"value": 1, "label": 1, "_id": 0}},
+    ]
+    list_info = await aggregate_infor(pipeline)
+    return JSONResponse(status_code=status.HTTP_200_OK, content=list_info)
 
 
 @router.get("/{name}")
