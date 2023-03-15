@@ -1,17 +1,19 @@
 from typing import List
 
 from bson import ObjectId
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, HTTPException, Path, status
 from fastapi.responses import JSONResponse
 
-from app.auth.password import get_password_hash
-from app.social.models import UserCreateModel
+from app.social.models import UpdateAccountMonitor, UserCreateModel
 from app.social.services import (
+    count_object,
     create_user,
     delete_follow_user,
     delete_user,
+    get_account_monitor_by_media,
     get_all_user,
     get_user,
+    update_account_monitor,
     update_follow_user,
     update_username_user,
 )
@@ -27,9 +29,7 @@ async def Get_all_user(skip: int, limit: int):
     users = await get_all_user(skip, limit)
     if users:
         return users
-    return HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN, detail="List of account users is empty"
-    )
+    return []
 
 
 @router.get("/{id}")
@@ -40,25 +40,42 @@ async def get_user_id(id):
     return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="user not exist")
 
 
-@router.post("/")
-async def add_user(
-    body: UserCreateModel, _q: str = Query("Social", enum=["Facebook", "Twitter"])
+@router.get("/get_by_social/{social_media}")
+async def get_account_monitor_by_medias(
+    social_media: str = Path(
+        "Media", title="Social Media", enum=["Facebook", "Twitter", "Tiktok"]
+    ),
+    page: int = 1,
+    limit: int = 20,
 ):
+    if social_media not in ["Facebook", "Twitter", "Tiktok"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid social media"
+        )
+    filter_object = {"social": social_media}
+
+    socials = await get_account_monitor_by_media(filter_object, page, limit)
+    count = await count_object(filter_object)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"result": socials, "total_record": count},
+    )
+
+
+@router.post("/")
+async def add_user(body: UserCreateModel):
     user_dict = body.dict()
     existing_user = await client.find_one({"username": user_dict["username"]})
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="User already exist"
         )
-    user_dict["hashed_password"] = get_password_hash(user_dict["password"])
-    user_dict.pop("password")
-    user_dict["social"] = _q
-    user_dict["users_follow"] = []
     await create_user(user_dict)
     return HTTPException(status_code=status.HTTP_200_OK)
 
 
-@router.delete("/{id}")
+@router.delete("/delete/{id}")
 async def Delete_user(id: str):
     deleted_user = await delete_user(id)
     if deleted_user:
@@ -91,3 +108,12 @@ async def Delete_follow_user(id_user: str, id_users_follow: List[str] = Body(...
         list_id_new.append(ObjectId(id_user))
     await delete_follow_user(id_obj, list_id_new)
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
+
+
+@router.put("/edit_account_monitor")
+async def update_social(data: UpdateAccountMonitor = Body(...)):
+    data = {k: v for k, v in data.dict().items() if v is not None}
+    updated_social = await update_account_monitor(data)
+    if updated_social:
+        return status.HTTP_200_OK
+    return status.HTTP_403_FORBIDDEN
