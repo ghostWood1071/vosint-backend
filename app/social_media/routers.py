@@ -10,6 +10,7 @@ from .services import (
     count_object,
     create_social_media,
     delete_user_by_id,
+    find_object_by_filter,
     find_object_by_filter_and_paginate,
     get_social_by_media,
     get_social_name,
@@ -81,7 +82,7 @@ async def get_social_by_types(
     page: int = 0,
     limit: int = 10,
 ):
-    filter_object = {"social_type": social_type}
+    filter_object = {"social_media": "Facebook", "social_type": social_type}
     types = await find_object_by_filter_and_paginate(filter_object, page, limit)
     count = await count_object(filter_object)
     return JSONResponse(
@@ -96,17 +97,13 @@ async def get_social_types(
         ..., title="Social Type", enum=["Object", "Group", "Fanpage"]
     ),
     social_name: str = "",
-    skip: int = 0,
-    limit: int = 10,
 ):
     filter_object = {"social_type": social_type}
     if social_name:
         filter_object["social_name"] = {"$regex": f"{social_name}", "$options": "i"}
-    results = await find_object_by_filter_and_paginate(filter_object, skip, limit)
-    count = await count_object(filter_object)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK, content={"data": results, "total_record": count}
-    )
+    results = await find_object_by_filter(filter_object)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"data": results})
 
 
 @router.get("/social_name/{social_name}")
