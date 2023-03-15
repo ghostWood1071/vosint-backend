@@ -288,6 +288,19 @@ async def update_me(
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
 
+@router.put("/profile")
+async def update_me(user_data: UserUpdateModel, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = ObjectId(authorize.get_jwt_subject())
+
+    user_data = {k: v for k, v in user_data.dict().items() if v is not None}
+    updated_user = await update_user(user_id, user_data)
+    if updated_user is None:
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=None)
+
+    return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
+
+
 @router.put("/{id}")
 async def update(id: str, user_data: UserUpdateModel = Body(...)):
     user_data = {k: v for k, v in user_data.dict().items() if v is not None}
