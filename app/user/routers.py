@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 
 from bson import ObjectId
 from fastapi import APIRouter, Body, File, HTTPException, Path, UploadFile, status
@@ -8,15 +8,18 @@ from fastapi_jwt_auth import AuthJWT
 
 from app.auth.password import get_password_hash
 from app.news.services import count_news, find_news_by_filter_and_paginate
-from app.social_media.services import count_object, find_object_by_filter_and_paginate
+from app.social_media.services import (
+    find_object_by_filter,
+    find_object_by_filter_and_paginate,
+)
 from db.init_db import get_collection_client
 
-from .models import Role, UserCreateModel, UserUpdateModel
+from .models import InterestedModel, Role, UserCreateModel, UserUpdateModel
 from .services import (
     count_users,
     create_user,
     delete_bookmark_user,
-    delete_interested_object,
+    delete_item_from_interested_list,
     delete_user,
     delete_vital_user,
     find_user_by_id,
@@ -117,72 +120,35 @@ async def get_news_bookmarks(skip=0, limit=20, authorize: AuthJWT = Depends()):
     )
 
 
-@router.get("/interested")
-async def get_interested_objects(skip=0, limit=20, authorize: AuthJWT = Depends()):
-    authorize.jwt_required()
-    user_id = authorize.get_jwt_subject()
-    user = await find_user_by_id(ObjectId(user_id))
-
-    if user is None:
-        return JSONResponse(
-            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
-        )
-    if "interested_list" not in user:
-        return JSONResponse(
-            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
-        )
-    objects = await find_object_by_filter_and_paginate(
-        {"_id": {"$in": user["interested_list"]}}, int(skip), int(limit)
-    )
-
-    count = await count_object({"_id": {"$in": user["interested_list"]}})
-
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"result": objects, "total_record": count},
-    )
-
-
-@router.get("/interested/{social_media}/{social_type}")
-async def get_interested_by_type(
-    social_media: str = Path(
-        "Media", title="Social Media", enum=["Facebook", "Twitter", "Tiktok"]
-    ),
-    social_type: str = Path(
+@router.get("/interested/{social_type}")
+async def get_interested(
+    social_type: Optional[str] = Path(
         ...,
         title="Social Type",
-        description="Facebook chọn cả 3 trường, Twitter và Tiktok chỉ chọn Object",
         enum=["Object", "Group", "Fanpage"],
     ),
-    skip: int = 1,
-    limit: int = 20,
+    social_name: str = "",
     authorize: AuthJWT = Depends(),
 ):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     user = await find_user_by_id(ObjectId(user_id))
-    if user is None:
-        return JSONResponse(
-            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
-        )
-    if "interested_list" not in user:
-        return JSONResponse(
-            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
-        )
-    filter_object = {
-        "_id": {"$in": user["interested_list"]},
-        "social_media": social_media,
-        "social_type": social_type,
-    }
 
-    objects = await find_object_by_filter_and_paginate(
-        filter_object, int(skip), int(limit)
-    )
-    count = len(objects)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"result": objects, "total_record": count},
-    )
+    if user is None:
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"result": []})
+
+    if "interested_list" not in user:
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"result": []})
+
+    filter = {"_id": {"$in": user["interested_list"]}}
+    if social_type:
+        filter["social_type"] = social_type
+    if social_name:
+        filter["social_name"] = {"$regex": f"{social_name.lower()}"}
+
+    objects = await find_object_by_filter(filter)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": objects})
 
 
 @router.post("/bookmarks")
@@ -241,32 +207,40 @@ async def delete_vital(
 
 @router.post("/interested")
 async def add_interested(
-    interesteds: List[str] = Body(...), authorize: AuthJWT = Depends()
+    interested: InterestedModel = Body(...), authorize: AuthJWT = Depends()
 ):
     authorize.jwt_required()
     user_id = ObjectId(authorize.get_jwt_subject())
-    list_interested_objects = []
-    for interested in interesteds:
-        list_interested_objects.append(ObjectId(interested))
-    await update_interested_object(user_id, list_interested_objects)
+    interested_list = [ObjectId(interested.id)]
+    exist_id = await client.find_one(
+        {"_id": user_id, "interested_list": {"$in": [ObjectId(interested.id)]}}
+    )
+    if exist_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The interested object already in database",
+        )
+    await update_interested_object(user_id, interested_list)
     return JSONResponse(
-        status_code=status.HTTP_201_CREATED, content="Successful add interested objects"
+        status_code=status.HTTP_201_CREATED, content="Successful add interested object"
     )
 
 
-@router.put("/interested")
-async def delete_interested(
-    id_interesteds: List[str] = Body(...), authorize: AuthJWT = Depends()
+@router.delete("/interested/{item_id}")
+async def delete_interested_item(
+    item_id: str,
+    authorize: AuthJWT = Depends(),
 ):
     authorize.jwt_required()
-    user_id = ObjectId(authorize.get_jwt_subject())
-    list_interested_objects = []
-    for id_interested in id_interesteds:
-        list_interested_objects.append(ObjectId(id_interested))
-    await delete_interested_object(user_id, list_interested_objects)
+    user_id = authorize.get_jwt_subject()
+    user = await find_user_by_id(ObjectId(user_id))
+    if user is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content={"detail": "User not found"}
+        )
+    await delete_item_from_interested_list(user_id, [ObjectId(item_id)])
     return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content="Successful delete interested objects",
+        status_code=status.HTTP_202_ACCEPTED, content="Successful delete"
     )
 
 

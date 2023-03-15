@@ -83,6 +83,13 @@ async def find_object_by_filter_and_paginate(filter_object, skip: int, limit: in
 
     return objects
 
+async def find_object_by_filter(filter_object):
+    objects = []
+    async for new in client.find(filter_object).sort("_id"):
+        new = object_to_json(new)
+        objects.append(new)
+
+    return objects
 
 async def count_object(filter_object):
     return await client.count_documents(filter_object)
