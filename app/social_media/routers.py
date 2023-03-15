@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Body, HTTPException, Path, status
 from fastapi.responses import JSONResponse
 
@@ -5,10 +7,11 @@ from db.init_db import get_collection_client
 
 from .models import CreateSocialModel, UpdateSocial, UpdateStatus
 from .services import (
+    count_object,
     create_social_media,
     delete_user_by_id,
+    find_object_by_filter_and_paginate,
     get_social_by_media,
-    get_social_facebook,
     get_social_name,
     update_social_account,
     update_status_account,
@@ -38,15 +41,16 @@ async def get_social_by_medias(
     social_media: str = Path(
         "Media", title="Social Media", enum=["Facebook", "Twitter", "Tiktok"]
     ),
-    page: int = 1,
-    limit: int = 20,
+    page: int = 0,
+    limit: int = 10,
 ):
     if social_media not in ["Facebook", "Twitter", "Tiktok"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid social media"
         )
-    socials = await get_social_by_media(social_media, page, limit)
-    count = len(socials)
+    filter_object = {"social_media": social_media}
+    socials = await get_social_by_media(filter_object, page, limit)
+    count = await count_object(filter_object)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"result": socials, "total_record": count},
@@ -74,14 +78,34 @@ async def get_social_by_types(
     social_type: str = Path(
         ..., title="Social Type", enum=["Object", "Group", "Fanpage"]
     ),
-    page: int = 1,
-    limit: int = 20,
+    page: int = 0,
+    limit: int = 10,
 ):
-    types = await get_social_facebook(social_type, page, limit)
-    count = len(types)
+    filter_object = {"social_type": social_type}
+    types = await find_object_by_filter_and_paginate(filter_object, page, limit)
+    count = await count_object(filter_object)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"result": types, "total_record": count},
+        content={"result": types, "total_records": count},
+    )
+
+
+@router.get("/{social_type}")
+async def get_social_types(
+    social_type: Optional[str] = Path(
+        ..., title="Social Type", enum=["Object", "Group", "Fanpage"]
+    ),
+    social_name: str = "",
+    skip: int = 0,
+    limit: int = 10,
+):
+    filter_object = {"social_type": social_type}
+    if social_name:
+        filter_object["social_name"] = {"$regex": f"{social_name}", "$options": "i"}
+    results = await find_object_by_filter_and_paginate(filter_object, skip, limit)
+    count = await count_object(filter_object)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"data": results, "total_record": count}
     )
 
 

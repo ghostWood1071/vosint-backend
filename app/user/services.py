@@ -1,7 +1,10 @@
+import re
 from typing import List
 
 from bson.objectid import ObjectId
 
+from app.list_object.service import object_to_json
+from app.user.models import InterestedModel
 from db.init_db import get_collection_client
 
 client = get_collection_client("users")
@@ -72,15 +75,20 @@ async def delete_vital_user(id: ObjectId, id_vitals: List[ObjectId]):
     )
 
 
-async def update_interested_object(id: ObjectId, interested_objects: List[ObjectId]):
+async def update_interested_object(
+    user_id: ObjectId, interested_objects: List[ObjectId]
+):
     return await client.update_one(
-        {"_id": id}, {"$push": {"interested_list": {"$each": interested_objects}}}
+        {"_id": user_id}, {"$push": {"interested_list": {"$each": interested_objects}}}
     )
 
 
-async def delete_interested_object(id: ObjectId, id_interested: List[ObjectId]):
+async def delete_item_from_interested_list(
+    user_id: str, id_interesteds: List[ObjectId]
+):
     return await client.update_one(
-        {"_id": id}, {"$pull": {"interested_list": {"$in": id_interested}}}
+        {"_id": ObjectId(user_id)},
+        {"$pull": {"interested_list": {"$in": id_interesteds}}},
     )
 
 

@@ -1,8 +1,7 @@
-# from ast import List
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Role(str, Enum):
@@ -18,6 +17,7 @@ class UserModal(BaseModel):
     role: Role
     news_bookmarks: list[str]
     vital_list: list[str]
+    interested_list: list[str]
     avatar_url: Optional[str]
 
 
@@ -44,3 +44,7 @@ class UserLoginModel(BaseModel):
 class UserChangePasswordModel(BaseModel):
     password: str
     new_password: str
+
+
+class InterestedModel(BaseModel):
+    id: Optional[str] = Field(...)
