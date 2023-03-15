@@ -19,14 +19,17 @@ async def delete_user_by_id(id: str):
         return True
 
 
-async def get_social_by_media(social_media: str, page: int = 1, limit: int = 20):
-    media_list = (
-        await client.find({"social_media": social_media})
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .to_list(length=limit)
-    )
-    return [social_entity(media) for media in media_list]
+async def get_social_by_media(social_media: str, page: int, limit: int):
+    offset = (page - 1) * limit if page > 0 else 0
+    list_social_media = []
+    async for item in client.find(social_media).sort("_id").skip(offset).limit(limit):
+        item = To_json(item)
+        list_social_media.append(social_entity(item))
+    return list_social_media
+
+def To_json(media) -> dict:
+    media["_id"] = str(media["_id"])
+    return media
 
 
 async def get_social_name(social_name: str) -> dict:

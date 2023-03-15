@@ -92,6 +92,20 @@ async def delete_item_from_interested_list(
     )
 
 
+async def get_interested_list(social_name):
+    pipeline = [
+        {"$match": {"interested_list.social_name": {"$regex": social_name}}},
+        {"$project": {"_id": 0, "interested_list": 1}},
+        {"$unwind": "$interested_list"},
+        {"$match": {"interested_list.social_name": {"$regex": social_name}}},
+    ]
+    cursor = client.aggregate(pipeline)
+    interested_list = []
+    async for document in cursor:
+        interested_list.append(document["interested_list"])
+    return interested_list
+
+
 async def delete_user(id: str):
     user = await client.find_one({"_id": ObjectId(id)})
     if user:
