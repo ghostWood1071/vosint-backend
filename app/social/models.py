@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
@@ -15,7 +15,15 @@ class UserModel(BaseModel):
 
 
 class UserCreateModel(BaseModel):
-    username: str
-    password: str
-    social: str
+    username: str = Field(...)
+    password: str = Field(...)
+    social: str = Field(...)
+    users_follow: List[str]
+
+
+class UpdateAccountMonitor(BaseModel):
+    id: Optional[str] = Field(...)
+    username: str = Field(...)
+    password: str = Field(...)
+    social: str = Field(...)
     users_follow: List[str]

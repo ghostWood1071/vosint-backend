@@ -27,5 +27,5 @@ ROUTE_LIST = [
     {"route": InformationRouter, "tags": ["Source"], "prefix": "/Source"},
     {"route": ManageNewsRouter, "tags": ["Source-group"], "prefix": "/Source-group"},
     {"route": SocialMediaRouter, "tags": ["Social-media"], "prefix": "/Social-media"},
-    {"route": SocialRouter, "tags": ["Social"], "prefix": "/account-social"},
+    {"route": SocialRouter, "tags": ["Social"], "prefix": "/account-monitor"},
 ]
