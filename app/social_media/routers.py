@@ -12,8 +12,6 @@ from .services import (
     delete_user_by_id,
     find_object_by_filter,
     find_object_by_filter_and_paginate,
-    get_social_by_media,
-    get_social_name,
     update_social_account,
     update_status_account,
 )
@@ -50,7 +48,7 @@ async def get_social_by_medias(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid social media"
         )
     filter_object = {"social_media": social_media}
-    socials = await get_social_by_media(filter_object, page, limit)
+    socials = await find_object_by_filter_and_paginate(filter_object, page, limit)
     count = await count_object(filter_object)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -108,7 +106,8 @@ async def get_social_types(
 
 @router.get("/social_name/{social_name}")
 async def get_social_by_name(social_name: str):
-    name_list = await get_social_name(social_name)
+    filter_object = {"social_name": {"$regex": f"{social_name}", "$options": "i"}}
+    name_list = await find_object_by_filter(filter_object)
     if name_list:
         return name_list
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="name not exist")
