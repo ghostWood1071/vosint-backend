@@ -19,44 +19,6 @@ async def delete_user_by_id(id: str):
         return True
 
 
-async def get_social_by_media(social_media: str, page: int, limit: int):
-    offset = (page - 1) * limit if page > 0 else 0
-    list_social_media = []
-    async for item in client.find(social_media).sort("_id").skip(offset).limit(limit):
-        item = To_json(item)
-        list_social_media.append(social_entity(item))
-    return list_social_media
-
-def To_json(media) -> dict:
-    media["_id"] = str(media["_id"])
-    return media
-
-
-async def get_social_name(social_name: str) -> dict:
-    name_list = []
-    async for item in client.find(
-        {
-            "social_name": {"$regex": social_name},
-        }
-    ):
-        name_list.append(social_entity(item))
-    return name_list
-
-
-async def get_social_facebook(social_type: str, page: int = 1, limit: int = 20):
-    accepted_types = ["Object", "Group", "Fanpage"]
-    query = {"social_media": "Facebook"}
-    if social_type in accepted_types:
-        query["social_type"] = social_type
-    type_list = (
-        await client.find(query)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .to_list(length=limit)
-    )
-    return [social_entity(types) for types in type_list]
-
-
 async def update_social_account(data: dict):
     id = data["id"]
     socials = await client.find_one({"_id": ObjectId(id)})
@@ -86,6 +48,7 @@ async def find_object_by_filter_and_paginate(filter_object, skip: int, limit: in
 
     return objects
 
+
 async def find_object_by_filter(filter_object):
     objects = []
     async for new in client.find(filter_object).sort("_id"):
@@ -93,6 +56,7 @@ async def find_object_by_filter(filter_object):
         objects.append(new)
 
     return objects
+
 
 async def count_object(filter_object):
     return await client.count_documents(filter_object)
