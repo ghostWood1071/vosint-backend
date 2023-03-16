@@ -51,7 +51,7 @@ async def search_by_filter_and_paginate(name, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_infor = []
     async for item in infor_collect.find(
-        {"$or": [{"name": {"$regex": name}}, {"host_name": {"$regex": name}}]}
+        {"$or": [{"name": {"$regex": name, "$options": "i"}}, {"host_name": {"$regex": name, "$options": "i"}}]}
     ).sort("_id").skip(offset).limit(limit):
         item = Infor_to_json(item)
         list_infor.append(item)
@@ -64,7 +64,7 @@ def Infor_to_json(infor) -> dict:
 
 
 async def count_search_infor(name: str):
-    name_filter = {"name": {"$regex": name}}
+    name_filter = {"name": {"$regex": name, "$options": "i"}}
     return await infor_collect.count_documents(name_filter)
 
 
@@ -79,13 +79,16 @@ async def search_infor(keyword: str) -> dict:
 
 async def update_infor(id: str, data: dict):
     infor = await infor_collect.find_one({"_id": ObjectId(id)})
-    if infor:
-        updated_infor = await infor_collect.update_one(
-            {"_id": ObjectId(id)}, {"$set": data}
+    if infor["name"] == data["name"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="source name already exist"
         )
-        if updated_infor:
-            return status.HTTP_200_OK
-        return False
+    updated_infor = await infor_collect.update_one(
+        {"_id": ObjectId(id)}, {"$set": data}
+    )
+    if updated_infor:
+        return status.HTTP_200_OK
+    return False
 
 
 async def delete_infor(id: str):

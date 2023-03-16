@@ -69,7 +69,7 @@ async def search(name, skip=0, limit=10):
     search_source_group = await search_by_filter_and_paginate(
         name, int(skip), int(limit)
     )
-    Count = await count_search_source_group({})
+    Count = await count_search_source_group(name)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"data": search_source_group, "total_record": Count},

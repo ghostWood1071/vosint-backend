@@ -44,7 +44,7 @@ async def get_all(skip=0, limit=10):
 @router.get("/{name}")
 async def search(name, skip=0, limit=10):
     search_proxy = await search_by_filter_and_paginate(name, int(skip), int(limit))
-    count = await count_search_proxy({})
+    count = await count_search_proxy(name)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"data": search_proxy, "total_record": count},

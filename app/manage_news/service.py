@@ -40,7 +40,7 @@ async def count_source(filter):
 async def search_by_filter_and_paginate(name, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_source_group = []
-    async for item in db.find({"$or": [{"source_name": {"$regex": name}}]}).sort(
+    async for item in db.find({"$or": [{"source_name": {"$regex": name, "$options": "i"}}]}).sort(
         "_id"
     ).skip(offset).limit(limit):
         item = source_group_to_json(item)
@@ -53,7 +53,8 @@ def source_group_to_json(source_group) -> dict:
     return source_group
 
 
-async def count_search_source_group(filter):
+async def count_search_source_group(name):
+    filter = {"source_name": {"$regex": name, "$options": "i"}}
     return await db.count_documents(filter)
 
 
@@ -84,13 +85,16 @@ async def update_news(id_group: str, source):
 
 async def update_source_group(id: str, data: dict):
     source_group = await db.find_one({"_id": ObjectId(id)})
-    if source_group:
-        updated_source_group = await db.update_one(
-            {"_id": ObjectId(id)}, {"$set": data}
+    if source_group["source_name"] == data["source_name"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="source name already exist"
         )
-        if updated_source_group:
-            return status.HTTP_200_OK
-        return False
+    updated_source_group = await db.update_one(
+        {"_id": ObjectId(id)}, {"$set": data}
+    )
+    if updated_source_group:
+        return status.HTTP_200_OK
+    return False
 
 
 async def hide_show(id: str, run):

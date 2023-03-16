@@ -57,7 +57,7 @@ async def count_all_object(filter):
 async def find_by_filter_and_paginate(
     name: str, type: str, skip: int, limit: int, projection=None
 ):
-    query = {"name": {"$regex": name}, "type": type}
+    query = {"name": {"$regex": name, "$options": "i"}, "type": type}
     if type:
         query["type"] = type
     offset = (skip - 1) * limit if skip > 0 else 0

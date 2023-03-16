@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from bson import ObjectId
 from fastapi import APIRouter, Body, HTTPException, Path, status
@@ -25,7 +25,7 @@ router = APIRouter()
 
 
 @router.get("/")
-async def Get_all_user(skip: int, limit: int):
+async def Get_all_user(skip: int = 1, limit: int = 10):
     users = await get_all_user(skip, limit)
     if users:
         return users

@@ -41,7 +41,7 @@ async def search_by_filter_and_paginate(name, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_proxy = []
     async for item in proxy_collect.find(
-        {"$or": [{"name": {"$regex": name}}, {"ip_address": {"$regex": name}}]}
+        {"$or": [{"name": {"$regex": name, "$options": "i"}}, {"ip_address": {"$regex": name}}]}
     ).sort("_id").skip(offset).limit(limit):
         item = Proxy_to_json(item)
         list_proxy.append(item)
@@ -53,7 +53,8 @@ def Proxy_to_json(proxy) -> dict:
     return proxy
 
 
-async def count_search_proxy(filter):
+async def count_search_proxy(name):
+    filter = {"name": {"$regex": name, "$options": "i"}}
     return await proxy_collect.count_documents(filter)
 
 
@@ -68,13 +69,16 @@ async def search_proxy(key: str) -> dict:
 
 async def update_proxy(id: str, data: dict):
     proxy = await proxy_collect.find_one({"_id": ObjectId(id)})
-    if proxy:
-        updated_proxy = await proxy_collect.update_one(
-            {"_id": ObjectId(id)}, {"$set": data}
+    if proxy["ip_address"] == data["ip_address"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="proxy ip already exist"
         )
-        if updated_proxy:
-            return status.HTTP_200_OK
-        return False
+    updated_proxy = await proxy_collect.update_one(
+        {"_id": ObjectId(id)}, {"$set": data}
+    )
+    if updated_proxy:
+        return status.HTTP_200_OK
+    return False
 
 
 async def delete_proxy(id: str):
