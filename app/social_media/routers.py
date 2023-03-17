@@ -104,13 +104,18 @@ async def get_social_types(
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": results})
 
 
-@router.get("/social_name/{social_name}")
-async def get_social_by_name(social_name: str):
-    filter_object = {"social_name": {"$regex": f"{social_name}", "$options": "i"}}
-    name_list = await find_object_by_filter(filter_object)
-    if name_list:
-        return name_list
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="name not exist")
+@router.get("/{social_media}/{social_name}")
+async def get_social_by_name(
+    social_media: Optional[str] = Path(
+        ..., title="Social Media", enum=["Facebook", "Twitter", "Tiktok"]
+    ),
+    social_name: str = "",
+):
+    filter_object = {"social_media": social_media}
+    if social_name:
+        filter_object["social_name"] = {"$regex": f"{social_name}", "$options": "i"}
+    results = await find_object_by_filter(filter_object)
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"data": results})
 
 
 @router.put("/edit_social")
