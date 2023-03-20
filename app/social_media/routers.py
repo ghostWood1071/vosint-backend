@@ -16,7 +16,7 @@ from .services import (
     update_status_account,
 )
 
-client = get_collection_client("socials")
+client = get_collection_client("social_media")
 
 router = APIRouter()
 
@@ -26,13 +26,24 @@ async def add_social(
     body: CreateSocialModel,
 ):
     social_dict = body.dict()
-    existing_user = await client.find_one({"social_name": social_dict["social_name"]})
+    existing_user = await client.find_one(
+        {
+            "$and": [
+                {"social_name": social_dict["social_name"]},
+                {"social_media": social_dict["social_media"]},
+                {"social_type": social_dict["social_type"]},
+            ]
+        }
+    )
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Account already exist"
         )
     await create_social_media(social_dict)
-    return HTTPException(status_code=status.HTTP_200_OK)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"message": "Social media account created successfully."},
+    )
 
 
 @router.get("/social_media/{social_media}/{social_type}")
