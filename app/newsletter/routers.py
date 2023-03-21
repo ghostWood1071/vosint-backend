@@ -12,7 +12,7 @@ from app.news.services import (
     find_news_by_filter_and_paginate,
 )
 
-from .models import NewsLetterCreateModel, NewsLetterUpdateModel
+from .models import NewsLetterCreateModel, NewsLetterUpdateModel, NewsletterDeleteMany
 from .services import (
     create_news_ids_to_newsletter,
     create_newsletter,
@@ -21,6 +21,7 @@ from .services import (
     find_newsletter_by_id,
     find_newsletters_and_filter,
     update_newsletter,
+    delete_many_newsletter,
 )
 from .utils import newsletter_to_json, newsletter_to_object_id
 
@@ -119,6 +120,17 @@ async def delete(newsletter_id: str, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
     await delete_newsletter(ObjectId(newsletter_id))
+
+    return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
+
+
+@router.post("/delete-many")
+async def delete_many_by_id(body: NewsletterDeleteMany, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    filter = {"_id": {"$in": list(map(lambda x: ObjectId(x), body.newsletter_ids))}}
+
+    await delete_many_newsletter(filter)
 
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 

@@ -38,3 +38,6 @@ class NewsLetterUpdateModel(BaseModel):
     required_keyword: Optional[list[str]]
     exclusion_keyword: Optional[str]
     news_samples: Optional[list[str]]
+
+class NewsletterDeleteMany(BaseModel):
+    newsletter_ids: List[str]

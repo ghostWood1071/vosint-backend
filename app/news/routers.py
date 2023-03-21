@@ -13,11 +13,12 @@ router = APIRouter()
 
 
 @router.get("/")
-async def get_news(skip=0, limit=20, authorize: AuthJWT = Depends()):
+async def get_news(title: str = "", skip=0, limit=20, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    news = await find_news_by_filter_and_paginate({}, int(skip), int(limit))
-    count = await count_news({})
+    query = {"$or": [{"data:title": {"$regex": title, "$options": "i"}}]}
+    news = await find_news_by_filter_and_paginate(query, int(skip), int(limit))
+    count = await count_news(query)
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"result": news, "total_record": count}
     )
