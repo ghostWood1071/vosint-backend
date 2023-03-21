@@ -56,6 +56,10 @@ async def delete_newsletter(newsletter_id):
     return await client.delete_one({"_id": newsletter_id})
 
 
+async def delete_many_newsletter(filter):
+    return await client.delete_many(filter)
+
+
 async def update_newsletter(newsletter_id: ObjectId, newsletter):
     return await client.update_one({"_id": newsletter_id}, {"$set": newsletter})
 
