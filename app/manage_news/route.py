@@ -14,6 +14,7 @@ from app.manage_news.service import (
     delete_list_infor,
     delete_source_group,
     find_by_filter_and_paginate,
+    get,
     get_all_source,
     hide_show,
     search_by_filter_and_paginate,
@@ -110,9 +111,14 @@ async def search(name, skip=0, limit=10):
 
 
 @router.put("/{id}")
-async def update_all(id: str, data: SourceGroupSchema = Body(...)):
+async def update_all(id: str, data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    list_source = await get({})
+    
     data = {k: v for k, v in data.dict().items() if v is not None}
-    updated_source_group = await update_source_group(id, data)
+    data["user_id"] = user_id
+    updated_source_group = await update_source_group(id, data, list_source)
     if updated_source_group:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN

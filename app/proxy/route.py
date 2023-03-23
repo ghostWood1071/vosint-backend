@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Body, HTTPException, status
 from fastapi.responses import JSONResponse
+from unidecode import unidecode
 
 from app.proxy.model import CreateProxy, UpdateProxy
 from app.proxy.service import (
@@ -42,9 +43,10 @@ async def get_all(skip=0, limit=10):
 
 
 @router.get("/{name}")
-async def search(name, skip=0, limit=10):
-    search_proxy = await search_by_filter_and_paginate(name, int(skip), int(limit))
-    count = await count_search_proxy(name)
+async def search(name: str = "", skip=0, limit=10):
+    char_name = name
+    search_proxy = await search_by_filter_and_paginate(char_name, int(skip), int(limit))
+    count = await count_search_proxy(char_name)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"data": search_proxy, "total_record": count},

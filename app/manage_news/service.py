@@ -19,6 +19,14 @@ async def get_all_source():
     return source_group
 
 
+async def get(list):
+    list_source = []
+    async for item in db.find(list).sort("_id"):
+        item = source_to_json(item)
+        list_source.append(item)
+    return list_source
+
+
 async def find_by_filter_and_paginate(filter, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_source = []
@@ -26,6 +34,7 @@ async def find_by_filter_and_paginate(filter, skip: int, limit: int):
         item = source_to_json(item)
         list_source.append(item)
     return list_source
+
 
 
 def source_to_json(source) -> dict:
@@ -83,18 +92,29 @@ async def update_news(id_group: str, source):
         return await db.update_one(group, {"$push": {"news": source}})
 
 
-async def update_source_group(id: str, data: dict):
+async def update_source_group(id: str, data: dict, list_source):
+          
     source_group = await db.find_one({"_id": ObjectId(id)})
-    if source_group["source_name"] == data["source_name"]:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="source name already exist"
-        )
-    updated_source_group = await db.update_one(
-        {"_id": ObjectId(id)}, {"$set": data}
-    )
-    if updated_source_group:
-        return status.HTTP_200_OK
-    return False
+    
+    for item in list_source:
+        if data["source_name"] == source_group["source_name"]:
+            updated_source_group = await db.update_one(
+                {"_id": ObjectId(id)}, {"$set": data}
+            )
+            if updated_source_group:
+                return {"message": "updated successful"}
+            return False
+        
+        if data["source_name"] != item["source_name"]:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="source group not found"
+            )
+        
+    
+        
+        
+    
+    
 
 
 async def hide_show(id: str, run):
