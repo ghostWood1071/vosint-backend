@@ -90,6 +90,10 @@ async def update_proxy(id: str, data: dict):
         return status.HTTP_200_OK
     return False
 
+async def get_proxy_by_id(id) -> dict:
+    proxy = await proxy_collect.find_one({"_id": ObjectId(id)})
+    if proxy:
+        return Entity(proxy)
 
 async def delete_proxy(id: str):
     proxy = await proxy_collect.find_one({"_id": ObjectId(id)})
