@@ -1,3 +1,4 @@
+from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, HTTPException, status
 from fastapi.responses import JSONResponse
 from unidecode import unidecode
@@ -10,6 +11,7 @@ from app.proxy.service import (
     delete_proxy,
     find_by_filter_and_paginate,
     get_all_proxy,
+    get_proxy_by_id,
     search_by_filter_and_paginate,
     search_proxy,
     update_proxy,
@@ -51,7 +53,13 @@ async def search(name: str = "", skip=0, limit=10):
         status_code=status.HTTP_200_OK,
         content={"data": search_proxy, "total_record": count},
     )
-
+    
+@router.get("/one-proxy/{id}")
+async def get_id(id: str):
+    proxy = await get_proxy_by_id(id)
+    if proxy:
+        return proxy
+    return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="proxy not exist")
 
 @router.put("/{id}")
 async def update(id, data: UpdateProxy = Body(...)):
