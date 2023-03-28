@@ -1,6 +1,12 @@
-from typing import Optional
+from typing import List, Optional
 
+from bson import ObjectId
 from pydantic import BaseModel, Field
+
+
+class AddFollowed(BaseModel):
+    followed_id: str
+    username: str
 
 
 class CreateSocialModel(BaseModel):
@@ -11,13 +17,14 @@ class CreateSocialModel(BaseModel):
     avatar_url: str = Field(...)
     profile: str = Field(...)
     is_active: bool = True
+    followed_by: List[AddFollowed]
 
     class config:
         orm_mode = True
 
 
 class UpdateSocial(BaseModel):
-    id: Optional[str] = Field(...)
+    id: str
     social_name: Optional[str] = Field(...)
     social_media: Optional[str] = Field(...)
     social_type: Optional[str] = Field(...)
@@ -25,8 +32,8 @@ class UpdateSocial(BaseModel):
     avatar_url: Optional[str] = Field(...)
     profile: Optional[str] = Field(...)
     is_active: Optional[bool]
+    followed_by: List[AddFollowed]
 
 
 class UpdateStatus(BaseModel):
-    id: Optional[str] = Field(...)
     is_active: bool = True
