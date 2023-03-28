@@ -11,19 +11,30 @@ class UserModel(BaseModel):
     username: str = Field(...)
     hash_password: str = Field(...)
     social: str
-    users_follow: List[str]
+
+
+class AddFollow(BaseModel):
+    follow_id: str
+    social_name: str
+
+
+class AddProxy(BaseModel):
+    proxy_id: str
+    name: str
 
 
 class UserCreateModel(BaseModel):
     username: str = Field(...)
     password: str = Field(...)
     social: str = Field(...)
-    users_follow: List[str]
+    users_follow: List[AddFollow]
+    list_proxy: List[AddProxy]
 
 
 class UpdateAccountMonitor(BaseModel):
-    id: Optional[str] = Field(...)
+    id: str
     username: str = Field(...)
     password: str = Field(...)
     social: str = Field(...)
-    users_follow: List[str]
+    users_follow: List[AddFollow]
+    list_proxy: List[AddProxy]
