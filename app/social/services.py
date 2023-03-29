@@ -13,14 +13,14 @@ client2 = get_collection_client("social_media")
 async def get_all_user(skip, limit):
     users = []
     async for user in client.find().limit(limit).skip(limit * skip):
-        users.append(user_entity(user))
+        users.append(user)
     return users
 
 
 async def get_user(id: str) -> dict:
     users = await client.find_one({"_id": ObjectId(id)})
     if users:
-        return user_entity(users)
+        return users
 
 
 async def create_user(user):
@@ -202,7 +202,7 @@ async def get_account_monitor_by_media(
     list_social_media = []
     async for item in client.find(social_media).sort("_id").skip(offset).limit(limit):
         item = To_json(item)
-        list_social_media.append(user_entity(item))
+        list_social_media.append(item)
     return list_social_media
 
 
@@ -214,13 +214,3 @@ def To_json(media) -> dict:
 async def count_object(filter_object):
     return await client.count_documents(filter_object)
 
-
-def user_entity(user) -> dict:
-    return {
-        "_id": str(user["_id"]),
-        "username": user["username"],
-        "password": user["password"],
-        "social": user["social"],
-        "users_follow": user["users_follow"],
-        "list_proxy": user["list_proxy"],
-    }

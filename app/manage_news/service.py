@@ -107,15 +107,9 @@ async def update_source_group(id: str, data: dict, list_source):
         
         if data["source_name"] != item["source_name"]:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="source group not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="source group not found"
             )
         
-    
-        
-        
-    
-    
-
 
 async def hide_show(id: str, run):
     run = await db.find_one({"_id": ObjectId(id)})

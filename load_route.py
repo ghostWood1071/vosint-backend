@@ -12,6 +12,7 @@ from app.user.routers import router as UserRouter
 from vosint_ingestion.features.job.routers import router as Job
 from vosint_ingestion.features.nlp.routers import router as Nlp
 from vosint_ingestion.features.pipeline.routers import router as PipeLine
+from app.event.router import router as EventRouter
 
 ROUTE_LIST = [
     {"route": AuthRouter, "tags": ["Xác Thực"], "prefix": ""},
@@ -28,4 +29,5 @@ ROUTE_LIST = [
     {"route": ManageNewsRouter, "tags": ["Source-group"], "prefix": "/Source-group"},
     {"route": SocialMediaRouter, "tags": ["Social-media"], "prefix": "/Social-media"},
     {"route": SocialRouter, "tags": ["Social"], "prefix": "/account-monitor"},
+    {"route": EventRouter, "tags": ["Event"], "prefix": "/event"}
 ]
