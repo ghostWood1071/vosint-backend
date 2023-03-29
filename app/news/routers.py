@@ -11,13 +11,30 @@ from .utils import news_to_json
 
 router = APIRouter()
 
+projection = {
+    "data:title": True,
+    "data:title": True,
+    "data:author": True,
+    "data:time": True,
+    "data:content": True,
+    "data:url": True,
+    "data:class": True,
+    "created_at": True,
+    "modified_at": True,
+}
+
 
 @router.get("/")
 async def get_news(title: str = "", skip=0, limit=20, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
     query = {"$or": [{"data:title": {"$regex": title, "$options": "i"}}]}
-    news = await find_news_by_filter_and_paginate(query, int(skip), int(limit))
+    news = await find_news_by_filter_and_paginate(
+        query,
+        projection,
+        int(skip),
+        int(limit),
+    )
     count = await count_news(query)
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"result": news, "total_record": count}
@@ -30,7 +47,10 @@ async def get_news_detail(id: str, authorize: AuthJWT = Depends()):
     user_id = authorize.get_jwt_subject()
 
     user = await find_user_by_id(ObjectId(user_id))
-    news = await find_news_by_id(ObjectId(id))
+    news = await find_news_by_id(
+        ObjectId(id),
+        projection,
+    )
 
     if news["_id"] in user["vital_list"]:
         news["is_bell"] = True
