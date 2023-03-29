@@ -16,10 +16,14 @@ async def find_news_by_filter(filter):
     return news
 
 
-async def find_news_by_filter_and_paginate(filter_news, skip: int, limit: int):
+async def find_news_by_filter_and_paginate(
+    filter_news, projection, skip: int, limit: int
+):
     offset = (skip - 1) * limit if skip > 0 else 0
     news = []
-    async for new in client.find(filter_news).sort("_id").skip(offset).limit(limit):
+    async for new in client.find(filter_news, projection).sort("_id").skip(
+        offset
+    ).limit(limit):
         new = news_to_json(new)
         news.append(new)
 
@@ -30,5 +34,5 @@ async def count_news(filter_news):
     return await client.count_documents(filter_news)
 
 
-async def find_news_by_id(news_id: ObjectId):
-    return await client.find_one({"_id": news_id})
+async def find_news_by_id(news_id: ObjectId, projection):
+    return await client.find_one({"_id": news_id}, projection)
