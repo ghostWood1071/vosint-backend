@@ -213,4 +213,3 @@ def To_json(media) -> dict:
 
 async def count_object(filter_object):
     return await client.count_documents(filter_object)
-

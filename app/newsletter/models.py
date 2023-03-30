@@ -39,5 +39,6 @@ class NewsLetterUpdateModel(BaseModel):
     exclusion_keyword: Optional[str]
     news_samples: Optional[list[str]]
 
+
 class NewsletterDeleteMany(BaseModel):
     newsletter_ids: List[str]

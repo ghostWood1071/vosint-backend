@@ -53,13 +53,17 @@ async def search(name: str = "", skip=0, limit=10):
         status_code=status.HTTP_200_OK,
         content={"data": search_proxy, "total_record": count},
     )
-    
+
+
 @router.get("/one-proxy/{id}")
 async def get_id(id: str):
     proxy = await get_proxy_by_id(id)
     if proxy:
         return proxy
-    return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="proxy not exist")
+    return HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="proxy not exist"
+    )
+
 
 @router.put("/{id}")
 async def update(id, data: UpdateProxy = Body(...)):

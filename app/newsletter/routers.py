@@ -12,20 +12,33 @@ from app.news.services import (
     find_news_by_filter_and_paginate,
 )
 
-from .models import NewsLetterCreateModel, NewsLetterUpdateModel, NewsletterDeleteMany
+from .models import NewsLetterCreateModel, NewsletterDeleteMany, NewsLetterUpdateModel
 from .services import (
     create_news_ids_to_newsletter,
     create_newsletter,
+    delete_many_newsletter,
     delete_news_ids_in_newsletter,
     delete_newsletter,
     find_newsletter_by_id,
     find_newsletters_and_filter,
     update_newsletter,
-    delete_many_newsletter,
 )
 from .utils import newsletter_to_json, newsletter_to_object_id
 
 router = APIRouter()
+
+projection = {
+    "data:title": True,
+    "data:html": True,
+    "data:author": True,
+    "data:time": True,
+    "data:content": True,
+    "data:url": True,
+    "data:class": True,
+    "data:class_sacthai": True,
+    "created_at": True,
+    "modified_at": True,
+}
 
 
 @router.post("/")
@@ -79,7 +92,7 @@ async def get_news_by_newsletter_id(
         )
 
     news = await find_news_by_filter_and_paginate(
-        {"_id": {"$in": newsletter["news_id"]}}, int(skip), int(limit)
+        {"_id": {"$in": newsletter["news_id"]}}, projection, int(skip), int(limit)
     )
 
     count = await count_news({"_id": {"$in": newsletter["news_id"]}})

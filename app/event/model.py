@@ -12,10 +12,11 @@ class CreateEvent(BaseModel):
     new_list: List[str] = []
     system_created: bool = True
     user_id: str
-    
+
     class config:
         orm_mode = True
-        
+
+
 class UpdateEvent(BaseModel):
     event_name: Optional[str] = Field(...)
     event_content: Optional[str] = Field(...)
@@ -24,4 +25,3 @@ class UpdateEvent(BaseModel):
     new_list: List[str] = []
     system_created: bool
     user_id: str
-    

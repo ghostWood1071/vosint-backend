@@ -13,12 +13,13 @@ router = APIRouter()
 
 projection = {
     "data:title": True,
-    "data:title": True,
+    "data:html": True,
     "data:author": True,
     "data:time": True,
     "data:content": True,
     "data:url": True,
     "data:class": True,
+    "data:class_sacthai": True,
     "created_at": True,
     "modified_at": True,
 }

@@ -20,6 +20,7 @@ from db.init_db import get_collection_client
 router = APIRouter()
 client = get_collection_client("event")
 
+
 @router.post("/")
 async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
@@ -34,6 +35,7 @@ async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depen
     await Create_event(event)
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=200)
 
+
 @router.post("/add-source/{id}")
 async def add_infor(id: str, list_id_infor: List[str] = Body(...)):
     list_infor = []
@@ -42,26 +44,30 @@ async def add_infor(id: str, list_id_infor: List[str] = Body(...)):
     await add_list_infor(id, list_id_infor)
     return status.HTTP_201_CREATED
 
+
 @router.get("/")
 async def get_all(skip=0, limit=10):
     list_event = await get_all_by_paginate({}, int(skip), int(limit))
     count = await Count({})
     return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"data": list_event, "total": count}
+        status_code=status.HTTP_200_OK, content={"data": list_event, "total": count}
     )
-    
+
+
 @router.put("/{id}")
-async def update(id: str, data: UpdateEvent = Body(...), authorize: AuthJWT = Depends()):
+async def update(
+    id: str, data: UpdateEvent = Body(...), authorize: AuthJWT = Depends()
+):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    all_event = await get({}) 
+    all_event = await get({})
     data = {k: v for k, v in data.dict().items() if v is not None}
     data["user_id"] = user_id
     updated_event = await update_event(id, data, all_event)
     if updated_event:
         return 200
     return status.HTTP_403_FORBIDDEN
+
 
 @router.delete("/{id}")
 async def delete_event(id):
