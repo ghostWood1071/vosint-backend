@@ -51,7 +51,12 @@ async def search_by_filter_and_paginate(name, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_infor = []
     async for item in infor_collect.find(
-        {"$or": [{"name": {"$regex": name, "$options": "i"}}, {"host_name": {"$regex": name, "$options": "i"}}]}
+        {
+            "$or": [
+                {"name": {"$regex": name, "$options": "i"}},
+                {"host_name": {"$regex": name, "$options": "i"}},
+            ]
+        }
     ).sort("_id").skip(offset).limit(limit):
         item = Infor_to_json(item)
         list_infor.append(item)

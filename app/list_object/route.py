@@ -27,6 +27,19 @@ from db.init_db import get_collection_client
 
 router = APIRouter()
 
+projection = {
+    "data:title": True,
+    "data:html": True,
+    "data:author": True,
+    "data:time": True,
+    "data:content": True,
+    "data:url": True,
+    "data:class": True,
+    "data:class_sacthai": True,
+    "created_at": True,
+    "modified_at": True,
+}
+
 db = get_collection_client("object")
 
 
@@ -50,19 +63,33 @@ async def add_object(
     return new_object
 
 
-@router.get("/{type}")
+# @router.get("/{type}")
+# async def get_search(type: str = Path(..., title="Object type", enum = ["Đối tượng", "Tổ chức", "Quốc gia"]), skip = 0, limit = 10):
+#     search_object = await search_by_filter_and_paginate(type, int(skip), int(limit))
+#     Count = await count_search_object(type)
+#     return JSONResponse(
+#         status_code=status.HTTP_200_OK, content={"data": search_object, "total": Count}
+#     )
+
+
+# @router.get("/")
+# async def get_all(skip=0, limit=10):
+#     list = await get_all_object({}, int(skip), int(limit))
+#     all = await count_all_object({})
+#     return {"result": list, "total": all}
+
+
+@router.get("/{Type}")
 async def get_type_and_name(
     name: str = "",
-    type: Optional[str] = Path(
+    Type: Optional[str] = Path(
         ..., title="Object type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]
     ),
     skip=0,
     limit=10,
 ):
-    list_obj = await find_by_filter_and_paginate(
-        name, type, int(skip), int(limit), {"news_id": 0}
-    )
-    count = await count_object(type, name)
+    list_obj = await find_by_filter_and_paginate(name, Type, int(skip), int(limit))
+    count = await count_object(Type, name)
     return {"data": list_obj, "total": count}
 
 
@@ -94,7 +121,7 @@ async def get_news_by_object_id(
         )
 
     news = await find_news_by_filter_and_paginate(
-        {"_id": {"$in": object["news_id"]}}, int(skip), int(limit)
+        {"_id": {"$in": object["news_id"]}}, projection, int(skip), int(limit)
     )
     count = await count_news({"_id": {"$in": object["news_id"]}})
 

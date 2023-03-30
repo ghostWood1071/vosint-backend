@@ -8,10 +8,7 @@ from fastapi_jwt_auth import AuthJWT
 
 from app.auth.password import get_password_hash
 from app.news.services import count_news, find_news_by_filter_and_paginate
-from app.social_media.services import (
-    find_object_by_filter,
-    find_object_by_filter_and_paginate,
-)
+from app.social_media.services import find_object_by_filter
 from db.init_db import get_collection_client
 
 from .models import InterestedModel, Role, UserCreateModel, UserUpdateModel
@@ -36,6 +33,18 @@ router = APIRouter()
     Required Authorization
 """
 
+projection = {
+    "data:title": True,
+    "data:html": True,
+    "data:author": True,
+    "data:time": True,
+    "data:content": True,
+    "data:url": True,
+    "data:class": True,
+    "data:class_sacthai": True,
+    "created_at": True,
+    "modified_at": True,
+}
 client = get_collection_client("users")
 
 
@@ -83,7 +92,7 @@ async def get_vital_by_user(skip=0, limit=20, authorize: AuthJWT = Depends()):
         )
 
     news = await find_news_by_filter_and_paginate(
-        {"_id": {"$in": user["vital_list"]}}, int(skip), int(limit)
+        {"_id": {"$in": user["vital_list"]}}, projection, int(skip), int(limit)
     )
 
     count = await count_news({"_id": {"$in": user["vital_list"]}})
@@ -110,7 +119,7 @@ async def get_news_bookmarks(skip=0, limit=20, authorize: AuthJWT = Depends()):
         )
 
     news = await find_news_by_filter_and_paginate(
-        {"_id": {"$in": user["news_bookmarks"]}}, int(skip), int(limit)
+        {"_id": {"$in": user["news_bookmarks"]}}, projection, int(skip), int(limit)
     )
 
     count = await count_news({"_id": {"$in": user["news_bookmarks"]}})

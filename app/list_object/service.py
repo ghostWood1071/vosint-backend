@@ -1,10 +1,12 @@
-from bson.objectid import ObjectId
+import pydantic
+from bson import ObjectId
 from fastapi import HTTPException, status
 
 from db.init_db import get_collection_client
 
 db = get_collection_client("object")
 
+pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 
 # async def aggregate_object(pipeline):
 #     items = []
@@ -35,8 +37,8 @@ async def count_search_object(type: str):
     return await db.count_documents(type_filter)
 
 
-async def create_object(object):
-    created_object = await db.insert_one(object)
+async def create_object(Object):
+    created_object = await db.insert_one(Object)
     new = await db.find_one({"id": created_object.inserted_id})
     return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
 
@@ -62,21 +64,19 @@ async def find_by_filter_and_paginate(
         query["type"] = type
     offset = (skip - 1) * limit if skip > 0 else 0
     list_object = []
-    async for item in db.find(filter=query, projection=projection).sort("_id").skip(
-        offset
-    ).limit(limit):
+    async for item in db.find(filter=query).sort("_id").skip(offset).limit(limit):
         item = object_to_json(item)
         list_object.append(item)
     return list_object
 
 
-def object_to_json(object) -> dict:
-    object["_id"] = str(object["_id"])
-    return object
+def object_to_json(Object) -> dict:
+    Object["_id"] = str(Object["_id"])
+    return Object
 
 
-async def count_object(type, name):
-    query = {"type": type, "name": {"$regex": name}}
+async def count_object(Type, name):
+    query = {"type": Type, "name": {"$regex": name}}
     return await db.count_documents(query)
 
 
@@ -109,7 +109,7 @@ async def delete_object(id: str):
         return status.HTTP_200_OK
 
 
-def Entity(object) -> dict:
+def Entity(object):
     return {
         "_id": str(object["_id"]),
         "name": object["name"],

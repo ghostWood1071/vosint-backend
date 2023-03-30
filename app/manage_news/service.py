@@ -36,7 +36,6 @@ async def find_by_filter_and_paginate(filter, skip: int, limit: int):
     return list_source
 
 
-
 def source_to_json(source) -> dict:
     source["_id"] = str(source["_id"])
     return source
@@ -49,9 +48,9 @@ async def count_source(filter):
 async def search_by_filter_and_paginate(name, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_source_group = []
-    async for item in db.find({"$or": [{"source_name": {"$regex": name, "$options": "i"}}]}).sort(
-        "_id"
-    ).skip(offset).limit(limit):
+    async for item in db.find(
+        {"$or": [{"source_name": {"$regex": name, "$options": "i"}}]}
+    ).sort("_id").skip(offset).limit(limit):
         item = source_group_to_json(item)
         list_source_group.append(item)
     return list_source_group
@@ -93,9 +92,8 @@ async def update_news(id_group: str, source):
 
 
 async def update_source_group(id: str, data: dict, list_source):
-          
     source_group = await db.find_one({"_id": ObjectId(id)})
-    
+
     for item in list_source:
         if data["source_name"] == source_group["source_name"]:
             updated_source_group = await db.update_one(
@@ -104,12 +102,12 @@ async def update_source_group(id: str, data: dict, list_source):
             if updated_source_group:
                 return {"message": "updated successful"}
             return False
-        
+
         if data["source_name"] != item["source_name"]:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="source group not found"
             )
-        
+
 
 async def hide_show(id: str, run):
     run = await db.find_one({"_id": ObjectId(id)})

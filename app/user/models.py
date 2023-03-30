@@ -27,6 +27,7 @@ class UserCreateModel(BaseModel):
     full_name: str
     role: Role
 
+
 class UserUpdateModel(BaseModel):
     username: Optional[str]
     password: Optional[str]
