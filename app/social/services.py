@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from bson import ObjectId
 from fastapi import status
@@ -10,10 +10,14 @@ client = get_collection_client("socials")
 client2 = get_collection_client("social_media")
 
 
-async def get_all_user(skip, limit):
+async def get_all_user(skip: Optional[int] = None, limit: Optional[int] = None):
     users = []
-    async for user in client.find().limit(limit).skip(limit * skip):
-        users.append(user)
+    if limit is not None:
+        async for user in client.find().limit(limit).skip(limit * (skip or 0)):
+            users.append(user)
+    else:
+        async for user in client.find():
+            users.append(user)
     return users
 
 
