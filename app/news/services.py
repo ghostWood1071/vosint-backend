@@ -1,3 +1,6 @@
+import datetime
+import json
+
 from bson.objectid import ObjectId
 
 from db.init_db import get_collection_client
@@ -25,6 +28,7 @@ async def find_news_by_filter_and_paginate(
         offset
     ).limit(limit):
         new = news_to_json(new)
+        new["pub_date"] = str(new["pub_date"])
         news.append(new)
 
     return news
@@ -35,4 +39,5 @@ async def count_news(filter_news):
 
 
 async def find_news_by_id(news_id: ObjectId, projection):
+    projection["pub_date"] = str(projection["pub_date"])
     return await client.find_one({"_id": news_id}, projection)

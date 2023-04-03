@@ -21,7 +21,8 @@ class AddFollow(BaseModel):
 class AddProxy(BaseModel):
     proxy_id: str
     name: str
-
+    ip_address: str
+    port: str
 
 class UserCreateModel(BaseModel):
     username: str = Field(...)

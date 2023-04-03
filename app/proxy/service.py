@@ -19,10 +19,21 @@ async def get_all_proxy():
     return list_proxy
 
 
-async def find_by_filter_and_paginate(filter, skip: int, limit: int):
-    offset = (skip - 1) * limit if skip > 0 else 0
+async def find_by_filter_and_paginate(skip: int, limit: int):
     list_proxy = []
-    async for item in proxy_collect.find(filter).sort("_id").skip(offset).limit(limit):
+    if limit is not None:
+        async for item in proxy_collect.find().limit(limit).skip(limit * (skip or 0)):
+            item = proxy_to_json(item)
+            list_proxy.append(item)
+    else:
+        async for item in proxy_collect.find():
+            item = proxy_to_json(item)
+            list_proxy.append(item)
+    return list_proxy
+
+async def list_all():
+    list_proxy = []
+    async for item in proxy_collect.find():
         item = proxy_to_json(item)
         list_proxy.append(item)
     return list_proxy
