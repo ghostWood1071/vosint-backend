@@ -36,12 +36,12 @@ async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depen
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=200)
 
 
-@router.post("/add-source/{id}")
-async def add_infor(id: str, list_id_infor: List[str] = Body(...)):
+@router.put("/add-new/")
+async def add_infor(id_event: str, list_id_infor: List[str] = Body(...)):
     list_infor = []
     for item in list_id_infor:
         list_infor.append(ObjectId(item))
-    await add_list_infor(id, list_id_infor)
+    await add_list_infor(id_event, list_id_infor)
     return status.HTTP_201_CREATED
 
 

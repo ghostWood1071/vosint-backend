@@ -58,6 +58,7 @@ async def get_account_monitor_by_medias(
         filter_object["username"] = {"$regex": f"{username}", "$options": "i"}
 
     socials = await get_account_monitor_by_media(filter_object, page, limit)
+    
     count = await count_object(filter_object)
 
     return JSONResponse(

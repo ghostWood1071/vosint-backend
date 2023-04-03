@@ -1,9 +1,12 @@
 from typing import List
 
+import pydantic
 from bson.objectid import ObjectId
 from fastapi import HTTPException, status
 
 from db.init_db import get_collection_client
+
+pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 
 client = get_collection_client("event")
 
@@ -17,7 +20,7 @@ async def get_all_by_paginate(filter, skip: int, limit: int):
     list_event = []
     async for item in client.find(filter).sort("_id").skip(offset).limit(limit):
         item = json(item)
-        list_event.append(Entity(item))
+        list_event.append(item)
     return list_event
 
 
@@ -72,15 +75,3 @@ async def Delete_event(id):
         await client.delete_one({"_id": ObjectId(id)})
         return 200
 
-
-def Entity(event) -> dict:
-    return {
-        "_id": str(event["_id"]),
-        "event_name": event["event_name"],
-        "event_content": event["event_content"],
-        "start_date": event["start_date"],
-        "end_date": event["end_date"],
-        "new_list": event["new_list"],
-        "system_created": event["system_created"],
-        "user_id": event["user_id"],
-    }
