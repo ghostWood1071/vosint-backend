@@ -49,17 +49,17 @@ async def add_object(
     type: Optional[str] = Query("Type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]),
     Status: Optional[str] = Query("Status", enum=["enable", "disable"]),
 ):
-    object = payload.dict()
-    exist_object = await db.find_one({"name": object["name"]})
+    Object = payload.dict()
+    exist_object = await db.find_one({"name": Object["name"]})
     if exist_object:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="object already exist"
         )
 
-    object["type"] = type
-    object["status"] = Status
+    Object["type"] = type
+    Object["status"] = Status
 
-    new_object = await create_object(object)
+    new_object = await create_object(Object)
     return new_object
 
 

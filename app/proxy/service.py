@@ -11,14 +11,6 @@ async def create_proxy(proxy):
     new = await proxy_collect.find_one({"id": created.inserted_id})
     return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
 
-
-async def get_all_proxy():
-    list_proxy = []
-    async for item in proxy_collect.find():
-        list_proxy.append(Entity(item))
-    return list_proxy
-
-
 async def find_by_filter_and_paginate(skip: int, limit: int):
     list_proxy = []
     if limit is not None:
@@ -59,14 +51,9 @@ async def search_by_filter_and_paginate(char_name, skip: int, limit: int):
             ]
         }
     ).sort("_id").skip(offset).limit(limit):
-        item = Proxy_to_json(item)
+        item = proxy_to_json(item)
         list_proxy.append(item)
     return list_proxy
-
-
-def Proxy_to_json(proxy) -> dict:
-    proxy["_id"] = str(proxy["_id"])
-    return proxy
 
 
 async def count_search_proxy(char_name: str):
@@ -77,15 +64,6 @@ async def count_search_proxy(char_name: str):
         ]
     }
     return await proxy_collect.count_documents(filter)
-
-
-async def search_proxy(key: str) -> dict:
-    list_proxy = []
-    async for item in proxy_collect.find(
-        {"$or": [{"name": {"$regex": key}}, {"ip_address": {"$regex": key}}]}
-    ):
-        list_proxy.append(Entity(item))
-    return list_proxy
 
 
 async def update_proxy(id: str, data: dict):
@@ -105,7 +83,7 @@ async def update_proxy(id: str, data: dict):
 async def get_proxy_by_id(id) -> dict:
     proxy = await proxy_collect.find_one({"_id": ObjectId(id)})
     if proxy:
-        return Entity(proxy)
+        return entity(proxy)
 
 
 async def delete_proxy(id: str):
@@ -115,7 +93,7 @@ async def delete_proxy(id: str):
         return True
 
 
-def Entity(proxy) -> dict:
+def entity(proxy) -> dict:
     return {
         "_id": str(proxy["_id"]),
         "name": proxy["name"],

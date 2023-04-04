@@ -7,10 +7,10 @@ from fastapi_jwt_auth import AuthJWT
 
 from app.event.model import CreateEvent, UpdateEvent
 from app.event.service import (
-    Count,
-    Create_event,
-    Delete_event,
+    add_event,
     add_list_infor,
+    count_event,
+    delete_event,
     get,
     get_all_by_paginate,
     update_event,
@@ -32,7 +32,7 @@ async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depen
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="event already exist"
         )
-    await Create_event(event)
+    await add_event(event)
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=200)
 
 
@@ -48,7 +48,7 @@ async def add_infor(id_event: str, list_id_infor: List[str] = Body(...)):
 @router.get("/")
 async def get_all(skip=0, limit=10):
     list_event = await get_all_by_paginate({}, int(skip), int(limit))
-    count = await Count({})
+    count = await count_event({})
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": list_event, "total": count}
     )
@@ -70,8 +70,8 @@ async def update(
 
 
 @router.delete("/{id}")
-async def delete_event(id):
-    deleted = await Delete_event(id)
+async def remove_event(id):
+    deleted = await delete_event(id)
     if deleted:
         return {"messsage": "event deleted successful"}
     return status.HTTP_403_FORBIDDEN

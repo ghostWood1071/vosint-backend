@@ -11,7 +11,7 @@ pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 client = get_collection_client("event")
 
 
-async def Create_event(event):
+async def add_event(event):
     return await client.insert_one(event)
 
 
@@ -37,11 +37,11 @@ def json(event) -> dict:
     return event
 
 
-async def Count(count):
+async def count_event(count):
     return await client.count_documents(count)
 
 
-async def update_event(id: str, data: dict, all_event):
+async def update_event(id: str, data: dict):
     event = await client.find_one({"_id": ObjectId(id)})
     # for item in all_event:
     #     if data["event_name"] == event["event_name"]:
@@ -69,7 +69,7 @@ async def add_list_infor(id: str, id_infor: List[ObjectId]):
     )
 
 
-async def Delete_event(id):
+async def delete_event(id):
     event = await client.find_one({"_id": ObjectId(id)})
     if event:
         await client.delete_one({"_id": ObjectId(id)})

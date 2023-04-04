@@ -7,18 +7,13 @@ from fastapi_jwt_auth import AuthJWT
 
 from app.manage_news.model import SourceGroupSchema
 from app.manage_news.service import (
-    add_list_infor,
     count_search_source_group,
     count_source,
     create_source_group,
-    delete_list_infor,
     delete_source_group,
     find_by_filter_and_paginate,
     get,
-    get_all_source,
-    hide_show,
     search_by_filter_and_paginate,
-    update_news,
     update_source_group,
 )
 from db.init_db import get_collection_client
@@ -70,45 +65,11 @@ async def search(name, skip=0, limit=10):
     search_source_group = await search_by_filter_and_paginate(
         name, int(skip), int(limit)
     )
-    Count = await count_search_source_group(name)
+    count_source = await count_search_source_group(name)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"data": search_source_group, "total_record": Count},
+        content={"data": search_source_group, "total_record": count_source},
     )
-
-
-# @router.post("/add-source/{id}")
-# async def add_news(id: str, payload: CreateSource = Body(...)):
-#     Payload = payload.dict()
-#     await update_news(id, Payload)
-#     payload.id_source = ObjectId()
-#     return status.HTTP_201_CREATED
-
-
-# @router.post("/run-hide-show/{id}")
-# async def hide_and_show(id: str, payload: UpdateState = Body(...)):
-#     data = payload.dict()
-#     await hide_show(id, data)
-#     return 200
-
-
-# @router.post("/add-source/{name}")
-# async def add_infor(name: str, list_id_infor: List[str] = Body(...)):
-#     list_infor = []
-#     for item in list_id_infor:
-#         list_infor.append(ObjectId(item))
-#     await add_list_infor(name, list_id_infor)
-#     return status.HTTP_201_CREATED
-
-
-# @router.put("/delete-infor/{id}")
-# async def delete_infor(id: str, list_source: str):
-#     # list_infor = []
-#     # for item in list_source:
-#     #     list_infor.append(item)
-#     await delete_list_infor(id, list_source)
-#     return status.HTTP_201_CREATED
-
 
 @router.put("/{id}")
 async def update_all(

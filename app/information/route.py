@@ -30,13 +30,6 @@ async def add_infor(payload: CreateInfor):
     return new_infor
 
 
-# @router.post("/add-infor/{name}")
-# async def add_news(name: str, payload: CreateInfor = Body(...)):
-#     Payload = payload.dict()
-#     await add_list_infor(name, Payload)
-#     return status.HTTP_201_CREATED
-
-
 @router.get("/")
 async def get_all(skip=0, limit=10):
     list_infor = await find_by_filter_and_paginate({}, int(skip), int(limit))
