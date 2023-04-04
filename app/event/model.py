@@ -11,6 +11,8 @@ class CreateEvent(BaseModel):
     end_date: Optional[str]
     new_list: List[str] = []
     system_created: bool = True
+    chu_the: str
+    khach_the: str
     user_id: str
 
     class config:
@@ -24,4 +26,6 @@ class UpdateEvent(BaseModel):
     end_date: Optional[str]
     new_list: List[str] = []
     system_created: bool
+    chu_the: str
+    khach_the: str
     user_id: str

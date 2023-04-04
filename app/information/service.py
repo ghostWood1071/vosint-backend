@@ -10,7 +10,6 @@ infor_collect = get_collection_client("infor")
 
 async def create_infor(infor):
     created = await infor_collect.insert_one(infor)
-    new = await infor_collect.find_one({"id": created.inserted_id})
     return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
 
 
@@ -25,7 +24,7 @@ async def aggregate_infor(pipeline):
 async def get_all_infor():
     list_infor = []
     async for item in infor_collect.find():
-        list_infor.append(Entity(item))
+        list_infor.append(entity(item))
     return list_infor
 
 
@@ -58,12 +57,12 @@ async def search_by_filter_and_paginate(name, skip: int, limit: int):
             ]
         }
     ).sort("_id").skip(offset).limit(limit):
-        item = Infor_to_json(item)
+        item = infor_json(item)
         list_infor.append(item)
     return list_infor
 
 
-def Infor_to_json(infor) -> dict:
+def infor_json(infor) -> dict:
     infor["_id"] = str(infor["_id"])
     return infor
 
@@ -78,7 +77,7 @@ async def search_infor(keyword: str) -> dict:
     async for item in infor_collect.find(
         {"$or": [{"name": {"$regex": keyword}}, {"host_name": {"$regex": keyword}}]}
     ):
-        list_infor.append(Entity(item))
+        list_infor.append(entity(item))
     return list_infor
 
 
@@ -103,7 +102,7 @@ async def delete_infor(id: str):
         return True
 
 
-def Entity(infor) -> dict:
+def entity(infor) -> dict:
     return {
         "_id": str(infor["_id"]),
         "name": infor["name"],

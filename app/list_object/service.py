@@ -8,13 +8,6 @@ db = get_collection_client("object")
 
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 
-# async def aggregate_object(pipeline):
-#     items = []
-#     async for item in db.aggregate(pipeline):
-#         items.append(item)
-
-#     return items
-
 
 async def find_by_id(id: ObjectId, projection=None):
     return await db.find_one(filter={"_id": id}, projection=projection)
@@ -38,18 +31,15 @@ async def count_search_object(type: str):
 
 
 async def create_object(Object):
-    created_object = await db.insert_one(Object)
-    new = await db.find_one({"id": created_object.inserted_id})
-    return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
-
+    return await db.insert_one(Object)
 
 async def get_all_object(filter, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
-    list_Object = []
+    list_object = []
     async for item in db.find(filter).sort("_id").skip(offset).limit(limit):
         item = object_to_json(item)
-        list_Object.append(item)
-    return list_Object
+        list_object.append(item)
+    return list_object
 
 
 async def count_all_object(filter):
@@ -89,7 +79,7 @@ async def get_one_object(name: str) -> dict:
             ]
         }
     ):
-        list_object.append(Entity(item))
+        list_object.append(entity(item))
     return list_object
 
 
@@ -103,13 +93,13 @@ async def update_object(id: str, data: dict):
 
 
 async def delete_object(id: str):
-    object = await db.find_one({"_id": ObjectId(id)})
-    if object:
+    object_deleted = await db.find_one({"_id": ObjectId(id)})
+    if object_deleted:
         await db.delete_one({"_id": ObjectId(id)})
         return status.HTTP_200_OK
 
 
-def Entity(object):
+def entity(object):
     return {
         "_id": str(object["_id"]),
         "name": object["name"],

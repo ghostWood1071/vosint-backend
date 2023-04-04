@@ -1,6 +1,8 @@
+from typing import Optional
+
 from fastapi import APIRouter, Body, HTTPException, status
 from fastapi.responses import JSONResponse
-from typing import Optional
+
 from app.proxy.model import CreateProxy, UpdateProxy
 from app.proxy.service import (
     count_proxy,
@@ -8,11 +10,8 @@ from app.proxy.service import (
     create_proxy,
     delete_proxy,
     find_by_filter_and_paginate,
-    get_all_proxy,
     get_proxy_by_id,
-    list_all,
     search_by_filter_and_paginate,
-    search_proxy,
     update_proxy,
 )
 from db.init_db import get_collection_client
@@ -42,13 +41,6 @@ async def get_paginate(skip: Optional[int] = None, limit: Optional[int] = None):
         content={"data": list_proxy, "total_record": count},
     )
     
-# @router.get("/All")
-# async def list_proxy():
-#     List_proxy = await list_all()
-#     return JSONResponse(
-#         status_code=status.HTTP_200_OK,
-#         content={"data": List_proxy}
-#     )
 
 @router.get("/{name}")
 async def search(name: str = "", skip=0, limit=10):

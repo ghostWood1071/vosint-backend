@@ -11,14 +11,6 @@ db = get_collection_client("Source")
 async def create_source_group(source):
     return await db.insert_one(source)
 
-
-async def get_all_source():
-    source_group = []
-    async for item in db.find():
-        source_group.append(Entity(item))
-    return source_group
-
-
 async def get(list):
     list_source = []
     async for item in db.find(list).sort("_id"):
@@ -117,10 +109,10 @@ async def hide_show(id: str, run):
         return await db.update_one({"_id": ObjectId(id)}, {"$set": {"is_hide": True}})
 
 
-def Entity(source) -> dict:
+def entity(source) -> dict:
     infor_list = []
 
-    infor_list.append(Entity_source(source))
+    infor_list.append(entity_source(source))
     return {
         "_id": str(source["_id"]),
         "user_id": source["user_id"],
@@ -129,7 +121,7 @@ def Entity(source) -> dict:
     }
 
 
-def Entity_source(infor) -> dict:
+def entity_source(infor) -> dict:
     return {
         "_id": str(infor["_id"]),
         "name": infor["name"],
