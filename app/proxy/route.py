@@ -29,7 +29,9 @@ async def add_proxy(payload: CreateProxy):
             status_code=status.HTTP_409_CONFLICT, detail="ip address already exist"
         )
     new_proxy = await create_proxy(proxy)
-    return new_proxy
+    if new_proxy:
+        return status.HTTP_201_CREATED
+    return status.HTTP_403_FORBIDDEN
 
 
 @router.get("/")

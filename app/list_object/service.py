@@ -46,9 +46,7 @@ async def count_all_object(filter):
     return await db.count_documents(filter)
 
 
-async def find_by_filter_and_paginate(
-    name: str, type: str, skip: int, limit: int, projection=None
-):
+async def find_by_filter_and_paginate(name: str, type: str, skip: int, limit: int):
     query = {"name": {"$regex": name, "$options": "i"}, "type": type}
     if type:
         query["type"] = type
@@ -79,7 +77,8 @@ async def get_one_object(name: str) -> dict:
             ]
         }
     ):
-        list_object.append(entity(item))
+        item = object_to_json(item)
+        list_object.append(item)
     return list_object
 
 
@@ -99,16 +98,3 @@ async def delete_object(id: str):
         return status.HTTP_200_OK
 
 
-def entity(object):
-    return {
-        "_id": str(object["_id"]),
-        "name": object["name"],
-        "facebook_link": object["facebook_link"],
-        "twitter_link": object["twitter_link"],
-        "profile_link": object["profile_link"],
-        "avatar_url": object["avatar_url"],
-        "profile": object["profile"],
-        "keywords": object["keywords"],
-        "type": object["type"],
-        "status": object["status"],
-    }

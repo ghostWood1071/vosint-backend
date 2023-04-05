@@ -43,19 +43,6 @@ async def count_event(count):
 
 async def update_event(id: str, data: dict):
     event = await client.find_one({"_id": ObjectId(id)})
-    # for item in all_event:
-    #     if data["event_name"] == event["event_name"]:
-    #         updated_event = await client.update_one(
-    #             {"_id": ObjectId(id)},
-    #             {"$set": data}
-    #         )
-    #         if updated_event:
-    #             return {"message": "updated successful"}
-    #         return status.HTTP_403_FORBIDDEN
-    #     if data["event_name"] != item["event_name"]:
-    #         raise HTTPException(
-    #             status_code=status.HTTP_404_NOT_FOUND, detail="event not found"
-    #         )
     if event:
         updated_event = await client.update_one({"_id": ObjectId(id)}, {"$set": data})
         if updated_event:

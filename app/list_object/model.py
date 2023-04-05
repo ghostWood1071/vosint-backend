@@ -28,7 +28,7 @@ class CreateObject(BaseModel):
     avatar_url: str = Field(...)
     profile: str = Field(...)
     keywords: Keyword
-    type: str = Field(...)
+    object_type: str = Field(...)
     status: str = Field(...)
 
     class config:
@@ -43,7 +43,7 @@ class UpdateObject(BaseModel):
     avatar_url: Optional[str]
     profile: Optional[str]
     keywords: Keyword
-    type: Optional[str]
+    object_type: Optional[str]
     status: Optional[str]
 
     class config:

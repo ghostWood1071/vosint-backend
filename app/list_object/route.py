@@ -60,36 +60,21 @@ async def add_object(
     Object["status"] = Status
 
     new_object = await create_object(Object)
-    return new_object
+    if new_object:
+        return 200
+    return status.HTTP_403_FORBIDDEN
 
-
-# @router.get("/{type}")
-# async def get_search(type: str = Path(..., title="Object type", enum = ["Đối tượng", "Tổ chức", "Quốc gia"]), skip = 0, limit = 10):
-#     search_object = await search_by_filter_and_paginate(type, int(skip), int(limit))
-#     Count = await count_search_object(type)
-#     return JSONResponse(
-#         status_code=status.HTTP_200_OK, content={"data": search_object, "total": Count}
-#     )
-
-
-# @router.get("/")
-# async def get_all(skip=0, limit=10):
-#     list = await get_all_object({}, int(skip), int(limit))
-#     all = await count_all_object({})
-#     return {"result": list, "total": all}
-
-
-@router.get("/{Type}")
+@router.get("/{type}")
 async def get_type_and_name(
     name: str = "",
-    Type: Optional[str] = Path(
+    type: Optional[str] = Path(
         ..., title="Object type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]
     ),
     skip=0,
     limit=10,
 ):
-    list_obj = await find_by_filter_and_paginate(name, Type, int(skip), int(limit))
-    count = await count_object(Type, name)
+    list_obj = await find_by_filter_and_paginate(name, type, int(skip), int(limit))
+    count = await count_object(type, name)
     return {"data": list_obj, "total": count}
 
 
@@ -114,8 +99,8 @@ async def get_news_by_object_id(
     #     {"$project": {"news_id": 1}},
     # ]
     # object = await aggregate_object(pipeline)
-    object = await find_by_id(ObjectId(id), {"news_id": 1})
-    if "news_id" not in object:
+    one_object = await find_by_id(ObjectId(id), {"news_id": 1})
+    if "news_id" not in one_object:
         return JSONResponse(
             status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
         )

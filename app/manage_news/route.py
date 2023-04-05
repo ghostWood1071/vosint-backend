@@ -22,19 +22,6 @@ router = APIRouter()
 
 db = get_collection_client("Source")
 
-
-# @router.post("/")
-# async def add_source(payload: CreateSourceGroup):
-#     source = payload.dict()
-#     exist_source = await db.find_one({"source_name": source["source_name"]})
-#     if exist_source:
-#         raise HTTPException(
-#             status_code=status.HTTP_409_CONFLICT, detail="source already exist"
-#         )
-#     new_source = await create_source_group(source)
-#     return new_source
-
-
 @router.post("/")
 async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
@@ -44,10 +31,12 @@ async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depen
     exist_source = await db.find_one({"source_name": source["source_name"]})
     if exist_source:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="source already exist"
+            status_code=status.HTTP_409_CONFLICT, detail="source group already exist"
         )
-    await create_source_group(source)
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
+    created_source_group = await create_source_group(source)
+    if created_source_group:
+        return status.HTTP_201_CREATED
+    return status.HTTP_403_FORBIDDEN
 
 
 @router.get("/")

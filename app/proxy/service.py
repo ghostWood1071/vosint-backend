@@ -7,9 +7,7 @@ proxy_collect = get_collection_client("proxy")
 
 
 async def create_proxy(proxy):
-    created = await proxy_collect.insert_one(proxy)
-    new = await proxy_collect.find_one({"id": created.inserted_id})
-    return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
+    return await proxy_collect.insert_one(proxy)
 
 async def find_by_filter_and_paginate(skip: int, limit: int):
     list_proxy = []
