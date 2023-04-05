@@ -9,8 +9,7 @@ infor_collect = get_collection_client("infor")
 
 
 async def create_infor(infor):
-    created = await infor_collect.insert_one(infor)
-    return HTTPException(status_code=status.HTTP_200_OK, detail="OK")
+    return await infor_collect.insert_one(infor)
 
 
 async def aggregate_infor(pipeline):

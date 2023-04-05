@@ -24,10 +24,12 @@ async def add_infor(payload: CreateInfor):
     exist_infor = await infor_collect.find_one({"name": infor["name"]})
     if exist_infor:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="infor already exist"
+            status_code=status.HTTP_409_CONFLICT, detail="source already exist"
         )
     new_infor = await create_infor(infor)
-    return new_infor
+    if new_infor: 
+        return 200
+    return status.HTTP_403_FORBIDDEN
 
 
 @router.get("/")
