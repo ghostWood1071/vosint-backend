@@ -1,9 +1,19 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
 
 class News(BaseModel):
-    class_name: str
-    van_ban_mau: List[str]
-    vocab: List[str]
+    id: str
+    title: str
+    content: str
+    cls: Optional[str] = 'unknown'
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+class ListNews(BaseModel):
+    data: List[News]
+
+    def __getitem__(self, item):
+        return getattr(self, item)

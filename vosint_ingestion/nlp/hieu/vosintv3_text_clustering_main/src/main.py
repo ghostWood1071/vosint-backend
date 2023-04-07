@@ -21,45 +21,74 @@ class Text_Clustering:
     """
 
     @staticmethod
-    def check_tu_khoa_loai_tru(lst_class, str):
-        tu_khoa_loai_tru = list(lst_class["tu_khoa_loai_tru"].strip("").split(","))
-        res = any(ele in str for ele in tu_khoa_loai_tru)
-        return res
+    def check_tu_khoa_loai_tru(lst_class,str):
+        if lst_class["tu_khoa_loai_tru"] is None:
+            return False
+        elif lst_class["tu_khoa_loai_tru"] == "":
+            return False
+        else:
+            tu_khoa_loai_tru = list(lst_class['tu_khoa_loai_tru'].split(","))
+            True_or_False = []
+            for i in tu_khoa_loai_tru:
+                pattern = r'\b{}\b'.format(re.escape(i))
+                True_or_False.append(bool(re.search(pattern, str)))   
+            res = any(True_or_False)
+            return res
 
-    """
+    '''
     check nếu tất cả từ khóa bắt buộc xuất hiện trong câu => trả về True
     nếu không => trả về False
-    """
-
+    '''
     @staticmethod
-    def check_tu_khoa_bat_buoc(lst_class, str):
-        for i in lst_class["tu_khoa_bat_buoc"]:
-            if all(x in str for x in list(i.strip("").split(","))) == False:
-                continue
-            elif all(x in str for x in list(i.strip("").split(","))) == True:
-                return True
-
-    """
+    def check_tu_khoa_bat_buoc(lst_class,str):
+        if lst_class["tu_khoa_bat_buoc"] is None:
+            return False
+        elif lst_class["tu_khoa_bat_buoc"] == "":
+            return False
+        else:
+            if isinstance(lst_class["tu_khoa_bat_buoc"],list) == True:
+                for i in lst_class["tu_khoa_bat_buoc"]:
+                    if i == "" or i is None:
+                        continue
+                    True_or_False = []
+                    tu_khoa_bat_buoc = list(i.split(","))
+                    #print(tu_khoa_bat_buoc)
+                    for k in tu_khoa_bat_buoc:
+                        pattern = r'\b{}\b'.format(re.escape(k))
+                        True_or_False.append(bool(re.search(pattern, str)))      
+                    if all(True_or_False) == False:
+                        continue
+                    elif all(True_or_False) == True:
+                        return True
+            else:
+                tu_khoa_bat_buoc = list(lst_class['tu_khoa_bat_buoc'].split(","))
+                True_or_False = []
+                for i in tu_khoa_bat_buoc:
+                    if i == "" or i is None:
+                        continue
+                    pattern = r'\b{}\b'.format(re.escape(i))
+                    True_or_False.append(bool(re.search(pattern, str)))   
+                res = all(True_or_False)
+                return res
+    '''
     phân cụm văn bản
     nếu không từ khóa loại trừ nào xuất hiện trong câu và trong câu chứa tất cả các từ khóa bắt buộc => câu thuộc cụm
     nếu không => câu không thuộc cụm
-    """
-
-    def clustering(self, str):
+    '''
+    def clustering(self,str):
         x = self.mydb.find({})
 
         class_ = []
 
         for i in x:
-            if (
-                self.check_tu_khoa_loai_tru(i, str) == False
-                and self.check_tu_khoa_bat_buoc(i, str) == True
-            ):
-                class_.append(i["class_name"])
+            if self.check_tu_khoa_loai_tru(i,str) == False and self.check_tu_khoa_bat_buoc(i,str) == True:
+                class_.append(i['class_name'])
 
         self.myclient.close()
 
         return class_
+
+
 
 
 def text_clustering(sentence: str, class_name):

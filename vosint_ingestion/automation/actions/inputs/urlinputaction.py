@@ -17,10 +17,18 @@ class URLInputAction(BaseAction):
                     val_type="str",
                     default_val="",
                     validators=["required"],
-                )
+                ),
+                ParamInfo(  # check URL input .run only url
+                    name="source",
+                    display_name="Nguồn",
+                    val_type="source",  # val_type='str',
+                    default_val="",
+                    options="",
+                    validators=["required_"],
+                ),
             ],
             z_index=0,
         )
 
-    def exec_func(self, input_val=None, pipeline_id=None):
+    def exec_func(self, input_val=None, **kwargs):
         return self.params["url"]

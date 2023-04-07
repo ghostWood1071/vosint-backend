@@ -5,10 +5,9 @@ from automation import Session
 from common.internalerror import *
 from features.pipeline.services import PipelineService
 from logger import Logger
+from models import HBaseRepository, MongoRepository
 from scheduler import Scheduler
 from utils import get_time_now_string
-
-from models import HBaseRepository, MongoRepository
 
 
 def start_job(actions: list[dict], pipeline_id=None):
@@ -27,13 +26,14 @@ class JobService:
         self.__pipeline_service = PipelineService()
         self.__mongo_repo = MongoRepository()
 
-    def run_only(self, id: str):
+    def run_only(self, id: str, mode_test=None):
         pipeline_dto = self.__pipeline_service.get_pipeline_by_id(id)
         session = Session(
             driver_name="playwright",
             storage_name="hbase",
             actions=pipeline_dto.schema,
             pipeline_id=id,
+            mode_test=mode_test,
         )
         result = session.start()
         # try:
@@ -46,11 +46,15 @@ class JobService:
         #     print('mongo error insert')
         return result  # pipeline_dto.schema #
 
-    def get_result_job(self, News, order_spec, pagination_spec):
+    def get_result_job(self, News, order_spec, pagination_spec, filter):
         results = self.__mongo_repo.get_many_News(
-            News, order_spec=order_spec, pagination_spec=pagination_spec
+            News,
+            order_spec=order_spec,
+            pagination_spec=pagination_spec,
+            filter_spec=filter,
         )
         # results['_id'] = str(results['_id'])
+        # results['pub_date'] = str(results['pub_date'])
         return results  # pipeline_dto.schema #
 
     def get_log_history(self, id: str, order_spec, pagination_spec):

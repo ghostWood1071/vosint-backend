@@ -2,7 +2,6 @@ import time
 from abc import abstractmethod
 
 from common.internalerror import *
-
 from models import HBaseRepository, MongoRepository
 
 from ..common import ActionInfo, ActionStatus
@@ -37,12 +36,18 @@ class BaseAction:
 
     def __validate_params(self, **params):
         action_info = self.get_action_info()
+        # print('aaaaaaaaaaaaaaaaaa',action_info.param_infos)
         for p_info in action_info.param_infos:
+            # print("p_info",p_info.validators)
             validators = p_info.validators
             # Validate with validators
             if validators:
                 for v in validators:
                     if v == "required":
+                        # print('p_info.name',p_info.name)
+                        # print('params',str(params))
+                        # print(p_info.name not in params)
+                        # print('abc',not '')
                         if p_info.name not in params or not params[p_info.name]:
                             raise InternalError(
                                 ERROR_REQUIRED,
@@ -53,7 +58,18 @@ class BaseAction:
                             )
 
             # Validate value must be in options
-            if p_info.options and params[p_info.name] not in p_info.options:
+            # print('params',str(params))
+            # print('1p_info.options', p_info.options)
+            # print('1.5',p_info.name)
+            # print('2params[p_info.name]',params[p_info.name])
+            # print('3???',params[p_info.name] not in p_info.options)
+            if (p_info.default_val == None or p_info.default_val == []) and (
+                p_info.options and params[p_info.name] not in p_info.options
+            ):
+                # print('1p_info.options', p_info.options)
+                # print('2params[p_info.name]',params[p_info.name])
+                # print('3???',params[p_info.name] not in p_info.options)
+                # print('aaaaaaaaaaaaaaaaaaaaaaaaa')
                 options = ", ".join(list(map(lambda o: str(o), p_info.options)))
                 raise InternalError(
                     ERROR_NOT_IN,
@@ -68,17 +84,19 @@ class BaseAction:
     def get_action_info(cls) -> ActionInfo:
         raise NotImplementedError()
 
-    def run(self, input_val=None, pipeline_id=None):
+    def run(self, input_val=None, **kwargs):
         tmp_val = ""
+        res = ""
         self.set_status(ActionStatus.RUNNING)
+        # print(kwargs)
+        res = self.exec_func(input_val, **kwargs)
         try:
-            res = self.exec_func(input_val, pipeline_id)
             history = self.return_str_status(ActionStatus.COMPLETED)
         except:
             history = self.return_str_status(ActionStatus.ERROR)
 
         his_log = {}
-        his_log["pipeline_id"] = pipeline_id
+        his_log["pipeline_id"] = kwargs["pipeline_id"]
         his_log["actione"] = f"{self.__class__.__name__}"
         his_log["log"] = history
         his_log["link"] = "" if type(input_val) != str else input_val
@@ -94,7 +112,7 @@ class BaseAction:
         return res
 
     @abstractmethod
-    def exec_func(self, input_val=None, pipeline_id=None):
+    def exec_func(self, input_val=None, **kwargs):
         raise NotImplementedError()
 
     def get_status(self) -> str:

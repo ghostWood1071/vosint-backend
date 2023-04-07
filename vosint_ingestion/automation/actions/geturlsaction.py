@@ -38,18 +38,21 @@ class GetUrlsAction(BaseAction):
             z_index=3,
         )
 
-    def exec_func(self, input_val=None, pipeline_id=None):
+    def exec_func(self, input_val=None, **kwargs):
         if not input_val:
             # TODO Put error msg to logs field (Pipeline mongo)
             raise InternalError(
                 ERROR_REQUIRED, params={"code": ["INPUT_URL"], "msg": ["Input URL"]}
             )
 
-        url = input_val
+        # url = input_val
+
         by = self.params["by"]
         expr = self.params["expr"]
 
-        page = self.driver.goto(url)
+        # page = self.driver.goto(url)
+        page = input_val
+
         elems = self.driver.select(page, by, expr)
 
         # Map from elements to urls
@@ -58,6 +61,7 @@ class GetUrlsAction(BaseAction):
         urls = list(filter(lambda url: url is not None, urls))
         # Distinct value
         urls = list(set(urls))
+        # print(urls)
         return urls
 
     def __map_to_url(self, elem):
