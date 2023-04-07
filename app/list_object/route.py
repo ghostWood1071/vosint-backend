@@ -64,17 +64,17 @@ async def add_object(
         return 200
     return status.HTTP_403_FORBIDDEN
 
-@router.get("/{type}")
+@router.get("/{type_object}")
 async def get_type_and_name(
     name: str = "",
-    type: Optional[str] = Path(
+    type_object: Optional[str] = Path(
         ..., title="Object type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]
     ),
     skip=0,
     limit=10,
 ):
-    list_obj = await find_by_filter_and_paginate(name, type, int(skip), int(limit))
-    count = await count_object(type, name)
+    list_obj = await find_by_filter_and_paginate(name, type_object, int(skip), int(limit))
+    count = await count_object(type_object, name)
     return {"data": list_obj, "total": count}
 
 
@@ -106,9 +106,9 @@ async def get_news_by_object_id(
         )
 
     news = await find_news_by_filter_and_paginate(
-        {"_id": {"$in": object["news_id"]}}, projection, int(skip), int(limit)
+        {"_id": {"$in": one_object["news_id"]}}, projection, int(skip), int(limit)
     )
-    count = await count_news({"_id": {"$in": object["news_id"]}})
+    count = await count_news({"_id": {"$in": one_object["news_id"]}})
 
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"result": news, "total_record": count}

@@ -28,7 +28,8 @@ async def find_news_by_filter_and_paginate(
         offset
     ).limit(limit):
         new = news_to_json(new)
-        new["pub_date"] = str(new["pub_date"])
+        if "pub_date" in new:
+            new["pub_date"] = str(new["pub_date"])
         news.append(new)
 
     return news

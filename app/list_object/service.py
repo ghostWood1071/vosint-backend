@@ -46,7 +46,7 @@ async def count_all_object(filter):
     return await db.count_documents(filter)
 
 
-async def find_by_filter_and_paginate(name: str, type: str, skip: int, limit: int):
+async def find_by_filter_and_paginate(name: str, type: str | None, skip: int, limit: int):
     query = {"name": {"$regex": name, "$options": "i"}, "type": type}
     if type:
         query["type"] = type
