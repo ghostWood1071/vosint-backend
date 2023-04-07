@@ -1,13 +1,25 @@
 # class_name string
 # tu_khoa_loai_tru string
 # tu_khoa_bat_buoc array {string}
-
+import pymongo
 from models import MongoRepository
 
 
 def create_db_chude():
     mongo = MongoRepository()
     # {"$and": [{"a": 1}, {"$or": [{"b": 2}, {"c": 3}]}]}
+
+    try:
+        client = pymongo.MongoClient("mongodb://vosint:vosint_2022@192.168.1.100:27017/?authMechanism=DEFAULT")
+        db = client["vosint_db"]
+
+        # Get a reference to the collection you want to drop
+        collection = db["class_chude"]
+
+        # Drop the collection
+        collection.drop()
+    except:
+        pass
 
     new_letter, _ = mongo.get_many(
         "newsletter",

@@ -3,7 +3,7 @@ from common.internalerror import *
 from scheduler import Scheduler
 from utils import norm_text
 
-from models import HBaseRepository, MongoRepository
+from vosint_ingestion.models import HBaseRepository, MongoRepository
 
 from ..models.dtos import PipelineForDetailsDto, PipelineForListDto
 

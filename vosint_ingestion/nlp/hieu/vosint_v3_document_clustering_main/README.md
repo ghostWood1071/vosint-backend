@@ -29,5 +29,5 @@ pip install -r requirements.txt
 Bước 3 : Khởi chạy dự án
 ```sh
 cd ../src
-uvicorn main:app --reload
+python main.py
 ```

@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
 from .pipelinecontroller import PipelineController
@@ -34,8 +35,11 @@ def get_pipelines(
 
 
 @router.post("/api/put_pipeline")
-def put_pipeline(pipeline_obj):
-    return JSONResponse(pipeline_controller.put_pipeline(pipeline_obj))
+async def put_pipeline(pipeline_obj: Request):
+    print(pipeline_obj)
+    return JSONResponse(
+        pipeline_controller.put_pipeline(jsonable_encoder(await pipeline_obj.json()))
+    )
 
 
 @router.post("/api/clone_pipeline/{from_id}")

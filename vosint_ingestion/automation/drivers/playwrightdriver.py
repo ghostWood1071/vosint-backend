@@ -33,20 +33,31 @@ class PlaywrightDriver(BaseDriver):
     def get_content(self, from_elem) -> str:
         return from_elem.inner_text()
 
-    def click(self, from_elem):
+    def get_html(self, from_elem) -> str:
+        return from_elem.inner_html()
+
+    def click(self, from_elem, time_sleep=0.3):
         from_elem.click()
+        time.sleep(float(time_sleep))
+        return self.page
 
     # TODO DoanCT: Bo sung scroll, sendkey
-    def scroll(self, from_elem, value: int):
+    def scroll(self, from_elem, value: int = 1, time_sleep: float = 0.3):
         for i in range(value):  # make the range as long as needed
-            self.page.mouse.wheel(0, 15000)
-            time.sleep(1)
+            from_elem.keyboard.press("End")
+            from_elem.wait_for_selector("body")
+            time.sleep(time_sleep)
+
+        return from_elem
 
     def sendkey(self, from_elem, value: str):
-        from_elem.type(value)
+        return from_elem.type(value)
 
     def fill(self, from_elem, value: str):
-        from_elem.fill(value)
+        return from_elem.fill(value)
 
     def __map_selector_by(self, selector_by: str) -> str:
         return "xpath=" if selector_by == SelectorBy.XPATH else "css="
+
+    def hover(self, from_elem):
+        return from_elem[0].hover()

@@ -60,7 +60,7 @@ class LoginAction(BaseAction):
             z_index=10,
         )
 
-    def exec_func(self, input_val=None, pipeline_id=None):
+    def exec_func(self, input_val=None, **kwargs):
         if not input_val:
             raise InternalError(
                 ERROR_REQUIRED, params={"code": ["FROM_ELEM"], "msg": ["From element"]}

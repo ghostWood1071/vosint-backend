@@ -11,6 +11,18 @@ def get_time_now_string(
     return datetime.now(pytz.timezone(tz)).strftime(fmt)
 
 
+def get_time_now_string_y_m_d(
+    tz: str = "Asia/Ho_Chi_Minh", fmt: str = "%Y/%m/%d"
+) -> str:
+    return datetime.now(pytz.timezone(tz)).strftime(fmt)
+
+
+def get_time_now_string_y_m_now(
+    tz: str = "Asia/Ho_Chi_Minh", fmt: str = "%Y/%m/%d"
+) -> str:
+    return datetime.strptime(str(get_time_now_string_y_m_d()), "%Y/%m/%d")
+
+
 def gen_id(length: int = 12) -> str:
     return str(uuid.uuid4().hex[-length:])
 

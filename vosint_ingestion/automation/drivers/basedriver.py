@@ -23,7 +23,11 @@ class BaseDriver:
         raise NotImplementedError()
 
     @abstractmethod
-    def click(self, from_elem):
+    def get_html(self, from_elem) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def click(self, from_elem, time_sleep: float = 0.3):
         raise NotImplementedError()
 
     @abstractmethod
@@ -31,9 +35,13 @@ class BaseDriver:
         raise NotImplementedError()
 
     @abstractmethod
-    def scoll(self, from_elem, value: int):
+    def scroll(self, from_elem, value: int, time_sleep: float = 0.3):
         raise NotImplementedError()
 
     @abstractmethod
     def sendkey(self, from_elem, value: str):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def hover(self, from_elem):
         raise NotImplementedError()

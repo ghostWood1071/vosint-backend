@@ -1,16 +1,18 @@
 from common.internalerror import *
-from models.kafka_producer import KafkaProducer_class
 
 from ..common import ActionInfo, ActionType, ParamInfo
 from .baseaction import BaseAction
+
+# from .foreachaction import get_action_class
 from .clickaction import ClickAction
-from .foraction import ForAction
 from .getattraction import GetAttrAction
 from .getnewsinfoaction import GetNewsInfoAction
 from .geturlsaction import GetUrlsAction
 from .gotoaction import GotoAction
 from .hoveraction import HoverAction
 from .login import LoginAction
+
+# from .foraction import ForAction
 from .scrollaction import ScrollAction
 from .selectaction import SelectAction
 
@@ -27,8 +29,8 @@ def get_action_class(name: str):
         if name == "select"
         else GetAttrAction
         if name == "get_attr"
-        else ForeachAction
-        if name == "foreach"
+        # else ForeachAction
+        # if name == "foreach"
         else ClickAction
         if name == "click"
         else ForAction
@@ -50,14 +52,14 @@ def get_action_class(name: str):
     return action_cls
 
 
-class ForeachAction(BaseAction):
+class ForAction(BaseAction):
     @classmethod
     def get_action_info(cls) -> ActionInfo:
         return ActionInfo(
-            name="foreach",
-            display_name="Foreach",
+            name="for",
+            display_name="For",
             action_type=ActionType.COMMON,
-            readme="Cấu trúc lặp cho mỗi phần tử",
+            readme="For ...",
             param_infos=[
                 ParamInfo(
                     name="actions",
@@ -67,52 +69,57 @@ class ForeachAction(BaseAction):
                     validators=["required"],
                 ),
                 ParamInfo(
-                    name="send_queue",
-                    display_name="Send_Queue",
-                    val_type="select",
-                    default_val="False",
-                    options=["False", "True"],
+                    name="start",
+                    display_name="Start",
+                    val_type="select",  # val_type='str',
+                    default_val=1,
+                    options=[i for i in range(0, 10)],
                     validators=["required_"],
                 ),
+                ParamInfo(
+                    name="end",
+                    display_name="End",
+                    val_type="select",  # val_type='str',
+                    default_val=1,
+                    options=[i for i in range(1, 100)],
+                    validators=["required"],
+                ),
+                ParamInfo(
+                    name="run_first",
+                    display_name="Run_First",
+                    val_type="select",  # val_type='str',
+                    default_val="True",
+                    options=["True", "False"],
+                    validators=["required"],
+                ),
             ],
-            z_index=6,
+            z_index=12,
         )
 
     def exec_func(self, input_val=None, **kwargs):
         actions = self.params["actions"]
         flatten = False if "flatten" not in self.params else self.params["flatten"]
-        # print(input_val)
-        # Run foreach actions
-        res = []
-        if input_val is not None:
-            for val in input_val:
-                # print("val",val)
-                # print("kwargs",kwargs)
-                # print("actions",actions)
 
-                message = {"actions": actions, "input_val": val, "kwargs": kwargs}
-                # message1 = {'name': 'John', 'age': 30, 'city': 'New hkahsdjk'}
-                if str(self.params["send_queue"]) == "True":
-                    # print('write to kafka ...')
-                    # print(message)
-                    KafkaProducer_class().write("crawling_", message)
-                    # print('write to kafka ...')
-                    if (
-                        kwargs["mode_test"] == True
-                    ):  # self.params['test_pipeline'] == 'True':
-                        # print(val)
-                        break
+        res = []
+        for i in range(self.params["start"], self.params["end"]):
+            # print(i)
+            if str(self.params["run_first"]) == "False":
+                if i == self.params["start"]:
+                    continue
+            flatten = True
+            if input_val is not None:
+                val = input_val
+                if flatten == False:
+                    res.append(self.__run_actions(actions, val, **kwargs))
                 else:
-                    if flatten == False:
-                        res.append(self.__run_actions(actions, val, **kwargs))
-                    else:
-                        res += self.__run_actions(actions, val, **kwargs)
-                    if (
-                        kwargs["mode_test"] == True
-                    ):  # self.params['test_pipeline'] == 'True':
-                        # print(val)
-                        break
-        return res
+                    # print('????????????????????????????????????????????????????????????????????????????????')
+                    res += self.__run_actions(actions, val, **kwargs)
+                if (
+                    kwargs["mode_test"] == True
+                ):  # self.params['test_pipeline'] == 'True':
+                    # print(val)
+                    break
+        return set(res)
 
     def __run_actions(self, actions: list[dict], input_val, **kwargs):
         tmp_val = input_val

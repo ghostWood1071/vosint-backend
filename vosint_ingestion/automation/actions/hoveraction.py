@@ -4,15 +4,15 @@ from ..common import ActionInfo, ActionType
 from .baseaction import BaseAction
 
 
-class GotoAction(BaseAction):
+class HoverAction(BaseAction):
     @classmethod
     def get_action_info(cls) -> ActionInfo:
         return ActionInfo(
-            name="goto",
-            display_name="Goto",
+            name="hover",
+            display_name="Hover",
             action_type=ActionType.COMMON,
-            readme="Mở địa chỉ URL",
-            z_index=1,
+            readme="Hover",
+            z_index=11,
         )
 
     def exec_func(self, input_val=None, **kwargs):
@@ -21,6 +21,4 @@ class GotoAction(BaseAction):
                 ERROR_REQUIRED, params={"code": ["INPUT_URL"], "msg": ["Input URL"]}
             )
 
-        url = input_val
-        # print(input_val)
-        return self.driver.goto(url)
+        return self.driver.hover(input_val)

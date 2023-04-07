@@ -1,16 +1,24 @@
 from models import MongoRepository
 
-from ...src.main import text_clustering
+#from ...src.main import text_clustering
+from ....vosintv3_text_clustering_main_15_3.src.inference import text_clustering
 
 mongo = MongoRepository()
 
 
-def update_chude():
-    a = mongo.get_many_d(
-        collection_name="News",
-        filter_spec={"data:class_chude": []},
-        filter_other={"_id": 1, "data:content": 1},
-    )
+def update_chude(mode_rerun = True):
+    if mode_rerun:
+        a = mongo.get_many_d(
+            collection_name="News",
+            filter_spec={},
+            filter_other={"_id": 1, "data:content": 1},
+        )
+    else:
+        a = mongo.get_many_d(
+            collection_name="News",
+            filter_spec={"data:class_chude": []},
+            filter_other={"_id": 1, "data:content": 1},
+        )
 
     for i in a[0]:
         content = ""
@@ -28,16 +36,43 @@ def update_chude():
         # class_title = []
         # for class_id in class_text_clustering:
         #     class_title.append(mongo.get_one(collection_name="class_chude",filter_spec = {"class_name":class_id})['title'])
+            
+        doc['data:class_chude'] = class_text_clustering
+        mongo.update_one('News', doc)
+        
+        #print(class_text_clustering)
 
-        doc["data:class_chude"] = class_text_clustering
-        mongo.update_one("News", doc)
-        # print(class_text_clustering)
+    new_letter, _ = mongo.get_many(
+        "newsletter",
+        {
+            "$and": [
+                {"tag": "chu_de"},
+                {
+                    "$and": [
+                        #{"required_keyword": {"$exists": True}},
+                        #{"exclusion_keyword": {"$exists": True}},
+                        {"required_keyword": {"$ne": None}},
+                        {"exclusion_keyword": {"$ne": None}},
+                    ]
+                },
+            ]
+        },
+    )
+    _id = []
+    for i in new_letter:
+        _id.append(str(i["_id"]))
+    for id_chude in _id:
+        query = { "data:class_chude": { "$regex": ".*"+id_chude+".*" } }
+        results = mongo.get_many_d('News',filter_spec=query,filter_other={"_id":1})
 
+        new_id = []
+        for i in results[0]:
+            new_id.append(i['_id'])
+        mongo.update_one(collection_name='newsletter',doc={"_id":id_chude,"news_id":new_id})
+        
     return True
 
 
 def test():
-    a = text_clustering(
-        "Trên đông,nước,trung quốc,bóng đá,cá độ,thể thao", class_name="class_chude"
-    )
+    a = text_clustering("Trên đông,nước,trung quốc,bóng đá,cá độ,thể thao",class_name="class_chude")
     print(a)
