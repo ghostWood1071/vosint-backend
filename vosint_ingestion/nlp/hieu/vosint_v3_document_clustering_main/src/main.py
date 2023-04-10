@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import time
-
-import numpy as np
-from underthesea import word_tokenize
-
-from .connect_mongodb import connect
 from .inference import Inference
-from .preprocess import clean_text, lower_text, remove_number, remove_stopwords
+from underthesea import word_tokenize
+from .connect_mongodb import connect
+import numpy as np
+from .preprocess import lower_text, clean_text, remove_stopwords, remove_number
+
 
 result = Inference()
 

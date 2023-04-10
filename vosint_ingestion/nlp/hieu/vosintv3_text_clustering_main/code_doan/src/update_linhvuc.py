@@ -2,7 +2,6 @@ from models import MongoRepository
 
 #from ...src.main import text_clustering
 from ....vosintv3_text_clustering_main_15_3.src.inference import text_clustering
-
 mongo = MongoRepository()
 
 
