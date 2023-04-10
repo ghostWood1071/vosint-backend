@@ -36,6 +36,27 @@ def json(event) -> dict:
     event["_id"] = str(event["_id"])
     return event
 
+async def search_event(event: str, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
+    list_event = []
+    async for item in client.find(
+        {"$or": [{"event_name": {"$regex": event, "$options": "i"}}]}
+    ).sort("_id").skip(offset).limit(limit):
+        item = json(item)
+        list_event.append(item)
+    return list_event
+
+async def search_result(name):
+    filter = {"event_name": {"$regex": name, "$options": "i"}}
+    return await client.count_documents(filter)
+
+
+async def event_detail(id) -> dict:
+    ev_detail = await client.find_one({"_id": ObjectId(id)})
+    if ev_detail:
+        ev = json(ev_detail)
+        return ev
+    
 
 async def count_event(count):
     return await client.count_documents(count)
@@ -61,4 +82,3 @@ async def delete_event(id):
     if event:
         await client.delete_one({"_id": ObjectId(id)})
         return 200
-
