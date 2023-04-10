@@ -1,7 +1,5 @@
 from underthesea import word_tokenize
-
 from .connect_mongodb import connect
-
 
 class Create_corpus:
     '''Hàm tạo tập dữ liệu'''

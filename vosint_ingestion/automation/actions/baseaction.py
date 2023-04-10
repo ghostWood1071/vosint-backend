@@ -56,20 +56,18 @@ class BaseAction:
                                     "msg": [p_info.display_name],
                                 },
                             )
-
+            
             # Validate value must be in options
             # print('params',str(params))
             # print('1p_info.options', p_info.options)
             # print('1.5',p_info.name)
             # print('2params[p_info.name]',params[p_info.name])
             # print('3???',params[p_info.name] not in p_info.options)
-            if (p_info.default_val == None or p_info.default_val == []) and (
-                p_info.options and params[p_info.name] not in p_info.options
-            ):
+            if (p_info.default_val==None or p_info.default_val==[]) and (p_info.options and params[p_info.name] not in p_info.options):
                 # print('1p_info.options', p_info.options)
                 # print('2params[p_info.name]',params[p_info.name])
                 # print('3???',params[p_info.name] not in p_info.options)
-                # print('aaaaaaaaaaaaaaaaaaaaaaaaa')
+                #print('aaaaaaaaaaaaaaaaaaaaaaaaa')
                 options = ", ".join(list(map(lambda o: str(o), p_info.options)))
                 raise InternalError(
                     ERROR_NOT_IN,
@@ -86,11 +84,12 @@ class BaseAction:
 
     def run(self, input_val=None, **kwargs):
         tmp_val = ""
-        res = ""
+        res =""
         self.set_status(ActionStatus.RUNNING)
-        # print(kwargs)
+        #print(kwargs)
         res = self.exec_func(input_val, **kwargs)
         try:
+            
             history = self.return_str_status(ActionStatus.COMPLETED)
         except:
             history = self.return_str_status(ActionStatus.ERROR)
@@ -125,3 +124,4 @@ class BaseAction:
 
     def return_str_status(self, status: str):
         return status
+    

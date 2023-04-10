@@ -5,12 +5,13 @@ from playwright.sync_api import sync_playwright
 from ..common import SelectorBy
 from .basedriver import BaseDriver
 
-
 class PlaywrightDriver(BaseDriver):
     def __init__(self):
+        
         self.playwright = sync_playwright().start()
         self.driver = self.playwright.chromium.launch(channel="chrome")
         self.page = self.driver.new_page()
+        
 
     def destroy(self):
         self.driver.close()
@@ -32,22 +33,23 @@ class PlaywrightDriver(BaseDriver):
 
     def get_content(self, from_elem) -> str:
         return from_elem.inner_text()
-
+    
     def get_html(self, from_elem) -> str:
-        return from_elem.inner_html()
+        return from_elem.inner_html()    
 
-    def click(self, from_elem, time_sleep=0.3):
+
+    def click(self, from_elem, time_sleep = 0.3):
         from_elem.click()
         time.sleep(float(time_sleep))
         return self.page
 
     # TODO DoanCT: Bo sung scroll, sendkey
-    def scroll(self, from_elem, value: int = 1, time_sleep: float = 0.3):
+    def scroll(self, from_elem, value: int = 1, time_sleep: float=0.3):
         for i in range(value):  # make the range as long as needed
-            from_elem.keyboard.press("End")
-            from_elem.wait_for_selector("body")
+            from_elem.keyboard.press('End')
+            from_elem.wait_for_selector('body')
             time.sleep(time_sleep)
-
+        
         return from_elem
 
     def sendkey(self, from_elem, value: str):
@@ -58,6 +60,6 @@ class PlaywrightDriver(BaseDriver):
 
     def __map_selector_by(self, selector_by: str) -> str:
         return "xpath=" if selector_by == SelectorBy.XPATH else "css="
-
+    
     def hover(self, from_elem):
         return from_elem[0].hover()
