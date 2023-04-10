@@ -1,12 +1,24 @@
 from bson.objectid import ObjectId
 from models import HBaseRepository, MongoRepository
-from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.update_chude import update_chude
-from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.create_db_chude import create_db_chude
-from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.create_db_linhvuc import create_db_linhvuc
-from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.update_linhvuc import update_linhvuc
+from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.create_db_chude import (
+    create_db_chude,
+)
+from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.create_db_linhvuc import (
+    create_db_linhvuc,
+)
+from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.create_db_object import (
+    create_db_object,
+)
+from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.update_chude import (
+    update_chude,
+)
+from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.update_linhvuc import (
+    update_linhvuc,
+)
+from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.update_object import (
+    update_object,
+)
 
-from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.create_db_object import create_db_object
-from nlp.hieu.vosintv3_text_clustering_main.code_doan.src.update_object import update_object
 
 class NlpService:
 

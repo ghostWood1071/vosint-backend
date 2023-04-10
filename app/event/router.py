@@ -11,8 +11,11 @@ from app.event.service import (
     add_list_infor,
     count_event,
     delete_event,
+    event_detail,
     get,
     get_all_by_paginate,
+    search_event,
+    search_result,
     update_event,
 )
 from db.init_db import get_collection_client
@@ -52,7 +55,21 @@ async def get_all(skip=0, limit=10):
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": list_event, "total": count}
     )
+    
+@router.get("/detail/{event_id}")
+async def get_event(event_id: str):
+    detail = await event_detail(event_id)
+    if detail:
+        return detail
+    return HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="event not exist"
+    )
 
+@router.get("/{name}")
+async def search_by_name(name, skip=0, limit=10):
+    search_list = await search_event(name, int(skip), int(limit))
+    count = await search_result(name)
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list, "total": count})
 
 @router.put("/{id}")
 async def update(
