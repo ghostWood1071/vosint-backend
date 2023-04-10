@@ -155,9 +155,7 @@ async def update_account_monitor(data: UpdateAccountMonitor):
     socials = await client.find_one({"_id": ObjectId(_id)})
     username = socials["username"]
     compare_name = data["username"]
-    if username == compare_name:
-        username = username
-    elif username != compare_name:
+    if username != compare_name:
         username = compare_name
     users_follow = data.get("users_follow", [])
 
