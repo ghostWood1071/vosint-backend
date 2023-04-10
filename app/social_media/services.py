@@ -71,9 +71,7 @@ async def update_social_account(data: UpdateSocial):
     socials = await client.find_one({"_id": ObjectId(_id)})
     social_name = socials["social_name"]
     compare_name = data["social_name"]
-    if social_name == compare_name:
-        social_name = social_name
-    elif social_name != compare_name:
+    if social_name != compare_name:
         social_name = compare_name
     followers = data.get("followed_by", [])
     print(followers)
