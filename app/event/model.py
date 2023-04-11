@@ -11,12 +11,12 @@ class AddNewEvent(BaseModel):
 
 class CreateEvent(BaseModel):
     event_name: str = Field(...)
-    event_content: str = Field(...)
-    date_created: str
-    new_list: List[str] = []
+    event_content: Optional[str]
+    date_created: Optional[str]
+    new_list: Optional[List] = []
     system_created: bool = True
-    chu_the: str
-    khach_the: str
+    chu_the: Optional[str]
+    khach_the: Optional[str]
     user_id: Optional[str]
 
     class config:
