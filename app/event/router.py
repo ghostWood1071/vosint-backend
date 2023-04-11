@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, Depends, HTTPException, status
@@ -103,8 +103,8 @@ async def show_event_by_news(news_id: str):
     result = await client.find({"new_list": news_id}).to_list(length=None)
     return result
 
-@router.get("/{name}")
-async def search_by_name(name, skip=0, limit=10):
+@router.get("/search")
+async def search_by_name(name: Optional[str] = "", skip=0, limit=10):
     search_list = await search_event(name, int(skip), int(limit))
     count = await search_result(name)
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list, "total": count})
