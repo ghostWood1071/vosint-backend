@@ -5,15 +5,18 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 
-from app.event.model import CreateEvent, UpdateEvent
+from app.event.model import AddNewEvent, CreateEvent, UpdateEvent
 from app.event.service import (
     add_event,
-    add_list_infor,
+    add_list_new,
+    add_list_new_id,
     count_event,
     delete_event,
+    delete_list_new,
     event_detail,
-    get,
     get_all_by_paginate,
+    get_based_new_id,
+    remove_list_new_id,
     search_event,
     search_result,
     update_event,
@@ -25,7 +28,7 @@ client = get_collection_client("event")
 
 
 @router.post("/")
-async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depends()):
+async def create_event(data: CreateEvent = Depends(), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     event = data.dict()
@@ -40,12 +43,42 @@ async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depen
 
 
 @router.put("/add-new/")
-async def add_infor(id_event: str, list_id_infor: List[str] = Body(...)):
-    list_infor = []
-    for item in list_id_infor:
-        list_infor.append(ObjectId(item))
-    await add_list_infor(id_event, list_id_infor)
+async def add_new(id_event: str, list_id_new: List[str] = Body(...)):
+    list_new = []
+    for item in list_id_new:
+        list_new.append(ObjectId(item))
+    await add_list_new_id(id_event, list_id_new)
     return status.HTTP_201_CREATED
+
+# @router.put("/add-new/")
+# async def add_more_new(id_new: str, list_news: List[AddNewEvent] = Body(...)):
+#     id_obj = ObjectId(id_new)
+#     news = []
+#     for list_new in list_news:
+#         follow = AddNewEvent(
+#             id_new=list_new.id_new, data_title=list_new.data_title, data_url=list_new.data_url
+#         )
+#         news.append(follow)
+#     await add_list_new(id_obj, news)
+#     return JSONResponse(status_code=status.HTTP_201_CREATED, content="Successful add")
+
+
+# @router.put("/remove-new/")
+# async def remove_new(id_event: str, list_news: List[AddNewEvent] = Body(...)):
+#     id_ev = ObjectId(id_event)
+#     list_exist_new = []
+#     for item in list_news:
+#         list_exist_new.append(item)
+#     await delete_list_new(id_ev, list_exist_new)
+#     return JSONResponse(status_code=status.HTTP_200_OK, content="Successful remove")
+
+@router.put("/remove-new/")
+async def remove_new(id_event: str, list_id_new: List[str] = Body(...)):
+    list_new = []
+    for item in list_id_new:
+        list_new.append(ObjectId(item))
+    await remove_list_new_id(id_event, list_id_new)
+    return JSONResponse(status_code=status.HTTP_200_OK, content="Successful remove")
 
 
 @router.get("/")
@@ -65,6 +98,11 @@ async def get_event(event_id: str):
         status_code=status.HTTP_403_FORBIDDEN, detail="event not exist"
     )
 
+@router.get("/news/{news_id}")
+async def show_event_by_news(news_id: str):
+    result = await client.find({"new_list": news_id}).to_list(length=None)
+    return result
+
 @router.get("/{name}")
 async def search_by_name(name, skip=0, limit=10):
     search_list = await search_event(name, int(skip), int(limit))
@@ -77,10 +115,9 @@ async def update(
 ):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    all_event = await get({})
     data = {k: v for k, v in data.dict().items() if v is not None}
     data["user_id"] = user_id
-    updated_event = await update_event(id, data, all_event)
+    updated_event = await update_event(id, data)
     if updated_event:
         return 200
     return status.HTTP_403_FORBIDDEN
