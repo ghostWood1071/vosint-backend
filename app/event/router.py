@@ -44,7 +44,7 @@ async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depen
 
 
 @router.put("/add-new/")
-async def add_new(id_event: str, list_id_new: List[str] = Body(...)):
+async def add_new_list(id_event: str, list_id_new: List[str] = Body(...)):
     list_new = []
     for item in list_id_new:
         list_new.append(ObjectId(item))
@@ -52,7 +52,7 @@ async def add_new(id_event: str, list_id_new: List[str] = Body(...)):
     return status.HTTP_201_CREATED
 
 @router.put("/add-event/")
-async def add_event(id_new: str, list_id_event: List[str] = Body(...)):
+async def add_event_list(id_new: str, list_id_event: List[str] = Body(...)):
     list_new = []
     for item in list_id_event:
         list_new.append(ObjectId(item))
