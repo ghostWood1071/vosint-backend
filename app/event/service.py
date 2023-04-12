@@ -21,7 +21,27 @@ projection = {
 
 
 async def add_event(event):
-    return await client.insert_one(event)
+    created_event = await client.insert_one(event)
+    id_event = str(created_event.inserted_id)
+    filter_event = await client.find_one({"_id": ObjectId(id_event)})
+    event_name = filter_event["event_name"]
+    newsList = event.get("new_list", [])
+    await client2.update_many(
+        {
+            "_id": {
+                "$in": [ObjectId(event_id) for event_id in newsList]
+            }
+        },
+        {
+            "$push": {
+                "event_list": {
+                    "event_id": id_event,
+                    "event_name": event_name
+                }
+            }
+        }
+    )
+    return await client.find_one({"id": created_event.inserted_id})
 
 
 async def get_all_by_paginate(filter, skip: int, limit: int):
@@ -81,15 +101,63 @@ async def count_event(count):
 
 
 async def update_event(id: str, data: dict):
+    id_event = str(id)
     event = await client.find_one({"_id": ObjectId(id)})
-    if event:
-        updated_event = await client.update_one({"_id": ObjectId(id)}, {"$set": data})
-        if updated_event:
-            return status.HTTP_200_OK
-        return False
+    event_name = event["event_name"]
+    newsList = data.get("new_list", [])
+    await client2.update_many(
+        {
+            "event_list.event_id": id_event,
+            "event_list.event_name": event_name
+        },
+        {
+            "$pull": {
+                "event_list": {
+                    "event_id": id_event,
+                    "event_name": event_name
+                }
+            }
+        }
+    )
+    for new in newsList:
+        new_id = new
+        await client2.update_one(
+            {"_id": ObjectId(new_id)},
+            {
+                "$addToSet": {
+                    "event_list": {
+                        "event_id": id_event,
+                        "event_name": event_name
+                    }
+                }
+            }
+        )
+    
+    updated_event = await client.update_one({"_id": ObjectId(id)}, {"$set": data})
+    if updated_event:
+        return status.HTTP_200_OK
+    return False
 
 
 async def add_list_new_id(id: str, id_new: List[ObjectId]):
+    id_event = str(id)
+    filter_event = await client.find_one({"_id": ObjectId(id_event)})
+    event_name = filter_event["event_name"]
+    newList = []
+    for item in id_new:
+        newList.append(item)
+    await client2.update_many(
+        { "_id": { "$in": [ObjectId(event_id) for event_id in newList] } },
+        {
+            "$addToSet": {
+                "event_list": {
+                    "event_id": id_event,
+                    "event_name": event_name
+                }
+            }
+        }
+    )
+    
     return await client.update_one(
         {"_id": ObjectId(id)}, {"$push": {"new_list": {"$each": id_new}}}
     )
