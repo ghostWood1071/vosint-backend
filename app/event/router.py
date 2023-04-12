@@ -8,6 +8,7 @@ from fastapi_jwt_auth import AuthJWT
 from app.event.model import AddNewEvent, CreateEvent, UpdateEvent
 from app.event.service import (
     add_event,
+    add_list_event_id,
     add_list_new,
     add_list_new_id,
     count_event,
@@ -15,7 +16,7 @@ from app.event.service import (
     delete_list_new,
     event_detail,
     get_all_by_paginate,
-    get_based_new_id,
+    remove_list_event_id,
     remove_list_new_id,
     search_event,
     search_result,
@@ -28,7 +29,7 @@ client = get_collection_client("event")
 
 
 @router.post("/")
-async def create_event(data: CreateEvent = Depends(), authorize: AuthJWT = Depends()):
+async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     event = data.dict()
@@ -48,6 +49,14 @@ async def add_new(id_event: str, list_id_new: List[str] = Body(...)):
     for item in list_id_new:
         list_new.append(ObjectId(item))
     await add_list_new_id(id_event, list_id_new)
+    return status.HTTP_201_CREATED
+
+@router.put("/add-event/")
+async def add_event(id_new: str, list_id_event: List[str] = Body(...)):
+    list_new = []
+    for item in list_id_event:
+        list_new.append(ObjectId(item))
+    await add_list_event_id(id_new, list_id_event)
     return status.HTTP_201_CREATED
 
 # @router.put("/add-new/")
@@ -80,6 +89,13 @@ async def remove_new(id_event: str, list_id_new: List[str] = Body(...)):
     await remove_list_new_id(id_event, list_id_new)
     return JSONResponse(status_code=status.HTTP_200_OK, content="Successful remove")
 
+@router.put("/remove-event/")
+async def remove_event(id_new: str, list_id_event: List[str] = Body(...)):
+    list_event = []
+    for item in list_id_event:
+        list_event.append(ObjectId(item))
+    await remove_list_event_id(id_new, list_id_event)
+    return JSONResponse(status_code=status.HTTP_200_OK, content="Successful remove")
 
 @router.get("/")
 async def get_all(skip=0, limit=10):
