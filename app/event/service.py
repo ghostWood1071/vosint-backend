@@ -49,14 +49,13 @@ async def get_all_by_paginate(filter, skip: int, limit: int):
     list_event = []
     
     async for item in client.find(filter).sort("_id").skip(offset).limit(limit):
+        ll = []
         for Item in item["new_list"]:
             id_new = {"_id": ObjectId(Item)}
-            ll = item["new_list"] = []
             async for new in client2.find(id_new, projection):
-                print(new)
                 gg = json(new)
                 ll.append(gg)
-                
+        item["new_list"] = ll
         item = json(item)
         list_event.append(item)            
     return list_event
