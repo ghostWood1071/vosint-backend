@@ -23,7 +23,8 @@ projection = {
     "created_at": True,
     "modified_at": True,
     "keywords": True,
-    "pub_date": True
+    "pub_date": True,
+    "event_list": True
 }
 
 

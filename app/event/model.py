@@ -24,10 +24,11 @@ class CreateEvent(BaseModel):
 
 class UpdateEvent(BaseModel):
     event_name: Optional[str] = Field(...)
-    event_content: Optional[str] = Field(...)
-    date_created: Optional[str] = Field(...)
-    new_list: List[str] = []
+    event_content: Optional[str]
+    date_created: Optional[str]
+    new_list: Optional[List] = []
     system_created: bool = True
-    chu_the: str
-    khach_the: str
+    chu_the: Optional[str]
+    khach_the: Optional[str]
     user_id: Optional[str]
+
