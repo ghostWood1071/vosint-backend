@@ -43,7 +43,7 @@ async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depen
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=200)
 
 
-@router.put("/add-new/")
+@router.put("/add-new/{id_event}")
 async def add_new_list(id_event: str, list_id_new: List[str] = Body(...)):
     list_new = []
     for item in list_id_new:
@@ -51,13 +51,13 @@ async def add_new_list(id_event: str, list_id_new: List[str] = Body(...)):
     await add_list_new_id(id_event, list_id_new)
     return status.HTTP_201_CREATED
 
-@router.put("/add-event/")
-async def add_event_list(id_new: str, list_id_event: List[str] = Body(...)):
+@router.put("/remove-new/{id_event}")
+async def remove_new(id_event: str, list_id_new: List[str] = Body(...)):
     list_new = []
-    for item in list_id_event:
+    for item in list_id_new:
         list_new.append(ObjectId(item))
-    await add_list_event_id(id_new, list_id_event)
-    return status.HTTP_201_CREATED
+    await remove_list_new_id(id_event, list_id_new)
+    return JSONResponse(status_code=status.HTTP_200_OK, content="Successful remove")
 
 # @router.put("/add-new/")
 # async def add_more_new(id_new: str, list_news: List[AddNewEvent] = Body(...)):
@@ -81,15 +81,15 @@ async def add_event_list(id_new: str, list_id_event: List[str] = Body(...)):
 #     await delete_list_new(id_ev, list_exist_new)
 #     return JSONResponse(status_code=status.HTTP_200_OK, content="Successful remove")
 
-@router.put("/remove-new/")
-async def remove_new(id_event: str, list_id_new: List[str] = Body(...)):
+@router.put("/add-event/{id_new}")
+async def add_event_list(id_new: str, list_id_event: List[str] = Body(...)):
     list_new = []
-    for item in list_id_new:
+    for item in list_id_event:
         list_new.append(ObjectId(item))
-    await remove_list_new_id(id_event, list_id_new)
-    return JSONResponse(status_code=status.HTTP_200_OK, content="Successful remove")
+    await add_list_event_id(id_new, list_id_event)
+    return status.HTTP_201_CREATED
 
-@router.put("/remove-event/")
+@router.put("/remove-event/{id_new}")
 async def remove_event(id_new: str, list_id_event: List[str] = Body(...)):
     list_event = []
     for item in list_id_event:
@@ -119,11 +119,16 @@ async def show_event_by_news(news_id: str):
     result = await client.find({"new_list": news_id}).to_list(length=None)
     return result
 
-@router.get("/search")
-async def search_by_name(name: Optional[str] = "", skip=0, limit=10):
-    search_list = await search_event(name, int(skip), int(limit))
-    count = await search_result(name)
+@router.get("/search/")
+async def search_by_name(event_name: Optional[str] = "", skip=0, limit=10):
+    search_list = await search_event(event_name, int(skip), int(limit))
+    count = await search_result(event_name)
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list, "total": count})
+
+@router.get("/filter-news/")
+async def show_event(id_event: Optional[str] = ""):
+    result = await client.find({"new_list": {"$nin": [id_event]}}).to_list(length=None)
+    return result
 
 @router.put("/{id}")
 async def update(
