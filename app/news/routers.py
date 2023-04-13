@@ -29,7 +29,7 @@ projection = {
 
 
 @router.get("/")
-async def get_news(title: str = "", skip=0, limit=20, authorize: AuthJWT = Depends()):
+async def get_news(title: str = "", skip=1, limit=20, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
     query = {"$or": [{"data:title": {"$regex": title, "$options": "i"}}]}

@@ -78,7 +78,7 @@ async def read(title: str = "", authorize: AuthJWT = Depends()):
 
 @router.get("/{newsletter_id}/news")
 async def get_news_by_newsletter_id(
-    newsletter_id: str, skip=0, limit=20, authorize: AuthJWT = Depends()
+    newsletter_id: str, skip=1, limit=20, authorize: AuthJWT = Depends()
 ):
     authorize.jwt_required()
 

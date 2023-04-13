@@ -79,7 +79,7 @@ async def get_me(authorize: AuthJWT = Depends()):
 
 
 @router.get("/vital")
-async def get_vital_by_user(skip=0, limit=20, authorize: AuthJWT = Depends()):
+async def get_vital_by_user(skip=1, limit=20, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     user = await find_user_by_id(ObjectId(user_id))
@@ -105,7 +105,7 @@ async def get_vital_by_user(skip=0, limit=20, authorize: AuthJWT = Depends()):
 
 
 @router.get("/bookmarks")
-async def get_news_bookmarks(skip=0, limit=20, authorize: AuthJWT = Depends()):
+async def get_news_bookmarks(skip=1, limit=20, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     user = await find_user_by_id(ObjectId(user_id))
@@ -257,7 +257,7 @@ async def delete_interested_item(
 
 @router.get("/")
 async def get_all(
-    skip=0,
+    skip=1,
     limit=20,
     name="",
     role: Union[Role, None] = None,

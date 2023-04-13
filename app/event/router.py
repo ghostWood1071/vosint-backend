@@ -101,7 +101,7 @@ async def remove_event_list(id_new: str, list_id_event: List[str] = Body(...)):
 
 
 @router.get("/")
-async def get_all(skip=0, limit=10):
+async def get_all(skip=1, limit=10):
     list_event = await get_all_by_paginate({}, int(skip), int(limit))
     count = await count_event({})
     return JSONResponse(
@@ -125,7 +125,7 @@ async def show_event_by_news(news_id: str):
     return result
 
 @router.get("/search/")
-async def search_by_name(event_name: Optional[str] = "", id_new: Optional[str] = "" , skip=0, limit=10):
+async def search_by_name(event_name: Optional[str] = "", id_new: Optional[str] = "" , skip=1, limit=10):
     search_list = await search_event(event_name,id_new, int(skip), int(limit))
     count = await search_result(event_name, id_new)
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list, "total": count})

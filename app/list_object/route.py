@@ -70,7 +70,7 @@ async def get_type_and_name(
     type_object: Optional[str] = Path(
         ..., title="Object type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]
     ),
-    skip=0,
+    skip=1,
     limit=10,
 ):
     list_obj = await find_by_filter_and_paginate(name, type_object, int(skip), int(limit))
@@ -80,7 +80,7 @@ async def get_type_and_name(
 
 @router.get("/{id}/news")
 async def get_news_by_object_id(
-    id: str, skip=0, limit=20, authorize: AuthJWT = Depends()
+    id: str, skip=1, limit=20, authorize: AuthJWT = Depends()
 ):
     authorize.jwt_required()
     # pipeline = [

@@ -45,7 +45,7 @@ async def get_paginate(skip: Optional[int] = None, limit: Optional[int] = None):
     
 
 @router.get("/{name}")
-async def search(name: str = "", skip=0, limit=10):
+async def search(name: str = "", skip=1, limit=10):
     char_name = name
     search_proxy = await search_by_filter_and_paginate(char_name, int(skip), int(limit))
     count = await count_search_proxy(char_name)
