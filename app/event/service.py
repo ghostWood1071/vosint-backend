@@ -73,14 +73,18 @@ def json(event) -> dict:
     event["_id"] = str(event["_id"])
     return event
 
-async def search_event(event: str, skip: int, limit: int):
+async def search_event(event_name: str, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_event = []
     async for item in client.find(
-        {"$or": [{"event_name": {"$regex": event, "$options": "i"}}]}
+        {"$or": 
+            [
+                {"event_name": {"$regex": event_name, "$options": "i"}}
+            ]
+        }
     ).sort("_id").skip(offset).limit(limit):
-        item = json(item)
-        list_event.append(item)
+        items = json(item)
+        list_event.append(items)
     return list_event
 
 async def search_result(name):
