@@ -5,7 +5,7 @@ from bson.objectid import ObjectId
 from fastapi import HTTPException, status
 
 from app.event.model import AddNewEvent
-from app.news.services import find_news_by_filter_and_paginate
+from app.news.services import find_news_by_filter
 from db.init_db import get_collection_client
 
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
@@ -13,11 +13,7 @@ pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 client = get_collection_client("event")
 client2 = get_collection_client("news")
 
-projection = {
-    "_id": True,
-    "data:title": True,
-    "data:url": True
-}
+projection = {"_id": True, "data:title": True, "data:url": True}
 
 
 async def add_event(event):
@@ -27,27 +23,16 @@ async def add_event(event):
     event_name = filter_event["event_name"]
     newsList = event.get("new_list", [])
     await client2.update_many(
-        {
-            "_id": {
-                "$in": [ObjectId(event_id) for event_id in newsList]
-            }
-        },
-        {
-            "$push": {
-                "event_list": {
-                    "event_id": id_event,
-                    "event_name": event_name
-                }
-            }
-        }
+        {"_id": {"$in": [ObjectId(event_id) for event_id in newsList]}},
+        {"$push": {"event_list": {"event_id": id_event, "event_name": event_name}}},
     )
-    return await client.find_one({"id": created_event.inserted_id})
+    return created_event
 
 
 async def get_all_by_paginate(filter, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_event = []
-    
+
     async for item in client.find(filter).sort("_id").skip(offset).limit(limit):
         ll = []
         for Item in item["new_list"]:
@@ -57,7 +42,7 @@ async def get_all_by_paginate(filter, skip: int, limit: int):
                 ll.append(gg)
         item["new_list"] = ll
         item = json(item)
-        list_event.append(item)            
+        list_event.append(item)
     return list_event
 
 
@@ -73,19 +58,17 @@ def json(event) -> dict:
     event["_id"] = str(event["_id"])
     return event
 
+
 async def search_event(event_name: str, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_event = []
     async for item in client.find(
-        {"$or": 
-            [
-                {"event_name": {"$regex": event_name, "$options": "i"}}
-            ]
-        }
+        {"$or": [{"event_name": {"$regex": event_name, "$options": "i"}}]}
     ).sort("_id").skip(offset).limit(limit):
         items = json(item)
         list_event.append(items)
     return list_event
+
 
 async def search_result(name):
     filter = {"event_name": {"$regex": name, "$options": "i"}}
@@ -94,10 +77,23 @@ async def search_result(name):
 
 async def event_detail(id) -> dict:
     ev_detail = await client.find_one({"_id": ObjectId(id)})
+    new_list = []
+    if "new_list" in ev_detail:
+        new_list = await find_news_by_filter(
+            {"_id": {"$in": convert_map_str_to_object_id(ev_detail["new_list"])}},
+            {"_id": 1, "data:title": 1, "data:url": 1},
+        )
+
+        ev_detail["new_list"] = new_list
+
     if ev_detail:
         ev = json(ev_detail)
         return ev
-    
+
+
+def convert_map_str_to_object_id(array: list[str]):
+    return list(map(ObjectId, array))
+
 
 async def count_event(count):
     return await client.count_documents(count)
@@ -109,18 +105,8 @@ async def update_event(id: str, data: dict):
     event_name = event["event_name"]
     newsList = data.get("new_list", [])
     await client2.update_many(
-        {
-            "event_list.event_id": id_event,
-            "event_list.event_name": event_name
-        },
-        {
-            "$pull": {
-                "event_list": {
-                    "event_id": id_event,
-                    "event_name": event_name
-                }
-            }
-        }
+        {"event_list.event_id": id_event, "event_list.event_name": event_name},
+        {"$pull": {"event_list": {"event_id": id_event, "event_name": event_name}}},
     )
     for new in newsList:
         new_id = new
@@ -128,14 +114,11 @@ async def update_event(id: str, data: dict):
             {"_id": ObjectId(new_id)},
             {
                 "$addToSet": {
-                    "event_list": {
-                        "event_id": id_event,
-                        "event_name": event_name
-                    }
+                    "event_list": {"event_id": id_event, "event_name": event_name}
                 }
-            }
+            },
         )
-    
+
     updated_event = await client.update_one({"_id": ObjectId(id)}, {"$set": data})
     if updated_event:
         return status.HTTP_200_OK
@@ -150,43 +133,38 @@ async def add_list_new_id(id: str, id_new: List[ObjectId]):
     for item in id_new:
         newList.append(item)
     await client2.update_many(
-        { "_id": { "$in": [ObjectId(event_id) for event_id in newList] } },
-        {
-            "$addToSet": {
-                "event_list": {
-                    "event_id": id_event,
-                    "event_name": event_name
-                }
-            }
-        }
+        {"_id": {"$in": [ObjectId(event_id) for event_id in newList]}},
+        {"$addToSet": {"event_list": {"event_id": id_event, "event_name": event_name}}},
     )
     return await client.update_one(
         {"_id": ObjectId(id)}, {"$push": {"new_list": {"$each": id_new}}}
     )
-    
+
+
 async def add_list_event_id(id_new: str, list_id_event: List[ObjectId]):
     id_news = str(id_new)
     filter_event = await client2.find_one({"_id": ObjectId(id_news)})
     eventList = []
     for item in list_id_event:
         eventList.append(item)
-    ev_name = await client.find_one({"_id": { "$in": [ObjectId(event_id) for event_id in eventList] }})
+    ev_name = await client.find_one(
+        {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}}
+    )
     ev_id = str(ev_name["_id"])
     await client2.update_many(
-        {   "_id": ObjectId(id_new) },
+        {"_id": ObjectId(id_new)},
         {
             "$addToSet": {
-                "event_list": {
-                    "event_id": ev_id ,
-                    "event_name": ev_name["event_name"]
-                }
+                "event_list": {"event_id": ev_id, "event_name": ev_name["event_name"]}
             }
-        }
+        },
     )
     return await client.update_one(
-        {"_id": { "$in": [ObjectId(event_id) for event_id in eventList] }}, {"$push": {"new_list": id_news}}
+        {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
+        {"$push": {"new_list": id_news}},
     )
-    
+
+
 async def remove_list_new_id(id: str, id_new: List[ObjectId]):
     id_event = str(id)
     filter_event = await client.find_one({"_id": ObjectId(id_event)})
@@ -195,70 +173,62 @@ async def remove_list_new_id(id: str, id_new: List[ObjectId]):
     for item in id_new:
         newList.append(item)
     await client2.update_many(
-        {
-            "event_list.event_id": id_event,
-            "event_list.event_name": event_name
-        },
-        {
-            "$pull": {
-                "event_list": {
-                    "event_id": id_event,
-                    "event_name": event_name
-                }
-            }
-        }
+        {"event_list.event_id": id_event, "event_list.event_name": event_name},
+        {"$pull": {"event_list": {"event_id": id_event, "event_name": event_name}}},
     )
     return await client.update_one(
         {"_id": ObjectId(id)}, {"$pull": {"new_list": {"$in": id_new}}}
     )
-    
+
+
 async def remove_list_event_id(id: str, list_id_event: List[ObjectId]):
     id_new = str(id)
     eventList = []
     for item in list_id_event:
         eventList.append(item)
-    ev_name = await client.find_one({"_id": { "$in": [ObjectId(event_id) for event_id in eventList] }})
+    ev_name = await client.find_one(
+        {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}}
+    )
     ev_id = str(ev_name["_id"])
     await client2.update_many(
-        {
-            "event_list.event_id": ev_id,
-            "event_list.event_name": ev_name["event_name"]
-        },
+        {"event_list.event_id": ev_id, "event_list.event_name": ev_name["event_name"]},
         {
             "$pull": {
-                "event_list": {
-                    "event_id": ev_id,
-                    "event_name": ev_name["event_name"]
-                }
+                "event_list": {"event_id": ev_id, "event_name": ev_name["event_name"]}
             }
-        }
+        },
     )
     return await client.update_one(
-        {"_id": { "$in": [ObjectId(event_id) for event_id in eventList] }}, {"$pull": {"new_list": id_new}}
+        {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
+        {"$pull": {"new_list": id_new}},
     )
-    
+
+
 async def add_list_new(id: str, data: List[AddNewEvent]):
     list_ev = []
     for Data in data:
         list_ev.append(
-            {"id_new": Data.id_new, "data_title": Data.data_title, "data_url": Data.data_url}
+            {
+                "id_new": Data.id_new,
+                "data_title": Data.data_title,
+                "data_url": Data.data_url,
+            }
         )
     return await client.update_one(
         {"_id": ObjectId(id)},
-        {"$addToSet": {"new_list": {"$each": [Data.dict() for Data in data]}}}
+        {"$addToSet": {"new_list": {"$each": [Data.dict() for Data in data]}}},
     )
-    
-async def delete_list_new(id: str, data: List[AddNewEvent]):    
+
+
+async def delete_list_new(id: str, data: List[AddNewEvent]):
     docs = [dict(Data) for Data in data]
     return await client.update_one(
         {"_id": ObjectId(id)}, {"$pull": {"new_list": {"$in": docs}}}
     )
-    
+
+
 async def delete_event(id):
     event = await client.find_one({"_id": ObjectId(id)})
     if event:
         await client.delete_one({"_id": ObjectId(id)})
         return 200
-
-
-

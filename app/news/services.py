@@ -10,9 +10,9 @@ from .utils import news_to_json
 client = get_collection_client("news")
 
 
-async def find_news_by_filter(filter):
+async def find_news_by_filter(filter, projection=None):
     news = []
-    async for new in client.find(filter).sort("_id"):
+    async for new in client.find(filter, projection).sort("_id"):
         new = news_to_json(new)
         news.append(new)
 
