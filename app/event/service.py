@@ -61,34 +61,28 @@ def json(event) -> dict:
 async def search_event(event_name: str, data: ObjectId, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_event = []
+    query = {}
     if event_name:
-        async for item in client.find(
-            {"$or": 
-                [
-                    {"event_name": {"$regex": event_name, "$options": "i"}}
-                ]
-            }
-        ).sort("_id").skip(offset).limit(limit):
-            items = json(item)
-            list_event.append(items)
+        query["$or"] = [{"event_name": {"$regex": event_name, "$options": "i"}}]
     if data:
-        async for item2 in client.find({"new_list": {"$nin": [data]}}).skip(offset).limit(limit):
-            res = json(item2)
-            list_event.append(res)
-    if list_event == []:
-        async for item3 in client.find().sort("_id").skip(offset).limit(limit):
-            result = json(item3)
-            list_event.append(result)
+        query["new_list"] = {"$nin": [data]}
+    if not query:
+        query = {}
+    async for item in client.find(query).sort("_id").skip(offset).limit(limit):
+        items = json(item)
+        list_event.append(items)
     return list_event
 
+
 async def search_result(name, id_new):
+    query = {}
     if name:
-        filter = {"event_name": {"$regex": name, "$options": "i"}}
-        return await client.count_documents(filter)
+        query["event_name"] = {"$regex": name, "$options": "i"}
     if id_new:
-        filter_based_new_id = {"new_list": {"$nin": [id_new]}}
-        return await client.count_documents(filter_based_new_id)
-    return await client.count_documents({})
+        query["new_list"] = {"$nin":[id_new]}
+    if not query:
+        query = {}
+    return await client.count_documents(query)
 
 
 async def event_detail(id) -> dict:

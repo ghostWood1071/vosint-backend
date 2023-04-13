@@ -40,7 +40,7 @@ async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depen
 
 
 @router.get("/")
-async def get_all(skip=0, limit=10):
+async def get_all(skip=1, limit=10):
     list_source_group = await find_by_filter_and_paginate({}, int(skip), int(limit))
     count = await count_source({})
     return JSONResponse(
@@ -50,7 +50,7 @@ async def get_all(skip=0, limit=10):
 
 
 @router.get("/{name}")
-async def search(name, skip=0, limit=10):
+async def search(name, skip=1, limit=10):
     search_source_group = await search_by_filter_and_paginate(
         name, int(skip), int(limit)
     )

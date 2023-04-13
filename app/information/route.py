@@ -33,7 +33,7 @@ async def add_infor(payload: CreateInfor):
 
 
 @router.get("/")
-async def get_all(skip=0, limit=10):
+async def get_all(skip=1, limit=10):
     list_infor = await find_by_filter_and_paginate({}, int(skip), int(limit))
     count = await count_infor({})
     return JSONResponse(
@@ -58,7 +58,7 @@ async def get_options_pipeline():
 
 
 @router.get("/{name}")
-async def search(name, skip=0, limit=10):
+async def search(name, skip=1, limit=10):
     list_infor = await search_by_filter_and_paginate(name, int(skip), int(limit))
     count = await count_search_infor(name)
     return JSONResponse(
