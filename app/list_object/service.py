@@ -50,12 +50,12 @@ async def count_all_object(filter):
 async def find_by_filter_and_paginate(
     name: str, type: str | None, skip: int, limit: int
 ):
-    query = {"name": {"$regex": name, "$options": "i"}, "type": type}
+    query = {"name": {"$regex": name, "$options": "i"}, "object_type": type}
     if type:
-        query["type"] = type
+        query["object_type"] = type
     offset = (skip - 1) * limit if skip > 0 else 0
     list_object = []
-    async for item in db.find(filter=query).sort("_id").skip(offset).limit(limit):
+    async for item in db.find(query).sort("_id").skip(offset).limit(limit):
         item = object_to_json(item)
         list_object.append(item)
     return list_object
@@ -67,7 +67,7 @@ def object_to_json(Object) -> dict:
 
 
 async def count_object(Type, name):
-    query = {"type": Type, "name": {"$regex": name}}
+    query = {"object_type": Type, "name": {"$regex": name}}
     return await db.count_documents(query)
 
 
@@ -87,10 +87,20 @@ async def get_one_object(name: str) -> dict:
 
 async def update_object(id: str, data: dict):
     object = await db.find_one({"_id": ObjectId(id)})
-    if object:
-        updated_object = await db.update_one({"_id": ObjectId(id)}, {"$set": data})
-        if updated_object:
-            return status.HTTP_200_OK
+    
+    list_object = await db.find().to_list(length=None)
+    
+    for item in list_object:
+        if item["_id"] != object["_id"] and item["name"] == data["name"]: 
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Object is duplicated")
+        
+    if object["name"] == data["name"]:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Object already exist")
+    
+    updated_object = await db.find_one_and_update({"_id": ObjectId(id)}, {"$set": data})
+    if updated_object:
+        return status.HTTP_200_OK
+    else:
         return False
 
 
