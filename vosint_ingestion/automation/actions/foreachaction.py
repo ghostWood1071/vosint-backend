@@ -1,19 +1,19 @@
 from common.internalerror import *
+from models.kafka_producer import KafkaProducer_class
 
 from ..common import ActionInfo, ActionType, ParamInfo
 from .baseaction import BaseAction
-
-from models.kafka_producer import KafkaProducer_class
 from .clickaction import ClickAction
+from .foraction import ForAction
 from .getattraction import GetAttrAction
 from .getnewsinfoaction import GetNewsInfoAction
 from .geturlsaction import GetUrlsAction
 from .gotoaction import GotoAction
-from .login import LoginAction
-from .selectaction import SelectAction
-from .foraction import ForAction
-from .scrollaction import ScrollAction
 from .hoveraction import HoverAction
+from .login import LoginAction
+from .scrollaction import ScrollAction
+from .selectaction import SelectAction
+
 
 def get_action_class(name: str):
     action_cls = (
@@ -49,6 +49,7 @@ def get_action_class(name: str):
 
     return action_cls
 
+
 class ForeachAction(BaseAction):
     @classmethod
     def get_action_info(cls) -> ActionInfo:
@@ -69,10 +70,10 @@ class ForeachAction(BaseAction):
                     name="send_queue",
                     display_name="Send_Queue",
                     val_type="select",
-                    default_val='False',
-                    options = ['False', 'True'],
-                    validators=["required_"]
-                )
+                    default_val="False",
+                    options=["False", "True"],
+                    validators=["required_"],
+                ),
             ],
             z_index=6,
         )
@@ -80,7 +81,7 @@ class ForeachAction(BaseAction):
     def exec_func(self, input_val=None, **kwargs):
         actions = self.params["actions"]
         flatten = False if "flatten" not in self.params else self.params["flatten"]
-        #print(input_val)
+        # print(input_val)
         # Run foreach actions
         res = []
         if input_val is not None:
@@ -88,28 +89,28 @@ class ForeachAction(BaseAction):
                 # print("val",val)
                 # print("kwargs",kwargs)
                 # print("actions",actions)
-                
-                message = {
-                "actions": actions,
-                "input_val": val,
-                "kwargs": kwargs
-            }
-                #message1 = {'name': 'John', 'age': 30, 'city': 'New hkahsdjk'}
-                if str(self.params['send_queue']) == 'True':
-                    #print('write to kafka ...')
-                    #print(message)
-                    KafkaProducer_class().write('crawling_',message)
-                    #print('write to kafka ...')
-                    if kwargs["mode_test"]==True:#self.params['test_pipeline'] == 'True':
-                        #print(val)
+
+                message = {"actions": actions, "input_val": val, "kwargs": kwargs}
+                # message1 = {'name': 'John', 'age': 30, 'city': 'New hkahsdjk'}
+                if str(self.params["send_queue"]) == "True":
+                    # print('write to kafka ...')
+                    # print(message)
+                    KafkaProducer_class().write("crawling_", message)
+                    # print('write to kafka ...')
+                    if (
+                        kwargs["mode_test"] == True
+                    ):  # self.params['test_pipeline'] == 'True':
+                        # print(val)
                         break
                 else:
                     if flatten == False:
                         res.append(self.__run_actions(actions, val, **kwargs))
                     else:
                         res += self.__run_actions(actions, val, **kwargs)
-                    if kwargs["mode_test"]==True:#self.params['test_pipeline'] == 'True':
-                        #print(val)
+                    if (
+                        kwargs["mode_test"] == True
+                    ):  # self.params['test_pipeline'] == 'True':
+                        # print(val)
                         break
         return res
 

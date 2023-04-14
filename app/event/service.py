@@ -58,6 +58,7 @@ def json(event) -> dict:
     event["_id"] = str(event["_id"])
     return event
 
+
 async def search_event(event_name: str, data: ObjectId, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_event = []
@@ -79,7 +80,7 @@ async def search_result(name, id_new):
     if name:
         query["event_name"] = {"$regex": name, "$options": "i"}
     if id_new:
-        query["new_list"] = {"$nin":[id_new]}
+        query["new_list"] = {"$nin": [id_new]}
     if not query:
         query = {}
     return await client.count_documents(query)

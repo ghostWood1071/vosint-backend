@@ -33,6 +33,7 @@ async def count_search_object(type: str):
 async def create_object(Object):
     return await db.insert_one(Object)
 
+
 async def get_all_object(filter, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_object = []
@@ -46,7 +47,9 @@ async def count_all_object(filter):
     return await db.count_documents(filter)
 
 
-async def find_by_filter_and_paginate(name: str, type: str | None, skip: int, limit: int):
+async def find_by_filter_and_paginate(
+    name: str, type: str | None, skip: int, limit: int
+):
     query = {"name": {"$regex": name, "$options": "i"}, "type": type}
     if type:
         query["type"] = type
@@ -96,5 +99,3 @@ async def delete_object(id: str):
     if object_deleted:
         await db.delete_one({"_id": ObjectId(id)})
         return status.HTTP_200_OK
-
-

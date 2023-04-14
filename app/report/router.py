@@ -1,19 +1,17 @@
-from typing import List, Optional
-from typing import Annotated
+from typing import Annotated, List, Optional
 
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Body
 from fastapi_jwt_auth import AuthJWT
 
-from fastapi import APIRouter
 from .model import CreateReport, UpdateReport
 from .service import (
+    count,
+    create_report,
+    delete_report,
     get_all,
     get_by_id,
-    create_report,
     update_report,
-    delete_report,
-    count,
 )
 
 router = APIRouter()

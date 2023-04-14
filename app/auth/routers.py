@@ -6,7 +6,7 @@ from pydash import pick
 
 from app.auth.password import get_password_hash, verify_and_update
 from app.user.models import UserChangePasswordModel, UserLoginModel
-from app.user.services import read_user_by_username, read_user_by_username, update_user
+from app.user.services import read_user_by_username, update_user
 
 router = APIRouter()
 

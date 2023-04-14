@@ -53,6 +53,7 @@ async def add_new_list(id_event: str, list_id_new: List[str] = Body(...)):
     await add_list_new_id(id_event, list_id_new)
     return status.HTTP_201_CREATED
 
+
 @router.put("/remove-new/{id_event}")
 async def remove_new_list(id_event: str, list_id_new: List[str] = Body(...)):
     list_new = []
@@ -60,6 +61,7 @@ async def remove_new_list(id_event: str, list_id_new: List[str] = Body(...)):
         list_new.append(ObjectId(item))
     await remove_list_new_id(id_event, list_id_new)
     return JSONResponse(status_code=status.HTTP_200_OK, content="Successful remove")
+
 
 # @router.put("/add-new/")
 # async def add_more_new(id_new: str, list_news: List[AddNewEvent] = Body(...)):
@@ -83,6 +85,7 @@ async def remove_new_list(id_event: str, list_id_new: List[str] = Body(...)):
 #     await delete_list_new(id_ev, list_exist_new)
 #     return JSONResponse(status_code=status.HTTP_200_OK, content="Successful remove")
 
+
 @router.put("/add-event/{id_new}")
 async def add_event_list(id_new: str, list_id_event: List[str] = Body(...)):
     list_new = []
@@ -90,6 +93,7 @@ async def add_event_list(id_new: str, list_id_event: List[str] = Body(...)):
         list_new.append(ObjectId(item))
     await add_list_event_id(id_new, list_id_event)
     return status.HTTP_201_CREATED
+
 
 @router.put("/remove-event/{id_new}")
 async def remove_event_list(id_new: str, list_id_event: List[str] = Body(...)):
@@ -124,11 +128,17 @@ async def show_event_by_news(news_id: str):
     result = await client.find({"new_list": news_id}).to_list(length=None)
     return result
 
+
 @router.get("/search/")
-async def search_by_name(event_name: Optional[str] = "", id_new: Optional[str] = "" , skip=1, limit=10):
-    search_list = await search_event(event_name,id_new, int(skip), int(limit))
+async def search_by_name(
+    event_name: Optional[str] = "", id_new: Optional[str] = "", skip=1, limit=10
+):
+    search_list = await search_event(event_name, id_new, int(skip), int(limit))
     count = await search_result(event_name, id_new)
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list, "total": count})
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"data": search_list, "total": count}
+    )
+
 
 @router.put("/{id}")
 async def update(

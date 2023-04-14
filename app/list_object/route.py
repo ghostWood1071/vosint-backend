@@ -64,6 +64,7 @@ async def add_object(
         return 200
     return status.HTTP_403_FORBIDDEN
 
+
 @router.get("/{type_object}")
 async def get_type_and_name(
     name: str = "",
@@ -73,7 +74,9 @@ async def get_type_and_name(
     skip=1,
     limit=10,
 ):
-    list_obj = await find_by_filter_and_paginate(name, type_object, int(skip), int(limit))
+    list_obj = await find_by_filter_and_paginate(
+        name, type_object, int(skip), int(limit)
+    )
     count = await count_object(type_object, name)
     return {"data": list_obj, "total": count}
 
