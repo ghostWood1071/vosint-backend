@@ -6,6 +6,10 @@ from db.init_db import get_collection_client
 proxy_collect = get_collection_client("proxy")
 
 
+async def aggregate_proxy(pipeline):
+    return await proxy_collect.aggregate(pipeline).to_list(None)
+
+
 async def create_proxy(proxy):
     return await proxy_collect.insert_one(proxy)
 
