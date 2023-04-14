@@ -13,6 +13,7 @@ from app.proxy.service import (
     get_proxy_by_id,
     search_by_filter_and_paginate,
     update_proxy,
+    aggregate_proxy,
 )
 from db.init_db import get_collection_client
 
@@ -43,6 +44,24 @@ async def get_paginate(skip: Optional[int] = None, limit: Optional[int] = None):
         content={"data": list_proxy, "total_record": count},
     )
     
+
+@router.get("/pipeline-options")
+async def get_pipeline_options():
+    pipeline = [
+        {
+            "$addFields": {
+                "label": {"$concat": ["$name", " (", "$ip_address", ")"]},
+                "value": {"$convert": {"input": "$_id", "to": "string"}},
+            }
+        },
+        {"$project": {"value": 1, "label": 1, "_id": 0}},
+    ]
+    list_proxy = await aggregate_proxy(pipeline)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=list_proxy,
+    )
+
 
 @router.get("/{name}")
 async def search(name: str = "", skip=1, limit=10):
