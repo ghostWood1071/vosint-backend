@@ -68,16 +68,23 @@ async def count_search_proxy(char_name: str):
 
 async def update_proxy(id: str, data: dict):
     proxy = await proxy_collect.find_one({"_id": ObjectId(id)})
-    if proxy["ip_address"] == data["ip_address"]:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="proxy ip already exist"
-        )
-    updated_proxy = await proxy_collect.update_one(
-        {"_id": ObjectId(id)}, {"$set": data}
-    )
+
+    list_proxy = await proxy_collect.find().to_list(length=None)
+
+    for item in list_proxy:
+
+        if item["_id"] != proxy["_id"] and item["ip_address"] == data["ip_address"]: 
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="proxy ip is duplicated")
+
+    if proxy["ip_address"] == data["ip_address"]: 
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="proxy ip already exist")
+
+    updated_proxy = await proxy_collect.find_one_and_update({"_id": ObjectId(id)}, {"$set": data})
+
     if updated_proxy:
         return status.HTTP_200_OK
-    return False
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proxy not found.")
 
 
 async def get_proxy_by_id(id) -> dict:
