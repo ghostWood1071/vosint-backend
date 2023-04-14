@@ -56,7 +56,7 @@ async def add_object(
             status_code=status.HTTP_409_CONFLICT, detail="object already exist"
         )
 
-    Object["type"] = type
+    Object["object_type"] = type
     Object["status"] = Status
 
     new_object = await create_object(Object)
@@ -65,19 +65,19 @@ async def add_object(
     return status.HTTP_403_FORBIDDEN
 
 
-@router.get("/{type_object}")
+@router.get("/{object_type}")
 async def get_type_and_name(
     name: str = "",
-    type_object: Optional[str] = Path(
+    object_type: Optional[str] = Path(
         ..., title="Object type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]
     ),
     skip=1,
     limit=10,
 ):
     list_obj = await find_by_filter_and_paginate(
-        name, type_object, int(skip), int(limit)
+        name, object_type, int(skip), int(limit)
     )
-    count = await count_object(type_object, name)
+    count = await count_object(object_type, name)
     return {"data": list_obj, "total": count}
 
 

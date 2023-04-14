@@ -13,10 +13,10 @@ async def create_proxy(proxy):
 async def find_by_filter_and_paginate(skip: int, limit: int):
     list_proxy = []
     if limit is not None:
-        async for item in proxy_collect.find().limit(limit).skip(limit * (skip or 0)):
+        async for item in proxy_collect.find().sort("_id").skip((skip - 1) * limit if skip > 0 else 0).limit(limit):
             item = proxy_to_json(item)
             list_proxy.append(item)
-    else:
+    elif skip is None and limit is None:
         async for item in proxy_collect.find():
             item = proxy_to_json(item)
             list_proxy.append(item)
