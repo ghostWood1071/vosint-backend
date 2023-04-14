@@ -9,6 +9,7 @@ proxy_collect = get_collection_client("proxy")
 async def create_proxy(proxy):
     return await proxy_collect.insert_one(proxy)
 
+
 async def find_by_filter_and_paginate(skip: int, limit: int):
     list_proxy = []
     if limit is not None:
@@ -20,6 +21,7 @@ async def find_by_filter_and_paginate(skip: int, limit: int):
             item = proxy_to_json(item)
             list_proxy.append(item)
     return list_proxy
+
 
 async def list_all():
     list_proxy = []

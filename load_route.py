@@ -6,11 +6,11 @@ from app.manage_news.route import router as ManageNewsRouter
 from app.news.routers import router as NewsRouter
 from app.newsletter.routers import router as NewsLetterRouter
 from app.proxy.route import router as ProxyRouter
+from app.report.router import router as ReportRouter
 from app.social.routers import router as SocialRouter
 from app.social_media.routers import router as SocialMediaRouter
 from app.upload.upload_file import router as UploadFileRouter
 from app.user.routers import router as UserRouter
-from app.report.router import router as ReportRouter
 from vosint_ingestion.features.job.routers import router as Job
 from vosint_ingestion.features.nlp.routers import router as Nlp
 from vosint_ingestion.features.pipeline.routers import router as PipeLine

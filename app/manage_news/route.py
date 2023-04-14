@@ -22,6 +22,7 @@ router = APIRouter()
 
 db = get_collection_client("Source")
 
+
 @router.post("/")
 async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
@@ -59,6 +60,7 @@ async def search(name, skip=1, limit=10):
         status_code=status.HTTP_200_OK,
         content={"data": search_source_group, "total_record": count_source},
     )
+
 
 @router.put("/{id}")
 async def update_all(

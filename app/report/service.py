@@ -1,5 +1,6 @@
 import pydantic
 from bson.objectid import ObjectId
+
 from db.init_db import get_collection_client
 
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str

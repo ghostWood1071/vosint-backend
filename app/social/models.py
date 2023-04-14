@@ -24,6 +24,7 @@ class AddProxy(BaseModel):
     ip_address: str
     port: str
 
+
 class UserCreateModel(BaseModel):
     username: str = Field(...)
     password: str = Field(...)

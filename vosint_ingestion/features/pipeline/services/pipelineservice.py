@@ -1,8 +1,9 @@
 from bson.objectid import ObjectId
 from common.internalerror import *
-from vosint_ingestion.models import HBaseRepository, MongoRepository
 from scheduler import Scheduler
 from utils import norm_text
+
+from vosint_ingestion.models import HBaseRepository, MongoRepository
 
 from ..models.dtos import PipelineForDetailsDto, PipelineForListDto
 

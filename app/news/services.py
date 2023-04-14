@@ -31,14 +31,10 @@ async def find_news_by_filter_and_paginate(
         if "pub_date" in new:
             new["pub_date"] = str(new["pub_date"])
         if "event_list" not in new:
-            await client.aggregate([
-                {
-                    "$addFields": {
-                        "event_list": []
-                    }
-                }    
-            ]).to_list(length=None)
-        
+            await client.aggregate([{"$addFields": {"event_list": []}}]).to_list(
+                length=None
+            )
+
         news.append(new)
 
     return news

@@ -1,5 +1,6 @@
 import pymongo
 
+
 def connect():
     myclient = pymongo.MongoClient("mongodb://vosint:vosint_2022@192.168.1.100:27017/?authMechanism=DEFAULT")
     return myclient

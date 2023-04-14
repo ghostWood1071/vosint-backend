@@ -27,7 +27,7 @@ async def add_infor(payload: CreateInfor):
             status_code=status.HTTP_409_CONFLICT, detail="source already exist"
         )
     new_infor = await create_infor(infor)
-    if new_infor: 
+    if new_infor:
         return 200
     return status.HTTP_403_FORBIDDEN
 
