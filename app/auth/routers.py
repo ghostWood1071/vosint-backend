@@ -6,7 +6,7 @@ from pydash import pick
 
 from app.auth.password import get_password_hash, verify_and_update
 from app.user.models import UserChangePasswordModel, UserLoginModel
-from app.user.services import get_user_by_id, read_user_by_username, update_user
+from app.user.services import read_user_by_username, read_user_by_username, update_user
 
 router = APIRouter()
 
@@ -46,16 +46,12 @@ async def login(body: UserLoginModel, authorize: AuthJWT = Depends()):
 
 
 @router.put("/change-password")
-async def change_user_password(
-    body: UserChangePasswordModel, authorize: AuthJWT = Depends()
-):
-    authorize.jwt_required()
-    user_id = ObjectId(authorize.get_jwt_subject())
-    user = await get_user_by_id(user_id)
+async def change_user_password(body: UserChangePasswordModel):
+    user = await read_user_by_username(body.username)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username or password is valid",
+            detail="Không tìm thấy tài khoản của bạn",
         )
 
     verified = verify_and_update(body.password, user["hashed_password"])
@@ -63,17 +59,17 @@ async def change_user_password(
     if not verified or verified[0] is False:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username or password is valid",
+            detail="Mật khẩu không chính xác.",
         )
 
     # TODO: check schemas password
     hashed_password = get_password_hash(body.new_password)
     try:
-        await update_user(user_id, {"hashed_password": hashed_password})
+        await update_user(user["_id"], {"hashed_password": hashed_password})
     except:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username or password is valid",
+            detail="Không thể thay đổi mật khẩu. Vui lòng thử lại sau.",
         )
 
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)

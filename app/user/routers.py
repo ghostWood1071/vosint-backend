@@ -45,7 +45,7 @@ projection = {
     "created_at": True,
     "modified_at": True,
     "keywords": True,
-    "pub_date": True
+    "pub_date": True,
 }
 client = get_collection_client("users")
 
@@ -58,7 +58,8 @@ async def add(body: UserCreateModel):
 
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="User already exist"
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Tên tài khoản đã tồn tại. Vui lòng nhập lại",
         )
 
     user_dict["hashed_password"] = get_password_hash(user_dict["password"])
