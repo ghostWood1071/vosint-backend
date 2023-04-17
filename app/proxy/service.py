@@ -80,8 +80,8 @@ async def update_proxy(id: str, data: dict):
         if item["_id"] != proxy["_id"] and item["ip_address"] == data["ip_address"]: 
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="proxy ip is duplicated")
 
-    if proxy["ip_address"] == data["ip_address"]: 
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="proxy ip already exist")
+    # if proxy["ip_address"] == data["ip_address"]: 
+    #     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="proxy ip already exist")
 
     updated_proxy = await proxy_collect.find_one_and_update({"_id": ObjectId(id)}, {"$set": data})
 
