@@ -94,8 +94,8 @@ async def update_object(id: str, data: dict):
         if item["_id"] != object["_id"] and item["name"] == data["name"]: 
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Object is duplicated")
         
-    if object["name"] == data["name"]:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Object already exist")
+    # if object["name"] == data["name"]:
+    #     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Object already exist")
     
     updated_object = await db.find_one_and_update({"_id": ObjectId(id)}, {"$set": data})
     if updated_object:

@@ -85,21 +85,38 @@ async def update_news(id_group: str, source):
 
 
 async def update_source_group(id: str, data: dict, list_source):
+    # source_group = await db.find_one({"_id": ObjectId(id)})
+
+    # for item in list_source:
+    #     if data["source_name"] == source_group["source_name"]:
+    #         updated_source_group = await db.update_one(
+    #             {"_id": ObjectId(id)}, {"$set": data}
+    #         )
+    #         if updated_source_group:
+    #             return {"message": "updated successful"}
+    #         return False
+
+    #     if data["source_name"] != item["source_name"]:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_404_NOT_FOUND, detail="source group not found"
+    #         )
+    
     source_group = await db.find_one({"_id": ObjectId(id)})
-
-    for item in list_source:
-        if data["source_name"] == source_group["source_name"]:
-            updated_source_group = await db.update_one(
-                {"_id": ObjectId(id)}, {"$set": data}
-            )
-            if updated_source_group:
-                return {"message": "updated successful"}
-            return False
-
-        if data["source_name"] != item["source_name"]:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="source group not found"
-            )
+    
+    list_source_group = await db.find().to_list(length=None)
+    
+    for item in list_source_group:
+        if item["_id"] != source_group["_id"] and item["source_name"] == data["source_name"]: 
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Source group is duplicated")
+        
+    # if infor["name"] == data["name"]:
+    #     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Object already exist")
+    
+    updated_source_group = await db.find_one_and_update({"_id": ObjectId(id)}, {"$set": data})
+    if updated_source_group:
+        return status.HTTP_200_OK
+    else:
+        return False
 
 
 async def hide_show(id: str, run):

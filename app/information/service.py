@@ -82,16 +82,21 @@ async def search_infor(keyword: str) -> dict:
 
 async def update_infor(id: str, data: dict):
     infor = await infor_collect.find_one({"_id": ObjectId(id)})
-    if infor["name"] == data["name"]:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="source name already exist"
-        )
-    updated_infor = await infor_collect.update_one(
-        {"_id": ObjectId(id)}, {"$set": data}
-    )
+    
+    list_infor = await infor_collect.find().to_list(length=None)
+    
+    for item in list_infor:
+        if item["_id"] != infor["_id"] and item["name"] == data["name"]: 
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Source is duplicated")
+        
+    # if infor["name"] == data["name"]:
+    #     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Object already exist")
+    
+    updated_infor = await infor_collect.find_one_and_update({"_id": ObjectId(id)}, {"$set": data})
     if updated_infor:
         return status.HTTP_200_OK
-    return False
+    else:
+        return False
 
 
 async def delete_infor(id: str):
