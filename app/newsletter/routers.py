@@ -120,7 +120,8 @@ async def get_details_newsletter(newsletter_id: str, authorize: AuthJWT = Depend
     news_samples = []
     if "news_samples" in newsletter:
         news_samples = await find_news_by_filter(
-            {"_id": {"$in": newsletter["news_samples"]}}
+            {"_id": {"$in": newsletter["news_samples"]}},
+            projection
         )
 
         newsletter["news_samples"] = news_samples

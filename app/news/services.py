@@ -28,8 +28,6 @@ async def find_news_by_filter_and_paginate(
         offset
     ).limit(limit):
         new = news_to_json(new)
-        if "pub_date" in new:
-            new["pub_date"] = str(new["pub_date"])
         if "event_list" not in new:
             await client.aggregate([{"$addFields": {"event_list": []}}]).to_list(
                 length=None
