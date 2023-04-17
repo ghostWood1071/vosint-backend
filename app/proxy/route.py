@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from app.proxy.model import CreateProxy, UpdateProxy
 from app.proxy.service import (
+    aggregate_proxy,
     count_proxy,
     count_search_proxy,
     create_proxy,
@@ -13,7 +14,6 @@ from app.proxy.service import (
     get_proxy_by_id,
     search_by_filter_and_paginate,
     update_proxy,
-    aggregate_proxy,
 )
 from db.init_db import get_collection_client
 
@@ -22,13 +22,15 @@ proxy_collect = get_collection_client("proxy")
 
 
 @router.post("/")
-async def add_proxy(payload: CreateProxy):
+async def add_proxy(payload: CreateProxy, username: Optional[str] = "", password: Optional[str] = ""):
     proxy = payload.dict()
     exist_proxy = await proxy_collect.find_one({"ip_address": proxy["ip_address"]})
     if exist_proxy:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="ip address already exist"
         )
+    proxy["username"] = username
+    proxy["password"] = password
     new_proxy = await create_proxy(proxy)
     if new_proxy:
         return status.HTTP_201_CREATED
@@ -85,8 +87,10 @@ async def get_id(id: str):
 
 
 @router.put("/{id}")
-async def update(id, data: UpdateProxy = Body(...)):
+async def update(id, data: UpdateProxy = Body(...), username: Optional[str] = "", password: Optional[str] = ""):
     data = {k: v for k, v in data.dict().items() if v is not None}
+    data["username"] = username
+    data["password"] = password
     updated_proxy = await update_proxy(id, data)
     if updated_proxy:
         return status.HTTP_200_OK
