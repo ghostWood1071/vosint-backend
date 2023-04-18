@@ -6,7 +6,7 @@ from fastapi.params import Depends
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 
-from app.auth.password import get_password_hash
+from app.auth.password import get_password_hash, verify_password_hash
 from app.news.services import count_news, find_news_by_filter_and_paginate
 from app.social_media.services import find_object_by_filter
 from db.init_db import get_collection_client
@@ -314,11 +314,33 @@ async def update_me(user_data: UserUpdateModel, authorize: AuthJWT = Depends()):
 
 
 @router.put("/{id}")
-async def update(id: str, user_data: UserUpdateModel = Body(...)):
-    user_data = {k: v for k, v in user_data.dict().items() if v is not None}
-    updated_user = await update_user(ObjectId(id), user_data)
+async def update(id: str, body: UserUpdateModel = Body(...)):
+    body_dict = {k: v for k, v in body.dict().items() if v is not None}
+    user = await find_user_by_id(ObjectId(id))
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Không tìm thấy nguời dùng"
+        )
+
+    if body_dict.get("password"):
+        verify_password = verify_password_hash(
+            body_dict["password"],
+            user["hashed_password"],
+        )
+
+        if verify_password == True:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Mật khẩu mới không được trùng với mật khẩu cũ",
+            )
+
+        body_dict["hashed_password"] = get_password_hash(body_dict["password"])
+        del body_dict["password"]
+
+    updated_user = await update_user(ObjectId(id), body_dict)
     if updated_user is None:
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=None)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=None)
 
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
