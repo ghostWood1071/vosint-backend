@@ -12,6 +12,10 @@ def verify_and_update(
     return pwd_context.verify_and_update(plain_password, hashed_password)
 
 
+def verify_password_hash(password: str, hash: str) -> bool:
+    return pwd_context.verify(password, hash)
+
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
