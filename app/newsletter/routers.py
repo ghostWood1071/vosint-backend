@@ -12,7 +12,12 @@ from app.news.services import (
     find_news_by_filter_and_paginate,
 )
 
-from .models import NewsLetterCreateModel, NewsletterDeleteMany, NewsLetterUpdateModel
+from .models import (
+    NewsLetterCreateModel,
+    NewsletterDeleteMany,
+    NewsLetterUpdateModel,
+    Tag,
+)
 from .services import (
     create_news_ids_to_newsletter,
     create_newsletter,
@@ -65,13 +70,36 @@ async def read(title: str = "", authorize: AuthJWT = Depends()):
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Bad jwt")
 
     query = {
-        "$or": [
-            {"title": {"$regex": f"\\b{title}\\b", "$options": "i"}},
-            {"title": {"$regex": title, "$options": "i"}},
+        "$and": [
+            {
+                "$or": [
+                    {"title": {"$regex": title, "$options": "i"}},
+                ]
+            },
+            {
+                "$or": [
+                    {
+                        "$and": [
+                            {"tag": {"$in": [Tag.gio_tin, Tag.chu_de]}},
+                            {"user_id": ObjectId(user_id)},
+                        ]
+                    },
+                    {"tag": Tag.linh_vuc},
+                ],
+            },
         ],
-        "user_id": ObjectId(user_id),
     }
-    newsletters = await find_newsletters_and_filter(query)
+
+    projection = {
+        "exclusion_keyword": True,
+        "required_keyword": True,
+        "tag": True,
+        "title": True,
+        "user_id": True,
+        "_id": True,
+    }
+
+    newsletters = await find_newsletters_and_filter(query, projection)
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=newsletters)
 
@@ -120,8 +148,7 @@ async def get_details_newsletter(newsletter_id: str, authorize: AuthJWT = Depend
     news_samples = []
     if "news_samples" in newsletter:
         news_samples = await find_news_by_filter(
-            {"_id": {"$in": newsletter["news_samples"]}},
-            projection
+            {"_id": {"$in": newsletter["news_samples"]}}, projection
         )
 
         newsletter["news_samples"] = news_samples

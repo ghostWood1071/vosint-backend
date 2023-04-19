@@ -14,28 +14,25 @@ async def find_newsletter_by_id(newsletter_id: ObjectId, projection=None):
     return await client.find_one(filter={"_id": newsletter_id}, projection=projection)
 
 
-async def find_newsletters_and_filter(filter_newsletters: dict):
+async def find_newsletters_and_filter(filter_newsletters: dict, projection=None):
     topics = {"gio_tin": [], "linh_vuc": [], "chu_de": []}
 
-    async for topic in client.find(filter_newsletters).sort("_id"):
+    async for topic in client.find(filter_newsletters, projection).sort("_id"):
         topic = newsletter_to_json(topic)
-        if "news_samples" in topic:
-            topic.pop("news_samples")
-
-        if "news_id" in topic:
-            topic.pop("news_id")
-
         if "tag" not in topic:
             continue
 
         if topic["tag"] == Tag.gio_tin:
             topics["gio_tin"].append(topic)
+            continue
 
         if topic["tag"] == Tag.linh_vuc:
             topics["linh_vuc"].append(topic)
+            continue
 
         if topic["tag"] == Tag.chu_de:
             topics["chu_de"].append(topic)
+            continue
 
     return topics
 
