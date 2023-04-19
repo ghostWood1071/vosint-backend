@@ -97,6 +97,7 @@ async def read(title: str = "", authorize: AuthJWT = Depends()):
         "title": True,
         "user_id": True,
         "_id": True,
+        "parent_id": True,
     }
 
     newsletters = await find_newsletters_and_filter(query, projection)
