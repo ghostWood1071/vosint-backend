@@ -19,7 +19,9 @@ from app.event.service import (
     remove_list_event_id,
     remove_list_new_id,
     search_event,
+    search_id,
     search_result,
+    update_add,
     update_event,
 )
 from db.init_db import get_collection_client
@@ -131,15 +133,37 @@ async def show_event_by_news(news_id: str):
 
 @router.get("/search/")
 async def search_by_name(
-    event_name: Optional[str] = "", id_new: Optional[str] = "", skip=1, limit=10
+    event_name: Optional[str] = "", 
+    id_new: Optional[str] = "", 
+    chu_the: Optional[str] = "", 
+    khach_the: Optional[str] = "",
+    system_created: Optional[bool] = "",
+    skip=1, 
+    limit=10
 ):
-    search_list = await search_event(event_name, id_new, int(skip), int(limit))
-    count = await search_result(event_name, id_new)
+    search_list = await search_event(event_name, id_new, chu_the, khach_the, system_created, int(skip), int(limit))
+    count = await search_result(event_name, id_new, chu_the, khach_the, system_created)
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": search_list, "total": count}
     )
+    
+@router.get("/search-based-user-id/")
+async def search_based_id_system(authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    search_list = await search_id(user_id)
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list})
 
-
+@router.put("/update-to-add/{id}")
+async def update_to_add(id: str, data: UpdateEvent = Body(...), authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    created = data.dict()
+    created["user_id"] = user_id
+    created["system_created"] = False
+    await update_add(id, created)
+    return 200
+    
 @router.put("/{id}")
 async def update(
     id: str, data: UpdateEvent = Body(...), authorize: AuthJWT = Depends()
@@ -152,7 +176,6 @@ async def update(
     if updated_event:
         return 200
     return status.HTTP_403_FORBIDDEN
-
 
 @router.delete("/{id}")
 async def remove_event(id):
