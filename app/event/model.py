@@ -15,13 +15,10 @@ class CreateEvent(BaseModel):
     event_content: Optional[str]
     date_created: Optional[str]
     new_list: Optional[List] = []
-    user_id: Optional[str]
-    event_content: str = Field(...)
-    date: Optional[str]
     system_created: bool = True
     chu_the: Optional[str]
     khach_the: Optional[str]
-
+    user_id: Optional[str]
     class config:
         orm_mode = True
 

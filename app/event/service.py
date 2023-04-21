@@ -58,15 +58,30 @@ def json(event) -> dict:
     event["_id"] = str(event["_id"])
     return event
 
+async def search_id(user_id: str):
+    query = {"user_id": {"$eq": user_id}}
+    list_event = []
+    async for item in client.find(query):
+        items = json(item)
+        list_event.append(items)
+    return list_event
 
-async def search_event(event_name: str, data: ObjectId, skip: int, limit: int):
+async def search_event(event_name: str, data: ObjectId, chu_the: str, khach_the: str, system: bool, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_event = []
     query = {}
     if event_name:
-        query["$or"] = [{"event_name": {"$regex": event_name, "$options": "i"}}]
+        query["$or"] = [{"event_name": {"$regex": event_name, "$options": "-i"}}]
     if data:
         query["new_list"] = {"$nin": [data]}
+    if chu_the:
+        query = {"chu_the": {"$regex": chu_the, "$options": "-i"}}
+    if khach_the:
+        query = {"khach_the": {"$regex": khach_the, "$options": "-i"}}
+    if system == True:
+        query = {"system_created": system}
+    if system == False:
+        query = {"system_created": system}
     if not query:
         query = {}
     async for item in client.find(query).sort("_id").skip(offset).limit(limit):
@@ -75,12 +90,20 @@ async def search_event(event_name: str, data: ObjectId, skip: int, limit: int):
     return list_event
 
 
-async def search_result(name, id_new):
+async def search_result(name, id_new, chu_the, khach_the, system):
     query = {}
     if name:
-        query["event_name"] = {"$regex": name, "$options": "i"}
+        query["event_name"] = {"$regex": name, "$options": "-i"}
     if id_new:
         query["new_list"] = {"$nin": [id_new]}
+    if chu_the:
+        query = {"chu_the": {"$regex": chu_the, "$options": "-i"}}
+    if khach_the:
+        query = {"khach_the": {"$regex": khach_the, "$options": "-i"}}
+    if system == True:
+        query = {"system_created": system}
+    if system == False:
+        query = {"system_created": system}
     if not query:
         query = {}
     return await client.count_documents(query)
@@ -109,12 +132,42 @@ def convert_map_str_to_object_id(array: list[str]):
 async def count_event(count):
     return await client.count_documents(count)
 
-
+async def update_add(id: str, data):
+    event = await client.find_one({"_id": ObjectId(id)})
+    event_name = event["event_name"]
+    newsList = data.get("new_list", [])
+    if  event["system_created"] == True:
+        exist_event = await client.find_one({"event_name": data["event_name"]})
+        if exist_event:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="event already exist"
+            )
+        await client.insert_one(data)
+        await client2.update_many(
+            {"event_list.event_id": id, "event_list.event_name": event_name},
+            {"$pull": {"event_list": {"event_id": id, "event_name": event_name}}},
+        )
+        for new in newsList:
+            new_id = new
+            await client2.update_one(
+                {"_id": ObjectId(new_id)},
+                {
+                    "$addToSet": {
+                        "event_list": {"event_id": id, "event_name": event_name}
+                    }
+                },
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="not allowed"
+        )
+        
 async def update_event(id: str, data: dict):
     id_event = str(id)
     event = await client.find_one({"_id": ObjectId(id)})
     event_name = event["event_name"]
     newsList = data.get("new_list", [])
+    
     await client2.update_many(
         {"event_list.event_id": id_event, "event_list.event_name": event_name},
         {"$pull": {"event_list": {"event_id": id_event, "event_name": event_name}}},
