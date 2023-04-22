@@ -12,10 +12,13 @@ from app.event.service import (
     add_list_new,
     add_list_new_id,
     count_event,
+    count_event_system,
     delete_event,
     delete_list_new,
     event_detail,
+    event_detail_system,
     get_all_by_paginate,
+    get_all_by_system,
     remove_list_event_id,
     remove_list_new_id,
     search_event,
@@ -28,19 +31,35 @@ from db.init_db import get_collection_client
 
 router = APIRouter()
 client = get_collection_client("event")
+client3 = get_collection_client("event_system")
 
-
+@router.get("/all-system-created/")
+async def get_all(skip=1, limit=10):
+    list_event = await get_all_by_system({}, int(skip), int(limit))
+    count = await count_event_system({})
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"data": list_event, "total": count}
+    )
+    
 @router.post("/")
 async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     event = data.dict()
     event["user_id"] = user_id
-    exist_event = await client.find_one({"event_name": event["event_name"]})
-    if exist_event:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="event already exist"
-        )
+    if event["system_created"] == True:
+        exist_event_system = await client3.find_one({"event_name": event["event_name"]})
+        event["user_id"] = 0
+        if exist_event_system:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="event already exist"
+            )
+    if event["system_created"] == False:
+        exist_event = await client.find_one({"event_name": event["event_name"]})
+        if exist_event:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="event already exist"
+            )
     event_created = await add_event(event)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED, content=str(event_created.inserted_id)
@@ -114,7 +133,6 @@ async def get_all(skip=1, limit=10):
         status_code=status.HTTP_200_OK, content={"data": list_event, "total": count}
     )
 
-
 @router.get("/detail/{event_id}")
 async def get_event(event_id: str):
     detail = await event_detail(event_id)
@@ -124,10 +142,23 @@ async def get_event(event_id: str):
         status_code=status.HTTP_403_FORBIDDEN, detail="event not exist"
     )
 
+@router.get("/detail-system/{event_id}")
+async def get_event(event_id: str):
+    detail = await event_detail_system(event_id)
+    if detail:
+        return detail
+    return HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="event not exist"
+    )
 
 @router.get("/news/{news_id}")
 async def show_event_by_news(news_id: str):
     result = await client.find({"new_list": news_id}).to_list(length=None)
+    return result
+
+@router.get("/news/system/{news_id}")
+async def show_event_by_news_and_system(news_id: str):
+    result = await client3.find({"new_list": news_id}).to_list(length=None)
     return result
 
 
@@ -137,12 +168,11 @@ async def search_by_name(
     id_new: Optional[str] = "", 
     chu_the: Optional[str] = "", 
     khach_the: Optional[str] = "",
-    system_created: Optional[bool] = "",
     skip=1, 
     limit=10
 ):
-    search_list = await search_event(event_name, id_new, chu_the, khach_the, system_created, int(skip), int(limit))
-    count = await search_result(event_name, id_new, chu_the, khach_the, system_created)
+    search_list = await search_event(event_name, id_new, chu_the, khach_the, int(skip), int(limit))
+    count = await search_result(event_name, id_new, chu_the, khach_the)
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": search_list, "total": count}
     )
@@ -159,8 +189,10 @@ async def update_to_add(id: str, data: UpdateEvent = Body(...), authorize: AuthJ
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     created = data.dict()
-    created["user_id"] = user_id
-    created["system_created"] = False
+    if created["system_created"] == True:
+        created["user_id"] = 0
+    if created["system_created"] == False:
+        created["user_id"] = user_id
     await update_add(id, created)
     return 200
     
@@ -171,7 +203,10 @@ async def update(
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     data = {k: v for k, v in data.dict().items() if v is not None}
-    data["user_id"] = user_id
+    if data["system_created"] == True:
+        data["user_id"] = 0
+    if data["system_created"] == False:
+        data["user_id"] = user_id
     updated_event = await update_event(id, data)
     if updated_event:
         return 200
