@@ -13,3 +13,16 @@ class UpdateReport(BaseModel):
     content: Optional[str] = Field(
         default=None, description="The content of the report"
     )
+
+
+class EventsDto(BaseModel):
+    _id: str
+    event_ids: List[str]
+
+
+class CreateEvents(BaseModel):
+    event_ids: Optional[List[str]] = Field(...)
+
+
+class UpdateEvents(BaseModel):
+    event_ids: Optional[List[str]] = Field(...)
