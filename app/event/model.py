@@ -19,6 +19,7 @@ class CreateEvent(BaseModel):
     chu_the: Optional[str]
     khach_the: Optional[str]
     user_id: Optional[str]
+    total_new: Optional[str]
     class config:
         orm_mode = True
 
@@ -32,3 +33,4 @@ class UpdateEvent(BaseModel):
     chu_the: Optional[str]
     khach_the: Optional[str]
     user_id: Optional[str]
+    total_new: Optional[str]
