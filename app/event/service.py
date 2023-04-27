@@ -28,6 +28,7 @@ async def add_event(event):
             {"_id": {"$in": [ObjectId(event_id) for event_id in newsList]}},
             {"$push": {"event_list": {"event_id": id_event, "event_name": event_name}}},
         )
+        
         return created_event
     if event["system_created"] == False:
         created_event = await client.insert_one(event)
@@ -54,6 +55,7 @@ async def get_all_by_paginate(filter, skip: int, limit: int):
                 gg = json(new)
                 ll.append(gg)
         item["new_list"] = ll
+        item["total_new"] = len(item["new_list"])
         item = json(item)
         list_event.append(item)
     return list_event
@@ -70,6 +72,7 @@ async def get_all_by_system(filter, skip: int, limit: int):
                 gg = json(new)
                 ll.append(gg)
         item["new_list"] = ll
+        item["total_new"] = len(item["new_list"])
         item = json(item)
         list_event.append(item)
     return list_event
@@ -81,9 +84,17 @@ def json(event) -> dict:
 async def search_id(user_id: str):
     query = {"user_id": {"$eq": user_id}}
     list_event = []
-    async for item in client.find(query):
-        items = json(item)
-        list_event.append(items)
+    async for item in client.find(query).sort("_id"):
+        ll = []
+        for Item in item["new_list"]:
+            id_new = {"_id": ObjectId(Item)}
+            async for new in client2.find(id_new, projection):
+                gg = json(new)
+                ll.append(gg)
+        item["new_list"] = ll
+        item["total_new"] = len(item["new_list"])
+        item = json(item)
+        list_event.append(item)
     return list_event
 
 async def search_event(event_name: str, data: ObjectId, chu_the: str, khach_the: str, skip: int, limit: int):
@@ -101,6 +112,7 @@ async def search_event(event_name: str, data: ObjectId, chu_the: str, khach_the:
     if not query:
         query = {}
     async for item in client.find(query).sort("_id").skip(offset).limit(limit):
+        item["total_new"] = len(item["new_list"])
         items = json(item)
         list_event.append(items)
     return list_event
@@ -131,6 +143,7 @@ async def event_detail(id) -> dict:
         )
         ev_detail["new_list"] = new_list
     if ev_detail:
+        ev_detail["total_new"] = len(ev_detail["new_list"])
         ev = json(ev_detail)
         return ev
 
@@ -144,6 +157,7 @@ async def event_detail_system(id) -> dict:
         )
         ev_detail["new_list"] = new_list
     if ev_detail:
+        ev_detail["total_new"] = len(ev_detail["new_list"])
         ev = json(ev_detail)
         return ev
 

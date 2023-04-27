@@ -60,6 +60,7 @@ async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depen
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="event already exist"
             )
+    event["total_new"] = len(event["new_list"])
     event_created = await add_event(event)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED, content=str(event_created.inserted_id)
@@ -154,11 +155,15 @@ async def get_event(event_id: str):
 @router.get("/news/{news_id}")
 async def show_event_by_news(news_id: str):
     result = await client.find({"new_list": news_id}).to_list(length=None)
+    for item in result:
+        item["total_new"] = len(item["new_list"])
     return result
 
 @router.get("/news/system/{news_id}")
 async def show_event_by_news_and_system(news_id: str):
     result = await client3.find({"new_list": news_id}).to_list(length=None)
+    for item in result:
+        item["total_new"] = len(item["new_list"])
     return result
 
 
@@ -207,6 +212,7 @@ async def update(
         data["user_id"] = 0
     if data["system_created"] == False:
         data["user_id"] = user_id
+    data["total_new"] = len(data["new_list"])
     updated_event = await update_event(id, data)
     if updated_event:
         return 200

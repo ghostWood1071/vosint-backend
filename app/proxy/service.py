@@ -1,3 +1,5 @@
+import re
+
 from bson.objectid import ObjectId
 from fastapi import HTTPException, status
 
@@ -47,10 +49,11 @@ async def count_proxy(filter):
 async def search_by_filter_and_paginate(char_name, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_proxy = []
+    regex_name = re.compile(f".*{char_name}.*", re.IGNORECASE | re.UNICODE)
     async for item in proxy_collect.find(
         {
             "$or": [
-                {"name": {"$regex": f".*{char_name}.*", "$options": "i"}},
+                {"name": {"$regex": regex_name}},
                 {"ip_address": {"$regex": f".*{char_name}.*", "$options": "i"}},
             ]
         }
