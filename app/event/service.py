@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 
 import pydantic
@@ -321,40 +322,88 @@ async def add_list_event_id(id_new: str, list_id_event: List[ObjectId]):
     eventList = []
     for item in list_id_event:
         eventList.append(item)
-    ev_name = await client.find_one(
-        {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}}
-    )
-    ev_name_2 = await client3.find_one(
-        {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}}
-    )
-    if ev_name_2:
-        ev_id_2 = str(ev_name_2["_id"])
-        await client2.update_many(
-            {"_id": ObjectId(id_news)},
-            {
-                "$addToSet": {
-                    "event_list": {"event_id": ev_id_2, "event_name": ev_name_2["event_name"]}
-                }
-            },
-        )
-        return await client3.update_one(
-            {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
-            {"$push": {"new_list": id_news}},
-        )
-    if ev_name:
-        ev_id = str(ev_name["_id"])
-        await client2.update_many(
-            {"_id": ObjectId(id_news)},
-            {
-                "$addToSet": {
-                    "event_list": {"event_id": ev_id, "event_name": ev_name["event_name"]}
-                }
-            },
-        )
-        return await client.update_one(
-            {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
-            {"$push": {"new_list": id_news}},
-        )
+       
+    event_ids = [ObjectId(event_id) for event_id in list_id_event]
+    ev_name = await client.find({"_id": {"$in": event_ids}}).to_list(length=None)
+    ev_name_2 = await client3.find({"_id": {"$in": event_ids}}).to_list(length=None)
+    
+    for item2 in ev_name_2:
+        if item2:
+            ev_id_2 = str(item2["_id"])
+            await client2.update_many(
+                {"_id": ObjectId(id_news)},
+                {
+                    "$addToSet": {
+                        "event_list": {"event_id": ev_id_2, "event_name": item2["event_name"]}
+                    }
+                },
+            ),
+            await client3.update_many(
+                {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
+                {"$addToSet": {"new_list": id_news}},
+            )
+    
+    for item in ev_name:
+        if item:
+            ev_id = str(item["_id"])
+            await client2.update_many(
+                {"_id": ObjectId(id_news)},
+                {
+                    "$addToSet": {
+                        "event_list": {"event_id": ev_id, "event_name": item["event_name"]}
+                    }
+                },
+            ),
+            await client.update_many(
+                {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
+                {"$addToSet": {"new_list": id_news}},
+            ),
+            
+        for item2 in ev_name_2:
+            if item2:
+                ev_id_2 = str(item2["_id"])
+                await client2.update_many(
+                    {"_id": ObjectId(id_news)},
+                    {
+                        "$addToSet": {
+                            "event_list": {"event_id": ev_id_2, "event_name": item2["event_name"]}
+                        }
+                    },
+                ),
+                await client3.update_many(
+                    {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
+                    {"$addToSet": {"new_list": id_news}},
+                )
+                
+            if item and item2:
+                ev_id = str(item["_id"])
+                ev_id_2 = str(item2["_id"])
+                await asyncio.gather(
+                    client3.update_many(
+                        {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
+                        {"$addToSet": {"new_list": id_news}},
+                    ),
+                    client.update_many(
+                        {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
+                        {"$addToSet": {"new_list": id_news}},
+                    ),
+                    client2.update_many(
+                        {"_id": ObjectId(id_news)},
+                        {
+                            "$addToSet": {
+                                "event_list":{
+                                    "$each": [
+                                        {"event_id": ev_id, "event_name": item["event_name"]},
+                                        {"event_id": ev_id_2, "event_name": item2["event_name"]},  
+                                    ]
+                                }
+                            }
+                        },
+                    ),
+                )
+        
+            
+                
 
 async def remove_list_new_id(id: str, id_new: List[ObjectId]):
     id_event = str(id)
