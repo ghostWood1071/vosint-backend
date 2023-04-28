@@ -6,7 +6,13 @@ from fastapi_jwt_auth import AuthJWT
 
 from app.user.services import find_user_by_id
 
-from .services import count_news, find_news_by_filter_and_paginate, find_news_by_id
+from .services import (
+    count_news,
+    find_news_by_filter_and_paginate,
+    find_news_by_id,
+    read_by_id,
+    unread_by_id,
+)
 from .utils import news_to_json
 
 router = APIRouter()
@@ -25,6 +31,8 @@ projection = {
     "keywords": True,
     "pub_date": True,
     "event_list": True,
+    "is_read": True,
+    "list_user_read": True
 }
 
 
@@ -62,3 +70,18 @@ async def get_news_detail(id: str, authorize: AuthJWT = Depends()):
         news["is_star"] = True
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=news_to_json(news))
+
+@router.post('/read/{id}')
+async def read_id(id: str, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    await read_by_id(id, user_id)
+    return id
+
+
+@router.post('/unread/{id}')
+async def read_id(id: str, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    await unread_by_id(id, user_id)
+    return id
