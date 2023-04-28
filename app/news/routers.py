@@ -48,6 +48,9 @@ async def get_news(title: str = "", skip=1, limit=20, authorize: AuthJWT = Depen
         int(limit),
     )
     count = await count_news(query)
+    for item in news:
+         if "is_read" not in item:
+            item["is_read"] = False
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"result": news, "total_record": count}
     )
