@@ -98,10 +98,21 @@ async def search_id(user_id: str):
         list_event.append(item)
     return list_event
 
-async def search_event(event_name: str, data: ObjectId, chu_the: str, khach_the: str, skip: int, limit: int):
+async def search_event(
+    event_name: str, 
+    data: ObjectId, 
+    chu_the: str, 
+    khach_the: str, 
+    start_date: str, 
+    end_date: str, 
+    skip: int, 
+    limit: int
+):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_event = []
     query = {}
+    if start_date and end_date:
+        query = {"date_created": {"$gte": start_date, "$lte": end_date}}
     if event_name:
         query["$or"] = [{"event_name": {"$regex": event_name, "$options": "-i"}}]
     if data:
@@ -116,10 +127,14 @@ async def search_event(event_name: str, data: ObjectId, chu_the: str, khach_the:
         item["total_new"] = len(item["new_list"])
         items = json(item)
         list_event.append(items)
+    async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
+        item["total_new"] = len(item["new_list"])
+        items = json(item)
+        list_event.append(items)
     return list_event
 
 
-async def search_result(name, id_new, chu_the, khach_the):
+async def search_result(name, id_new, chu_the, khach_the, start_date, end_date):
     query = {}
     if name:
         query["event_name"] = {"$regex": name, "$options": "-i"}
@@ -129,9 +144,16 @@ async def search_result(name, id_new, chu_the, khach_the):
         query = {"chu_the": {"$regex": chu_the, "$options": "-i"}}
     if khach_the:
         query = {"khach_the": {"$regex": khach_the, "$options": "-i"}}
+    if start_date and end_date:
+        query = {"date_created": {"$gte": start_date, "$lte": end_date}}
     if not query:
         query = {}
-    return await client.count_documents(query)
+    count = {
+        'client': await client.count_documents(query),
+        'client3': await client3.count_documents(query)
+    }
+    total = sum(count.values())
+    return total
 
 
 async def event_detail(id) -> dict:
@@ -499,12 +521,23 @@ async def delete_list_new(id: str, data: List[AddNewEvent]):
 
 
 async def delete_event(id):
+    id_event = str(id)
     event = await client.find_one({"_id": ObjectId(id)})
     event_2 = await client3.find_one({"_id": ObjectId(id)})
     
     if event:
+        event_name = event["event_name"]
+        await client2.update_many(
+            {"event_list.event_id": id_event, "event_list.event_name": event_name},
+            {"$pull": {"event_list": {"event_id": id_event, "event_name": event_name}}},
+        )
         await client.delete_one({"_id": ObjectId(id)})
         return 200
     if event_2:
+        event_name_2 = event_2["event_name"]
+        await client2.update_many(
+            {"event_list.event_id": id_event, "event_list.event_name": event_name_2},
+            {"$pull": {"event_list": {"event_id": id_event, "event_name": event_name_2}}},
+        )
         await client3.delete_one({"_id": ObjectId(id)})
         return 200
