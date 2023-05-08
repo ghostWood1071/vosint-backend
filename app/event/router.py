@@ -173,11 +173,13 @@ async def search_by_name(
     id_new: Optional[str] = "", 
     chu_the: Optional[str] = "", 
     khach_the: Optional[str] = "",
+    start_date: Optional[str] = "",
+    end_date: Optional[str] = "",
     skip=1, 
     limit=10
 ):
-    search_list = await search_event(event_name, id_new, chu_the, khach_the, int(skip), int(limit))
-    count = await search_result(event_name, id_new, chu_the, khach_the)
+    search_list = await search_event(event_name, id_new, chu_the, khach_the, start_date, end_date, int(skip), int(limit))
+    count = await search_result(event_name, id_new, chu_the, khach_the, start_date, end_date)
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": search_list, "total": count}
     )
