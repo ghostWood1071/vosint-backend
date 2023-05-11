@@ -60,6 +60,7 @@ async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depen
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="event already exist"
             )
+    event["total_new"] = len(event["new_list"])
     event_created = await add_event(event)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED, content=str(event_created.inserted_id)
@@ -154,11 +155,15 @@ async def get_event(event_id: str):
 @router.get("/news/{news_id}")
 async def show_event_by_news(news_id: str):
     result = await client.find({"new_list": news_id}).to_list(length=None)
+    for item in result:
+        item["total_new"] = len(item["new_list"])
     return result
 
 @router.get("/news/system/{news_id}")
 async def show_event_by_news_and_system(news_id: str):
     result = await client3.find({"new_list": news_id}).to_list(length=None)
+    for item in result:
+        item["total_new"] = len(item["new_list"])
     return result
 
 
@@ -168,11 +173,13 @@ async def search_by_name(
     id_new: Optional[str] = "", 
     chu_the: Optional[str] = "", 
     khach_the: Optional[str] = "",
+    start_date: Optional[str] = "",
+    end_date: Optional[str] = "",
     skip=1, 
     limit=10
 ):
-    search_list = await search_event(event_name, id_new, chu_the, khach_the, int(skip), int(limit))
-    count = await search_result(event_name, id_new, chu_the, khach_the)
+    search_list = await search_event(event_name, id_new, chu_the, khach_the, start_date, end_date, int(skip), int(limit))
+    count = await search_result(event_name, id_new, chu_the, khach_the, start_date, end_date)
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": search_list, "total": count}
     )
@@ -207,6 +214,7 @@ async def update(
         data["user_id"] = 0
     if data["system_created"] == False:
         data["user_id"] = user_id
+    data["total_new"] = len(data["new_list"])
     updated_event = await update_event(id, data)
     if updated_event:
         return 200

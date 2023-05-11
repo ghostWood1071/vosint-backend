@@ -56,9 +56,14 @@ class JobController:
             News, order_spec=order_spec, pagination_spec=pagination_spec, filter=filter
         )
         for i in pipeline_dtos:
-            i["_id"] = str(i["_id"])
-            i["pub_date"] = str(i["pub_date"])
-
+            try:
+                i["_id"] = str(i["_id"])
+            except:
+                pass
+            try:
+                i["pub_date"] = str(i["pub_date"])
+            except:
+                pass
         return {"success": True, "total_record": total_records, "result": pipeline_dtos}
 
     def run_one_foreach(self, pipeline_id: str):
