@@ -33,6 +33,7 @@ router = APIRouter()
 client = get_collection_client("event")
 client3 = get_collection_client("event_system")
 
+
 @router.get("/all-system-created/")
 async def get_all(skip=1, limit=10):
     list_event = await get_all_by_system({}, int(skip), int(limit))
@@ -40,7 +41,8 @@ async def get_all(skip=1, limit=10):
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": list_event, "total": count}
     )
-    
+
+
 @router.post("/")
 async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
@@ -134,23 +136,27 @@ async def get_all(skip=1, limit=10):
         status_code=status.HTTP_200_OK, content={"data": list_event, "total": count}
     )
 
+
 @router.get("/detail/{event_id}")
 async def get_event(event_id: str):
     detail = await event_detail(event_id)
-    if detail:
-        return detail
-    return HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN, detail="event not exist"
-    )
+    if detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="event not exist"
+        )
+    return detail
+
 
 @router.get("/detail-system/{event_id}")
 async def get_event(event_id: str):
     detail = await event_detail_system(event_id)
-    if detail:
-        return detail
-    return HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN, detail="event not exist"
-    )
+    if detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="event not exist"
+        )
+
+    return detail
+
 
 @router.get("/news/{news_id}")
 async def show_event_by_news(news_id: str):
@@ -158,6 +164,7 @@ async def show_event_by_news(news_id: str):
     for item in result:
         item["total_new"] = len(item["new_list"])
     return result
+
 
 @router.get("/news/system/{news_id}")
 async def show_event_by_news_and_system(news_id: str):
@@ -169,21 +176,33 @@ async def show_event_by_news_and_system(news_id: str):
 
 @router.get("/search/")
 async def search_by_name(
-    event_name: Optional[str] = "", 
-    id_new: Optional[str] = "", 
-    chu_the: Optional[str] = "", 
+    event_name: Optional[str] = "",
+    id_new: Optional[str] = "",
+    chu_the: Optional[str] = "",
     khach_the: Optional[str] = "",
     start_date: Optional[str] = "",
     end_date: Optional[str] = "",
-    skip=1, 
-    limit=10
+    skip=1,
+    limit=10,
 ):
-    search_list = await search_event(event_name, id_new, chu_the, khach_the, start_date, end_date, int(skip), int(limit))
-    count = await search_result(event_name, id_new, chu_the, khach_the, start_date, end_date)
+    search_list = await search_event(
+        event_name,
+        id_new,
+        chu_the,
+        khach_the,
+        start_date,
+        end_date,
+        int(skip),
+        int(limit),
+    )
+    count = await search_result(
+        event_name, id_new, chu_the, khach_the, start_date, end_date
+    )
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": search_list, "total": count}
     )
-    
+
+
 @router.get("/search-based-user-id/")
 async def search_based_id_system(authorize: AuthJWT = Depends()):
     authorize.jwt_required()
@@ -191,8 +210,11 @@ async def search_based_id_system(authorize: AuthJWT = Depends()):
     search_list = await search_id(user_id)
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list})
 
+
 @router.put("/update-to-add/{id}")
-async def update_to_add(id: str, data: UpdateEvent = Body(...), authorize: AuthJWT = Depends()):
+async def update_to_add(
+    id: str, data: UpdateEvent = Body(...), authorize: AuthJWT = Depends()
+):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     created = data.dict()
@@ -202,7 +224,8 @@ async def update_to_add(id: str, data: UpdateEvent = Body(...), authorize: AuthJ
         created["user_id"] = user_id
     await update_add(id, created)
     return 200
-    
+
+
 @router.put("/{id}")
 async def update(
     id: str, data: UpdateEvent = Body(...), authorize: AuthJWT = Depends()
@@ -219,6 +242,7 @@ async def update(
     if updated_event:
         return 200
     return status.HTTP_403_FORBIDDEN
+
 
 @router.delete("/{id}")
 async def remove_event(id):
