@@ -1,36 +1,33 @@
 # -*- coding: utf-8 -*-
 import json
-
 from kafka import KafkaProducer
 from kafka.admin import KafkaAdminClient, NewTopic
 from models.kafka_python import Kafka_class
-
-
 class KafkaProducer_class:
     def __init__(self):
         # Create a Kafka producer object
-        self.producer = KafkaProducer(bootstrap_servers=["192.168.1.63:9092"])
-
+        self.producer = KafkaProducer(
+            bootstrap_servers=['192.168.1.63:9092']
+        )
+           
     def write(self, topic: str, message):
         # if not self.check_topic_exist(topic):
         #     Kafka_class().create_topic(topic,5,1)
-        json_message = json.dumps(message).encode("utf-8")
+        json_message = json.dumps(message).encode('utf-8')
         self.producer.send(topic, json_message)
         self.producer.flush()
         self.producer.close()
 
-    def check_topic_exist(self, topic_name):
-        # print(1)
-        admin_client = KafkaAdminClient(bootstrap_servers=["192.168.1.63:9092"])
-        # print(2)
+    def check_topic_exist(self,topic_name):
+        #print(1)
+        admin_client = KafkaAdminClient(bootstrap_servers=['192.168.1.63:9092'])
+        #print(2)
         topic_metadata = admin_client.list_topics()
-        # print(3)
+        #print(3)
         if topic_name not in set(t for t in topic_metadata):
             return False
         else:
             return True
-
-
 # #Xóa topic
 # from kafka.admin import KafkaAdminClient, NewTopic
 
@@ -50,3 +47,5 @@ class KafkaProducer_class:
 #     print(f"Topic {topic_to_delete} has been deleted")
 # else:
 #     print(f"Failed to delete topic {topic_to_delete}")
+            
+        

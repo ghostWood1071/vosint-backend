@@ -1,6 +1,6 @@
 import time
 from abc import abstractmethod
-
+from fastapi import status
 from common.internalerror import *
 from models import HBaseRepository, MongoRepository
 
@@ -31,6 +31,8 @@ class BaseAction:
         self.driver = driver
         self.storage = storage
         self.params = params
+        #print(params)
+        
 
         self.set_status(ActionStatus.INITIALIZED)
 
@@ -56,20 +58,18 @@ class BaseAction:
                                     "msg": [p_info.display_name],
                                 },
                             )
-
+            
             # Validate value must be in options
             # print('params',str(params))
             # print('1p_info.options', p_info.options)
             # print('1.5',p_info.name)
             # print('2params[p_info.name]',params[p_info.name])
             # print('3???',params[p_info.name] not in p_info.options)
-            if (p_info.default_val == None or p_info.default_val == []) and (
-                p_info.options and params[p_info.name] not in p_info.options
-            ):
+            if (p_info.default_val==None or p_info.default_val==[]) and (p_info.options and params[p_info.name] not in p_info.options):
                 # print('1p_info.options', p_info.options)
                 # print('2params[p_info.name]',params[p_info.name])
                 # print('3???',params[p_info.name] not in p_info.options)
-                # print('aaaaaaaaaaaaaaaaaaaaaaaaa')
+                #print('aaaaaaaaaaaaaaaaaaaaaaaaa')
                 options = ", ".join(list(map(lambda o: str(o), p_info.options)))
                 raise InternalError(
                     ERROR_NOT_IN,
@@ -86,22 +86,36 @@ class BaseAction:
 
     def run(self, input_val=None, **kwargs):
         tmp_val = ""
-        res = ""
+        res =""
         self.set_status(ActionStatus.RUNNING)
-        # print(kwargs)
-        res = self.exec_func(input_val, **kwargs)
+        #print(kwargs)
+        
         try:
+            res = self.exec_func(input_val, **kwargs)
             history = self.return_str_status(ActionStatus.COMPLETED)
-        except:
+            his_log = {}
+            his_log["pipeline_id"] = kwargs["pipeline_id"]
+            his_log["actione"] = f"{self.__class__.__name__}"
+            his_log["log"] = history
+            his_log["link"] = "" if type(input_val) != str else input_val
+            #his_log["id_schema"] = self.params['id_schema']
+            his_log['message_error'] = ''
+        except Exception as e:
             history = self.return_str_status(ActionStatus.ERROR)
+            his_log = {}
+            his_log["pipeline_id"] = kwargs["pipeline_id"]
+            his_log["actione"] = f"{self.__class__.__name__}"
+            his_log["log"] = history
+            his_log["link"] = "" if type(input_val) != str else input_val
+            #print('abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',his_log["actione"])
+            his_log["id_schema"] = self.params['id_schema']
+            his_log['message_error'] = str(e).replace('=========================== logs ===========================','').replace('============================================================','')
 
-        his_log = {}
-        his_log["pipeline_id"] = kwargs["pipeline_id"]
-        his_log["actione"] = f"{self.__class__.__name__}"
-        his_log["log"] = history
-        his_log["link"] = "" if type(input_val) != str else input_val
+            MongoRepository().insert_one(collection_name="his_log", doc=his_log)
+            res = self.exec_func(input_val, **kwargs)
+            
 
-        MongoRepository().insert_one(collection_name="his_log", doc=his_log)
+        
 
         # Wait if necessary
         if "wait" in self.params and self.params["wait"]:
@@ -125,3 +139,4 @@ class BaseAction:
 
     def return_str_status(self, status: str):
         return status
+    

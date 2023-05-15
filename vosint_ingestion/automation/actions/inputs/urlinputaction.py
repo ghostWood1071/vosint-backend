@@ -18,14 +18,30 @@ class URLInputAction(BaseAction):
                     default_val="",
                     validators=["required"],
                 ),
-                ParamInfo(  # check URL input .run only url
+                ParamInfo(#check URL input .run only url
                     name="source",
                     display_name="Nguồn",
                     val_type="source",  # val_type='str',
-                    default_val="",
-                    options="",
-                    validators=["required_"],
+                    default_val='',
+                    options='',
+                    validators=["required_"]
                 ),
+                ParamInfo(#check URL input .run only url
+                    name="proxy_list",
+                    display_name="Danh sách proxy",
+                    val_type="proxy",  # val_type='str',
+                    default_val='None',
+                    #options='',
+                    validators=["required_"]
+                ),
+                ParamInfo(#check URL input .run only url
+                    name="max_new",
+                    display_name="Số tin tối đa",
+                    val_type="str",  # val_type='str',
+                    default_val='10',
+                    validators=["required_"]
+                )
+                
             ],
             z_index=0,
         )
