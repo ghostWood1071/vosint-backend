@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, time, timedelta
 
 import pydantic
 from bson.objectid import ObjectId
+from dateutil import parser
 
 from db.init_db import get_collection_client
 
@@ -16,19 +17,20 @@ newsletter_client = get_collection_client("newsletter")
 
 projection = {
     "_id": True,
-    "title": True
+    "title": True,
+    "parent_id": True,
 }
 
 projection_event = {
     "event_name": True,
-    "new_list": True
+    "new_list": True,
+    "date_created": True
 }
 
 projection_new = {
     "_id": True, 
     "data:title": True, 
     "data:url": True, 
-    "data:time": True,
     "created_at": True
 }
 
@@ -68,7 +70,25 @@ async def get_event(data):
         async for item in newsletter_client.find({"_id": ObjectId(data_model.id_linh_vuc)}, projection):
             if "events" not in item:
                 ll = []
-                async for item2 in event_client.find({"list_linh_vuc": {"$in": [data_model.id_linh_vuc]}}, projection_event):
+                start_date = datetime.strptime(data_model.start, "%d/%m/%Y").date()
+                datetime_start = datetime.combine(start_date, time.min)
+                
+                end_date = datetime.strptime(data_model.end, "%d/%m/%Y").date()
+                datetime_end = datetime.combine(end_date, time.max)
+                query = {"$or": 
+                    [
+                        {"list_linh_vuc": {"$in": [data_model.id_linh_vuc]}},
+                        {"date_created": {
+                            "$gte": datetime_start,
+                            "$lt": datetime_end
+                        }},
+                    ]
+                }
+                async for item2 in event_client.find(
+                    query,
+                    projection_event
+                ):
+                    item2["date_created"] = datetime.strptime(item2["date_created"], "%d/%m/%Y")
                     ll2 = []
                     for item3 in item2["new_list"]:
                         id_new = {"_id": ObjectId(item3)}
