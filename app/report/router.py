@@ -4,13 +4,14 @@ from bson.objectid import ObjectId
 from fastapi import APIRouter, Body
 from fastapi_jwt_auth import AuthJWT
 
-from .model import CreateReport, UpdateReport, CreateEvents, UpdateEvents
+from .model import CreateEvents, CreateReport, GetEvents, UpdateEvents, UpdateReport
 from .service import (
     count,
     create_report,
     delete_report,
-    get_reports,
+    get_event,
     get_report,
+    get_reports,
     update_report,
 )
 
@@ -57,3 +58,11 @@ async def put_report(id: str, data: UpdateReport = Body(...)):
 async def delete(id: str):
     await delete_report(id)
     return id
+
+@router.post("/get-event-with-new/")
+async def get_event_route(id_count: List[GetEvents] = Body(...)):
+    list_ev = []
+    for item in id_count:
+        list_ev.append(item)
+    reports = await get_event(list_ev)
+    return reports
