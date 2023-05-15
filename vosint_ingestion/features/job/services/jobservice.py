@@ -26,14 +26,14 @@ class JobService:
         self.__pipeline_service = PipelineService()
         self.__mongo_repo = MongoRepository()
 
-    def run_only(self, id: str, mode_test=None):
+    def run_only(self, id: str, mode_test = None):
         pipeline_dto = self.__pipeline_service.get_pipeline_by_id(id)
         session = Session(
             driver_name="playwright",
             storage_name="hbase",
             actions=pipeline_dto.schema,
             pipeline_id=id,
-            mode_test=mode_test,
+            mode_test = mode_test
         )
         result = session.start()
         # try:
@@ -48,10 +48,7 @@ class JobService:
 
     def get_result_job(self, News, order_spec, pagination_spec, filter):
         results = self.__mongo_repo.get_many_News(
-            News,
-            order_spec=order_spec,
-            pagination_spec=pagination_spec,
-            filter_spec=filter,
+            News, order_spec=order_spec, pagination_spec=pagination_spec, filter_spec = filter
         )
         # results['_id'] = str(results['_id'])
         # results['pub_date'] = str(results['pub_date'])
@@ -63,6 +60,14 @@ class JobService:
             {"pipeline_id": id},
             order_spec=order_spec,
             pagination_spec=pagination_spec,
+        )
+
+        return results
+    
+    def get_log_history_last(self, id: str):
+        results = self.__mongo_repo.get_many_his_log(
+            "his_log",
+            {"pipeline_id": id,"log":"error"}
         )
 
         return results

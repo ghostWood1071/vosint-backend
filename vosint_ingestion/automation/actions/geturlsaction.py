@@ -34,6 +34,12 @@ class GetUrlsAction(BaseAction):
                     val_type="str",
                     default_val="",
                 ),
+                # ParamInfo(
+                #     name="replace",
+                #     display_name="Delete string address",
+                #     val_type="str",
+                #     default_val="",
+                # ),
             ],
             z_index=3,
         )
@@ -45,12 +51,13 @@ class GetUrlsAction(BaseAction):
                 ERROR_REQUIRED, params={"code": ["INPUT_URL"], "msg": ["Input URL"]}
             )
 
-        # url = input_val
+        #url = input_val
+
 
         by = self.params["by"]
         expr = self.params["expr"]
 
-        # page = self.driver.goto(url)
+        #page = self.driver.goto(url)
         page = input_val
 
         elems = self.driver.select(page, by, expr)
@@ -61,7 +68,7 @@ class GetUrlsAction(BaseAction):
         urls = list(filter(lambda url: url is not None, urls))
         # Distinct value
         urls = list(set(urls))
-        # print(urls)
+        #print(urls)
         return urls
 
     def __map_to_url(self, elem):

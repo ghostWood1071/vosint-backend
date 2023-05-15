@@ -2,20 +2,17 @@ from common.internalerror import *
 
 from ..common import ActionInfo, ActionType, ParamInfo
 from .baseaction import BaseAction
-
 # from .foreachaction import get_action_class
 from .clickaction import ClickAction
 from .getattraction import GetAttrAction
 from .getnewsinfoaction import GetNewsInfoAction
 from .geturlsaction import GetUrlsAction
 from .gotoaction import GotoAction
-from .hoveraction import HoverAction
 from .login import LoginAction
-
+from .selectaction import SelectAction
 # from .foraction import ForAction
 from .scrollaction import ScrollAction
-from .selectaction import SelectAction
-
+from .hoveraction import HoverAction
 
 def get_action_class(name: str):
     action_cls = (
@@ -51,7 +48,6 @@ def get_action_class(name: str):
 
     return action_cls
 
-
 class ForAction(BaseAction):
     @classmethod
     def get_action_info(cls) -> ActionInfo:
@@ -73,7 +69,7 @@ class ForAction(BaseAction):
                     display_name="Start",
                     val_type="select",  # val_type='str',
                     default_val=1,
-                    options=[i for i in range(0, 10)],
+                    options=[i for i in range(0,10)],
                     validators=["required_"],
                 ),
                 ParamInfo(
@@ -81,7 +77,7 @@ class ForAction(BaseAction):
                     display_name="End",
                     val_type="select",  # val_type='str',
                     default_val=1,
-                    options=[i for i in range(1, 100)],
+                    options=[i for i in range(1,100)],
                     validators=["required"],
                 ),
                 ParamInfo(
@@ -89,7 +85,7 @@ class ForAction(BaseAction):
                     display_name="Run_First",
                     val_type="select",  # val_type='str',
                     default_val="True",
-                    options=["True", "False"],
+                    options=["True","False"],
                     validators=["required"],
                 ),
             ],
@@ -101,10 +97,10 @@ class ForAction(BaseAction):
         flatten = False if "flatten" not in self.params else self.params["flatten"]
 
         res = []
-        for i in range(self.params["start"], self.params["end"]):
-            # print(i)
-            if str(self.params["run_first"]) == "False":
-                if i == self.params["start"]:
+        for i in range(self.params['start'],self.params['end']):
+            #print(i)
+            if str(self.params['run_first']) == 'False':
+                if i == self.params['start']:
                     continue
             flatten = True
             if input_val is not None:
@@ -112,12 +108,10 @@ class ForAction(BaseAction):
                 if flatten == False:
                     res.append(self.__run_actions(actions, val, **kwargs))
                 else:
-                    # print('????????????????????????????????????????????????????????????????????????????????')
+                    #print('????????????????????????????????????????????????????????????????????????????????')
                     res += self.__run_actions(actions, val, **kwargs)
-                if (
-                    kwargs["mode_test"] == True
-                ):  # self.params['test_pipeline'] == 'True':
-                    # print(val)
+                if kwargs["mode_test"]==True:#self.params['test_pipeline'] == 'True':
+                    #print(val)
                     break
         return set(res)
 
