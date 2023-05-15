@@ -1,9 +1,15 @@
 from .services import JobService
-
+def get_depth(mylist):
+    if isinstance(mylist, list):
+        return 1 + max(get_depth(item) for item in mylist)
+    else:
+        return 0
 
 class JobController:
     def __init__(self):
         self.__job_service = JobService()
+
+    
 
     def start_job(self, pipeline_id: str):
         self.__job_service.start_job(pipeline_id)
@@ -32,9 +38,30 @@ class JobController:
 
     ### Doan
     def run_only(self, pipeline_id: str, mode_test):
-        result = self.__job_service.run_only(pipeline_id, mode_test)
-
-        return {"success": True, "result": str(result)}
+        result = self.__job_service.run_only(pipeline_id,mode_test)
+        #print('huuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu',get_depth(result))
+        #print(result)
+        try:
+            depth = get_depth(result)
+        except:
+            depth = 0
+        try:
+            if type(result) == list and mode_test == True and depth != 0:
+                for i in range(depth):
+                    result = result[0]
+                try:
+                    result['pub_date'] = str(result['pub_date'])
+                except:
+                    pass
+                try:
+                    result['_id'] = str(result['_id'])
+                except:
+                    pass
+                return {"success": True, "result": result}
+            else:
+                return {"success": True, "result": str(result)}
+        except:
+            return {"success": True, "result": str(result)}
 
     def get_result_job(self, News, order, page_number, page_size, filter):
         # Receives request data
@@ -53,12 +80,17 @@ class JobController:
         page_size = page_size if page_size else 20
         pagination_spec = {"skip": page_size * (page_number - 1), "limit": page_size}
         pipeline_dtos, total_records = self.__job_service.get_result_job(
-            News, order_spec=order_spec, pagination_spec=pagination_spec, filter=filter
+            News, order_spec=order_spec, pagination_spec=pagination_spec ,filter = filter
         )
         for i in pipeline_dtos:
-            i["_id"] = str(i["_id"])
-            i["pub_date"] = str(i["pub_date"])
-
+            try:
+                i["_id"] = str(i["_id"])
+            except:
+                pass
+            try:
+                i["pub_date"] = str(i["pub_date"])
+            except:
+                pass
         return {"success": True, "total_record": total_records, "result": pipeline_dtos}
 
     def run_one_foreach(self, pipeline_id: str):
@@ -93,6 +125,14 @@ class JobController:
         )
 
         return {"success": True, "total_record": result[1], "result": result[0]}
+    
+    def get_log_history_last(self, pipeline_id: str):
+
+        result = self.__job_service.get_log_history_last(
+            pipeline_id
+        )
+        
+        return {"success": True, "total_record": result[1], "result": result[0]}
 
     def get_log_history_error_or_getnews(
         self, pipeline_id: str, order, page_number, page_size
@@ -118,3 +158,7 @@ class JobController:
         )
 
         return {"success": True, "total_record": result[1], "result": result[0]}
+
+
+
+

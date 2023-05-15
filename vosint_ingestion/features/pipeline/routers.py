@@ -1,6 +1,7 @@
-from fastapi import APIRouter, FastAPI, Request
-from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter
 from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 
 from .pipelinecontroller import PipelineController
 
@@ -18,28 +19,15 @@ def get_pipeline_by_id(id: str):
     return JSONResponse(pipeline_controller.get_pipeline_by_id(id))
 
 
-@router.get("/api/get_pipelines")
-def get_pipelines(
-    text_search=None,
-    enabled=None,
-    actived=None,
-    order=None,
-    page_number=None,
-    page_size=None,
-):
-    return JSONResponse(
-        pipeline_controller.get_pipelines(
-            text_search, enabled, actived, order, page_number, page_size
-        )
-    )
+@router.get('/api/get_pipelines')
+def get_pipelines(text_search = None, enabled = None, actived = None, order = None, page_number = None, page_size = None):
+    return JSONResponse(pipeline_controller.get_pipelines(text_search, enabled, actived, order, page_number, page_size))
 
 
 @router.post("/api/put_pipeline")
 async def put_pipeline(pipeline_obj: Request):
     print(pipeline_obj)
-    return JSONResponse(
-        pipeline_controller.put_pipeline(jsonable_encoder(await pipeline_obj.json()))
-    )
+    return JSONResponse(pipeline_controller.put_pipeline(jsonable_encoder(await pipeline_obj.json())))
 
 
 @router.post("/api/clone_pipeline/{from_id}")

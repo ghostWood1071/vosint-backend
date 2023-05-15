@@ -1,6 +1,5 @@
 from abc import abstractmethod
 
-
 class BaseDriver:
     @abstractmethod
     def destroy(self):
@@ -21,13 +20,13 @@ class BaseDriver:
     @abstractmethod
     def get_content(self, from_elem) -> str:
         raise NotImplementedError()
-
+    
     @abstractmethod
     def get_html(self, from_elem) -> str:
         raise NotImplementedError()
 
     @abstractmethod
-    def click(self, from_elem, time_sleep: float = 0.3):
+    def click(self, from_elem, time_sleep: float=0.3):
         raise NotImplementedError()
 
     @abstractmethod
@@ -35,13 +34,14 @@ class BaseDriver:
         raise NotImplementedError()
 
     @abstractmethod
-    def scroll(self, from_elem, value: int, time_sleep: float = 0.3):
+    def scroll(self, from_elem, value: int, time_sleep: float=0.3):
         raise NotImplementedError()
 
     @abstractmethod
     def sendkey(self, from_elem, value: str):
         raise NotImplementedError()
-
+    
     @abstractmethod
     def hover(self, from_elem):
         raise NotImplementedError()
+
