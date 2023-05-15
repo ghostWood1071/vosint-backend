@@ -9,6 +9,8 @@ class CreateReport(BaseModel):
 
 class GetEvents(BaseModel):
     id_linh_vuc: str
+    start: str
+    end: str
     count: int
 
 class UpdateReport(BaseModel):
