@@ -87,7 +87,7 @@ class GetNewsInfoAction(BaseAction):
         )
 
     def exec_func(self, input_val=None, **kwargs):
-        collection_name = 'News__'
+        collection_name = 'News'
         if not input_val:
             raise InternalError(
                 ERROR_REQUIRED, params={"code": ["URL"], "msg": ["URL"]}
