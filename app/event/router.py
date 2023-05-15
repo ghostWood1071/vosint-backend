@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from bson.objectid import ObjectId
@@ -25,6 +26,7 @@ from app.event.service import (
     search_id,
     search_result,
     update_add,
+    update_add_system,
     update_event,
 )
 from db.init_db import get_collection_client
@@ -218,13 +220,22 @@ async def update_to_add(
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     created = data.dict()
-    if created["system_created"] == True:
-        created["user_id"] = 0
-    if created["system_created"] == False:
-        created["user_id"] = user_id
+    created["system_created"] = False
+    created["user_id"] = user_id
     await update_add(id, created)
     return 200
 
+@router.put("/update-to-add-event-system/{id}")
+async def update_to_add_system(
+    id: str, data: UpdateEvent = Body(...), authorize: AuthJWT = Depends()
+):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    created = data.dict()
+    created["system_created"] = False
+    created["user_id"] = user_id
+    await update_add_system(id, created)
+    return 200
 
 @router.put("/{id}")
 async def update(

@@ -20,6 +20,7 @@ class CreateEvent(BaseModel):
     khach_the: Optional[str]
     user_id: Optional[str]
     total_new: Optional[str]
+    list_linh_vuc: Optional[List] = []
     class config:
         orm_mode = True
 
@@ -34,3 +35,4 @@ class UpdateEvent(BaseModel):
     khach_the: Optional[str]
     user_id: Optional[str]
     total_new: Optional[str]
+    list_linh_vuc: Optional[List] = []

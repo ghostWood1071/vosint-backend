@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from typing import List
 
 import pydantic
@@ -27,9 +28,10 @@ async def add_event(event):
         newsList = event.get("new_list", [])
         await client2.update_many(
             {"_id": {"$in": [ObjectId(event_id) for event_id in newsList]}},
-            {"$push": {"event_list": {"event_id": id_event, "event_name": event_name}}},
-        )
+            {"$addToSet": {"event_list": {"event_id": id_event, "event_name": event_name}}},
+        )       
         return created_event
+    
     if event["system_created"] == False:
         created_event = await client.insert_one(event)
         id_event = str(created_event.inserted_id)
@@ -38,10 +40,10 @@ async def add_event(event):
         newsList = event.get("new_list", [])
         await client2.update_many(
             {"_id": {"$in": [ObjectId(event_id) for event_id in newsList]}},
-            {"$push": {"event_list": {"event_id": id_event, "event_name": event_name}}},
+            {"$addToSet": {"event_list": {"event_id": id_event, "event_name": event_name}}},
         )
         return created_event
-
+    
 
 async def get_all_by_paginate(filter, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
@@ -206,8 +208,6 @@ async def count_event_system(count):
 
 async def update_add(id: str, data):
     event = await client.find_one({"_id": ObjectId(id)})
-    event_2 = await client3.find_one({"_id": ObjectId(id)})
-
     if event:
         event_name = event["event_name"]
         newsList = data.get("new_list", [])
@@ -231,6 +231,11 @@ async def update_add(id: str, data):
                     }
                 },
             )
+    
+
+
+async def update_add_system(id: str, data):
+    event_2 = await client3.find_one({"_id": ObjectId(id)})
     if event_2:
         event_name_2 = event_2["event_name"]
         newsList_2 = data.get("new_list", [])
@@ -239,7 +244,7 @@ async def update_add(id: str, data):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="event already exist"
             )
-        await client3.insert_one(data)
+        await client.insert_one(data)
         await client2.update_many(
             {"event_list.event_id": id, "event_list.event_name": event_name_2},
             {"$pull": {"event_list": {"event_id": id, "event_name": event_name_2}}},
@@ -250,11 +255,10 @@ async def update_add(id: str, data):
                 {"_id": ObjectId(new_id)},
                 {
                     "$addToSet": {
-                        "event_list": {"event_id": id, "event_name": event_name}
+                        "event_list": {"event_id": id, "event_name": event_name_2}
                     }
                 },
             )
-
 
 async def update_event(id: str, data: dict):
     id_event = str(id)
