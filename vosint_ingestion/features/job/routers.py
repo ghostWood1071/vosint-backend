@@ -8,8 +8,8 @@ from typing import List
 from models import MongoRepository
 from fastapi_jwt_auth import AuthJWT
 from fastapi.params import Body, Depends
-# from features.job.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
-# my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
+from features.job.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
+my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
 
 job_controller = JobController()
 router = APIRouter()
@@ -195,10 +195,15 @@ def get_result_job(order = None,text_search = '', page_number = None, page_size 
                     query['$and'].append({'khong_lay_gi':'bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka'})
         elif text_search != '':
             tmp = (my_es.search_main(index_name="vosint", query=text_search))
+            # print(text_search)
+            # print(tmp)
             list_link =[]
             for k in tmp:
                 list_link.append({'data:url':k["_source"]["url"]})
-            query['$and'].append({'$or': list_link.copy()})
+            if len(list_link) != 0:
+                query['$and'].append({'$or': list_link.copy()})
+            else:
+                query['$and'].append({'khong_lay_gi':'bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka'})
     except:
         query = {}
     if str(query) == "{'$and': []}":
