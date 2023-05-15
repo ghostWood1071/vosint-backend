@@ -1,18 +1,16 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from pydantic import BaseModel, Field
 
 
 class CreateReport(BaseModel):
     title: str = Field()
-    content: str = Field()
+    headings: Optional[Any]
 
 
 class UpdateReport(BaseModel):
-    title: Optional[str] = Field(default=None, description="The title of the report")
-    content: Optional[str] = Field(
-        default=None, description="The content of the report"
-    )
+    title: Optional[Any] = Field(default=None, description="The title of the report")
+    headings: Optional[Any]
 
 
 class EventsDto(BaseModel):

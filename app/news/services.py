@@ -7,7 +7,7 @@ from db.init_db import get_collection_client
 
 from .utils import news_to_json
 
-client = get_collection_client("news")
+client = get_collection_client("News")
 
 
 async def find_news_by_filter(filter, projection=None):
