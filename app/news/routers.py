@@ -26,6 +26,7 @@ projection = {
     "data:url": True,
     "data:class": True,
     "data:class_sacthai": True,
+    "data:class_linhvuc": True,
     "created_at": True,
     "modified_at": True,
     "keywords": True,
