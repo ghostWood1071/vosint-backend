@@ -1,9 +1,12 @@
-from elasticsearch import Elasticsearch
-import requests
+# from elasticsearch import Elasticsearch
 import datetime
-from elasticsearch.helpers import bulk
-import elasticsearch
+
+# from elasticsearch.helpers import bulk
+# import elasticsearch
 import json
+
+import requests
+
 # import warnings
 # from elasticsearch.exceptions import ElasticsearchWarning
 # warnings.simplefilter('ignore', ElasticsearchWarning)
@@ -15,7 +18,7 @@ class My_ElasticSearch:
         self.user = user
         self.password = password
         self.verify_certs = verify_certs
-        self.es = Elasticsearch(hosts=self.host, verify_certs=self.verify_certs)
+        # self.es = Elasticsearch(hosts=self.host, verify_certs=self.verify_certs)
         
     def log_cluster_health(self):
         """
@@ -247,11 +250,11 @@ class My_ElasticSearch:
                             "class_object": []
                         }
         """
-        try:
-            self.es.index(index=index_name,doc_type='_doc', body=document)
-            return 'Document đã được thêm vào Index'
-        except elasticsearch.exceptions.RequestError as e:
-            return (f"Error: {e} \n Có thể lỗi là do bạn truyền Document không đúng định dạng được định nghĩa trong Index !")
+        # try:
+        #     self.es.index(index=index_name,doc_type='_doc', body=document)
+        #     return 'Document đã được thêm vào Index'
+        # except elasticsearch.exceptions.RequestError as e:
+        #     return (f"Error: {e} \n Có thể lỗi là do bạn truyền Document không đúng định dạng được định nghĩa trong Index !")
     
     def insert_many_document(self, index_name:str, list_of_document: list):
         """
@@ -304,11 +307,11 @@ class My_ElasticSearch:
             }
             for doc in list_of_document
         ]
-        try :
-            bulk(self.es, bulk_action)
-            return 'Document đã được thêm vào Index'
-        except elasticsearch.exceptions.RequestError as e:
-            return (f"Error: {e} \n Có thể lỗi là do bạn truyền Document không đúng định dạng được định nghĩa trong Index!")
+        # try :
+        #     bulk(self.es, bulk_action)
+        #     return 'Document đã được thêm vào Index'
+        # except elasticsearch.exceptions.RequestError as e:
+        #     return (f"Error: {e} \n Có thể lỗi là do bạn truyền Document không đúng định dạng được định nghĩa trong Index!")
     
     def check_number_document(self, index_name:str):
         """

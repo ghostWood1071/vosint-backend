@@ -3,7 +3,8 @@ from datetime import datetime
 
 import requests
 from common.internalerror import *
-from elasticsearch import Elasticsearch
+
+# from elasticsearch import Elasticsearch
 from models import HBaseRepository, MongoRepository
 from models.mongorepository import MongoRepository
 from utils import get_time_now_string_y_m_now
@@ -230,34 +231,34 @@ class GetNewsInfoAction(BaseAction):
                 except:
                     pass
                 
-                try:
-                    news_info['keywords'] = Keywords_Ext().extracting(document= news_info["data:content"],num_keywords =6)
-                except:
-                    news_info['keywords'] = []
-                try:
-                    class_text_clustering = text_clustering(sentence = str(news_info["data:content"]), class_name="class_chude")
-                    news_info["data:class_chude"] = class_text_clustering
+                # try:
+                #     news_info['keywords'] = Keywords_Ext().extracting(document= news_info["data:content"],num_keywords =6)
+                # except:
+                #     news_info['keywords'] = []
+                # try:
+                #     class_text_clustering = text_clustering(sentence = str(news_info["data:content"]), class_name="class_chude")
+                #     news_info["data:class_chude"] = class_text_clustering
         
-                except:
-                    pass
-                try:
-                    class_text_clustering = text_clustering(sentence = str(news_info["data:content"]), class_name="class_linhvuc")
-                    news_info["data:class_linhvuc"] = class_text_clustering
-                except:
-                    pass
-                try:
-                    kq = topic_sentiment_classification(news_info["data:content"])
-                    if str(kq['sentiment_label']) == 'tieu_cuc':
-                        kq = '-1'
-                    elif str(kq['sentiment_label']) == 'trung_tinh':
-                        kq = '0'
-                    elif str(kq['sentiment_label']) == 'tich_cuc':
-                        kq = '1'
-                    else:
-                        kq = ''
-                    news_info['data:class_sacthai'] = kq
-                except:
-                    pass
+                # except:
+                #     pass
+                # try:
+                #     class_text_clustering = text_clustering(sentence = str(news_info["data:content"]), class_name="class_linhvuc")
+                #     news_info["data:class_linhvuc"] = class_text_clustering
+                # except:
+                #     pass
+                # try:
+                #     kq = topic_sentiment_classification(news_info["data:content"])
+                #     if str(kq['sentiment_label']) == 'tieu_cuc':
+                #         kq = '-1'
+                #     elif str(kq['sentiment_label']) == 'trung_tinh':
+                #         kq = '0'
+                #     elif str(kq['sentiment_label']) == 'tich_cuc':
+                #         kq = '1'
+                #     else:
+                #         kq = ''
+                #     news_info['data:class_sacthai'] = kq
+                # except:
+                #     pass
 
             news_info["data:url"] = url
         if content_expr != "None" and content_expr !="":
@@ -367,10 +368,10 @@ class GetNewsInfoAction(BaseAction):
                     doc_es['class_object'] = news_info['class_object']
                 except:
                     pass
-                try:
-                    print('aaaaaaaaaaaaaa',my_es.insert_document(index_name='vosint', document=doc_es))
-                except:
-                    print('insert elastic search false')
+                # try:
+                #     print('aaaaaaaaaaaaaa',my_es.insert_document(index_name='vosint', document=doc_es))
+                # except:
+                #     print('insert elastic search false')
 
             except:
                 print("An error occurred while pushing data to the database!")
