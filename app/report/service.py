@@ -66,39 +66,57 @@ async def delete_report(id: str):
 
 async def get_event(data):
     list_ev = []
+    
     for data_model in data:
-        async for item in newsletter_client.find({"_id": ObjectId(data_model.id_linh_vuc)}, projection):
-            if "events" not in item:
-                ll = []
-                start_date = datetime.strptime(data_model.start, "%d/%m/%Y").date()
-                datetime_start = datetime.combine(start_date, time.min)
+        # Find the newsletter document by its id_linh_vuc
+        newsletter_doc = await newsletter_client.find_one(
+            {"_id": ObjectId(data_model.id_linh_vuc)},
+            projection
+        )
+        
+        if newsletter_doc and "events" not in newsletter_doc:
+            ll = []
+            
+            # Convert start and end dates to datetime objects
+            start_date = datetime.strptime(data_model.start, "%d/%m/%Y").date()
+            datetime_start = datetime.combine(start_date, time.min)
+            end_date = datetime.strptime(data_model.end, "%d/%m/%Y").date()
+            datetime_end = datetime.combine(end_date, time.max)
+            
+            # Query the events collection
+            query = {
+                "$or": [
+                    {"list_linh_vuc": {"$in": [data_model.id_linh_vuc]}},
+                    {"date_created": {"$gte": datetime_start, "$lt": datetime_end}},
+                ]
+            }
+            async for event_doc in event_client.find(query, projection_event):
+                # Convert date_created field to datetime object
+                if "date_created" in event_doc:
+                    try:
+                        event_doc["date_created"] = datetime.strptime(event_doc["date_created"], "%d/%m/%Y")
+                    except ValueError:
+                        pass
                 
-                end_date = datetime.strptime(data_model.end, "%d/%m/%Y").date()
-                datetime_end = datetime.combine(end_date, time.max)
-                query = {"$or": 
-                    [
-                        {"list_linh_vuc": {"$in": [data_model.id_linh_vuc]}},
-                        {"date_created": {
-                            "$gte": datetime_start,
-                            "$lt": datetime_end
-                        }},
-                    ]
-                }
-                async for item2 in event_client.find(
-                    query,
-                    projection_event
-                ):
-                    item2["date_created"] = datetime.strptime(item2["date_created"], "%d/%m/%Y")
-                    ll2 = []
-                    for item3 in item2["new_list"]:
-                        id_new = {"_id": ObjectId(item3)}
-                        async for new in new_client.find(id_new, projection_new).sort("created_at", -1).limit(data_model.count):
-                            new["created_at"] = datetime.strptime(new["created_at"], "%Y/%m/%d %H:%M:%S")
-                            ll2.append(new)
-                    ll2 = sorted(ll2, key=lambda x: x["created_at"], reverse=True)[:data_model.count]
-                    item2["new_list"] = ll2             
-                    ll.append(item2)
-                item["events"] = ll
-        list_ev.append(item)
+                # Query the news collection and sort by created_at field
+                ll2 = []
+                for new_id in event_doc.get("new_list", []):
+                    id_new = {"_id": ObjectId(new_id)}
+                    async for new_doc in new_client.find(id_new, projection_new).sort("created_at", -1).limit(data_model.count):
+                        try:
+                            new_doc["created_at"] = datetime.strptime(new_doc["created_at"], "%Y/%m/%d %H:%M:%S")
+                        except ValueError:
+                            pass
+                        ll2.append(new_doc)
+                
+                # Sort the news list by created_at field and limit to data_model.count
+                ll2 = sorted(ll2, key=lambda x: x.get("created_at"), reverse=True)[:data_model.count]
+                
+                event_doc["new_list"] = ll2             
+                ll.append(event_doc)
+            
+            newsletter_doc["events"] = ll
+        list_ev.append(newsletter_doc)
+    
     return list_ev
 
