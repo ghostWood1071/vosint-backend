@@ -9,8 +9,8 @@ class CreateReport(BaseModel):
 
 class GetEvents(BaseModel):
     id_linh_vuc: str
-    start: str
-    end: str
+    start: Optional[str] = ""
+    end: Optional[str] = ""
     count: int
 
 class UpdateReport(BaseModel):

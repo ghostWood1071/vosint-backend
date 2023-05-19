@@ -60,7 +60,7 @@ async def delete(id: str):
     return id
 
 @router.post("/get-event-with-new/")
-async def get_event_route(id_count: List[GetEvents] = Body(...)):
+async def get_event_route(id_count: List[GetEvents]):
     list_ev = []
     for item in id_count:
         list_ev.append(item)
