@@ -119,7 +119,7 @@ def News_search(text_search = '*', page_number = 1, page_size = 30, start_date :
 @router.get("/api/get_result_job/News")
 def get_result_job(order = None,text_search = '', page_number = None, page_size = None, start_date : str = '', end_date : str = '', sac_thai : str = '', language_source : str ='',news_letter_id: str = '', authorize: AuthJWT = Depends(),vital:str='',bookmarks:str=''): 
     
-
+    print(text_search)
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     #print(user_id)
@@ -195,8 +195,8 @@ def get_result_job(order = None,text_search = '', page_number = None, page_size 
                     query['$and'].append({'khong_lay_gi':'bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka'})
         elif text_search != '':
             tmp = (my_es.search_main(index_name="vosint", query=text_search))
-            # print(text_search)
-            # print(tmp)
+            print('sssssssssssssssssss',text_search)
+            print(tmp)
             list_link =[]
             for k in tmp:
                 list_link.append({'data:url':k["_source"]["url"]})
@@ -209,7 +209,7 @@ def get_result_job(order = None,text_search = '', page_number = None, page_size 
     if str(query) == "{'$and': []}":
         query = {}
         
-    #print(query)
+    print(query)
     return JSONResponse(
         job_controller.get_result_job('News', order, page_number, page_size,filter=query)
     )

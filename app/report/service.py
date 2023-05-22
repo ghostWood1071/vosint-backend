@@ -76,46 +76,81 @@ async def get_event(data):
         
         if newsletter_doc and "events" not in newsletter_doc:
             ll = []
-            
+            if data_model.start and data_model.end is not None:
             # Convert start and end dates to datetime objects
-            start_date = datetime.strptime(data_model.start, "%d/%m/%Y").date()
-            datetime_start = datetime.combine(start_date, time.min)
-            end_date = datetime.strptime(data_model.end, "%d/%m/%Y").date()
-            datetime_end = datetime.combine(end_date, time.max)
-            
-            # Query the events collection
-            query = {
-                "$or": [
-                    {"list_linh_vuc": {"$in": [data_model.id_linh_vuc]}},
-                    {"date_created": {"$gte": datetime_start, "$lt": datetime_end}},
-                ]
-            }
-            async for event_doc in event_client.find(query, projection_event):
-                # Convert date_created field to datetime object
-                if "date_created" in event_doc:
-                    try:
-                        event_doc["date_created"] = datetime.strptime(event_doc["date_created"], "%d/%m/%Y")
-                    except ValueError:
-                        pass
+                start_date = datetime.strptime(data_model.start, "%d/%m/%Y").date()
+                datetime_start = datetime.combine(start_date, datetime.min.time())
                 
-                # Query the news collection and sort by created_at field
-                ll2 = []
-                for new_id in event_doc.get("new_list", []):
-                    id_new = {"_id": ObjectId(new_id)}
-                    async for new_doc in new_client.find(id_new, projection_new).sort("created_at", -1).limit(data_model.count):
+                end_date = datetime.strptime(data_model.end, "%d/%m/%Y").date()
+                datetime_end = datetime.combine(end_date, datetime.max.time())
+                
+                # Query the events collection
+                query = {
+                    "$or": [
+                        {"list_linh_vuc": data_model.id_linh_vuc},
+                        {"date_created": {"$gte": datetime_start, "$lte": datetime_end}},
+                    ]
+                }
+                
+                async for event_doc in event_client.find(query, projection_event):
+                    # Convert date_created field to datetime object
+                    if "date_created" in event_doc:
                         try:
-                            new_doc["created_at"] = datetime.strptime(new_doc["created_at"], "%Y/%m/%d %H:%M:%S")
+                            event_doc["date_created"] = datetime.strptime(event_doc["date_created"], "%d/%m/%Y")
                         except ValueError:
                             pass
-                        ll2.append(new_doc)
+                    
+                    # Query the news collection and sort by created_at field
+                    ll2 = []
+                    for new_id in event_doc.get("new_list", []):
+                        id_new = {"_id": ObjectId(new_id)}
+                        async for new_doc in new_client.find(id_new, projection_new).sort("created_at", -1).limit(data_model.count):
+                            try:
+                                new_doc["created_at"] = datetime.strptime(new_doc["created_at"], "%Y/%m/%d %H:%M:%S")
+                            except ValueError:
+                                pass
+                            ll2.append(new_doc)
+                    
+                    # Sort the news list by created_at field and limit to data_model.count
+                    ll2 = sorted(ll2, key=lambda x: x.get("created_at"), reverse=True)[:data_model.count]
+                    
+                    event_doc["new_list"] = ll2             
+                    ll.append(event_doc)
+            else: 
+                # Query the events collection
+                query = {
+                    "$or": [
+                        {"list_linh_vuc": data_model.id_linh_vuc},
+                    ]
+                }
                 
-                # Sort the news list by created_at field and limit to data_model.count
-                ll2 = sorted(ll2, key=lambda x: x.get("created_at"), reverse=True)[:data_model.count]
-                
-                event_doc["new_list"] = ll2             
-                ll.append(event_doc)
+                async for event_doc in event_client.find(query, projection_event):
+                    # Convert date_created field to datetime object
+                    if "date_created" in event_doc:
+                        try:
+                            event_doc["date_created"] = datetime.strptime(event_doc["date_created"], "%d/%m/%Y")
+                        except ValueError:
+                            pass
+                    
+                    # Query the news collection and sort by created_at field
+                    ll2 = []
+                    for new_id in event_doc.get("new_list", []):
+                        id_new = {"_id": ObjectId(new_id)}
+                        async for new_doc in new_client.find(id_new, projection_new).sort("created_at", -1).limit(data_model.count):
+                            try:
+                                new_doc["created_at"] = datetime.strptime(new_doc["created_at"], "%Y/%m/%d %H:%M:%S")
+                            except ValueError:
+                                pass
+                            ll2.append(new_doc)
+                    
+                    # Sort the news list by created_at field and limit to data_model.count
+                    ll2 = sorted(ll2, key=lambda x: x.get("created_at"), reverse=True)[:data_model.count]
+                    
+                    event_doc["new_list"] = ll2             
+                    ll.append(event_doc)
             
             newsletter_doc["events"] = ll
+            
         list_ev.append(newsletter_doc)
     
     return list_ev
