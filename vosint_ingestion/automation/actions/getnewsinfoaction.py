@@ -1,30 +1,32 @@
-import json
-from datetime import datetime
-
-import requests
 from common.internalerror import *
-
-# from elasticsearch import Elasticsearch
 from models import HBaseRepository, MongoRepository
-from models.mongorepository import MongoRepository
-from utils import get_time_now_string_y_m_now
 
 from ..common import ActionInfo, ActionType, ParamInfo, SelectorBy
 from .baseaction import BaseAction
+from models.mongorepository import MongoRepository
+from datetime import datetime
+from utils import get_time_now_string_y_m_now
 
-# # from nlp.keyword_extraction.keywords_ext import Keywords_Ext
-# from nlp.toan.v_osint_topic_sentiment_main.sentiment_analysis import topic_sentiment_classification
-# from nlp.hieu.vosintv3_text_clustering_main_15_3.src.inference import text_clustering
+from nlp.keyword_extraction.keywords_ext import Keywords_Ext
+from nlp.toan.v_osint_topic_sentiment_main.sentiment_analysis import topic_sentiment_classification
+from nlp.hieu.vosintv3_text_clustering_main_15_3.src.inference import text_clustering
 
+import requests
 
-# from vosint_ingestion.features.job.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
+import json
+from elasticsearch import Elasticsearch
+from features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
 
-# my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
+my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
 
-def call_tran_en_vi(content = ''):
+def call_tran(content = '', lang = 'en'):
     result = ''
-    
-    url = 'http://192.168.1.100:5001/predictions/en-vi-trans'
+    if lang == 'en':
+        url = 'http://192.168.1.100:5002/predictions/en-vi-trans'
+    elif lang == 'cn':
+        url = 'http://192.168.1.100:5002/predictions/zh-vi-trans'
+    elif lang == 'ru':
+        url = 'http://192.168.1.100:5002/predictions/ru-vi-trans'
     headers = {'Content-Type': 'application/json'} # Set the content type of the request body
 
     # Make the POST request with the request body
@@ -147,9 +149,15 @@ class GetNewsInfoAction(BaseAction):
             if len(elems) > 0:
                 news_info["data:title"] = self.driver.get_content(elems[0])
                 news_info["data:title_translate"]= ''
+                #print('aaaaaaaaaaa',kwargs["source_language"])
                 try:
                     if kwargs["source_language"] == "en":
-                        news_info["data:title_translate"] = call_tran_en_vi(news_info["data:title"]).replace('vi: ','')
+                        news_info["data:title_translate"] = call_tran(content = news_info["data:title"].encode('utf-8'), lang='en').replace('vi: ','')
+                    elif kwargs["source_language"] == "ru":
+                        news_info["data:title_translate"] = call_tran(content = news_info["data:title"].encode('utf-8'), lang='ru').replace('vi: ','')
+                    elif kwargs["source_language"] == "cn":
+                        #print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+                        news_info["data:title_translate"] = call_tran(content = news_info["data:title"].encode('utf-8'), lang='cn').replace('vi: ','')
                 except:
                     pass
 
@@ -225,40 +233,40 @@ class GetNewsInfoAction(BaseAction):
                 check_content = True
 
                 news_info["data:content_translate"] = ''
+                # try:
+                #     if kwargs["source_language"] == "en":
+                #         news_info["data:content_translate"] = call_tran_en_vi(news_info["data:content"]).replace('vi: ','')
+                # except:
+                #     pass
+                
                 try:
-                    if kwargs["source_language"] == "en":
-                        news_info["data:content_translate"] = call_tran_en_vi(news_info["data:content"]).replace('vi: ','')
+                    news_info['keywords'] = Keywords_Ext().extracting(document= news_info["data:content"],num_keywords =6)
+                except:
+                    news_info['keywords'] = []
+                try:
+                    class_text_clustering = text_clustering(sentence = str(news_info["data:content"]), class_name="class_chude")
+                    news_info["data:class_chude"] = class_text_clustering
+        
                 except:
                     pass
-                
-                # try:
-                #     news_info['keywords'] = Keywords_Ext().extracting(document= news_info["data:content"],num_keywords =6)
-                # except:
-                #     news_info['keywords'] = []
-                # try:
-                #     class_text_clustering = text_clustering(sentence = str(news_info["data:content"]), class_name="class_chude")
-                #     news_info["data:class_chude"] = class_text_clustering
-        
-                # except:
-                #     pass
-                # try:
-                #     class_text_clustering = text_clustering(sentence = str(news_info["data:content"]), class_name="class_linhvuc")
-                #     news_info["data:class_linhvuc"] = class_text_clustering
-                # except:
-                #     pass
-                # try:
-                #     kq = topic_sentiment_classification(news_info["data:content"])
-                #     if str(kq['sentiment_label']) == 'tieu_cuc':
-                #         kq = '-1'
-                #     elif str(kq['sentiment_label']) == 'trung_tinh':
-                #         kq = '0'
-                #     elif str(kq['sentiment_label']) == 'tich_cuc':
-                #         kq = '1'
-                #     else:
-                #         kq = ''
-                #     news_info['data:class_sacthai'] = kq
-                # except:
-                #     pass
+                try:
+                    class_text_clustering = text_clustering(sentence = str(news_info["data:content"]), class_name="class_linhvuc")
+                    news_info["data:class_linhvuc"] = class_text_clustering
+                except:
+                    pass
+                try:
+                    kq = topic_sentiment_classification(news_info["data:content"])
+                    if str(kq['sentiment_label']) == 'tieu_cuc':
+                        kq = '-1'
+                    elif str(kq['sentiment_label']) == 'trung_tinh':
+                        kq = '0'
+                    elif str(kq['sentiment_label']) == 'tich_cuc':
+                        kq = '1'
+                    else:
+                        kq = ''
+                    news_info['data:class_sacthai'] = kq
+                except:
+                    pass
 
             news_info["data:url"] = url
         if content_expr != "None" and content_expr !="":
@@ -368,10 +376,10 @@ class GetNewsInfoAction(BaseAction):
                     doc_es['class_object'] = news_info['class_object']
                 except:
                     pass
-                # try:
-                #     print('aaaaaaaaaaaaaa',my_es.insert_document(index_name='vosint', document=doc_es))
-                # except:
-                #     print('insert elastic search false')
+                try:
+                    print('aaaaaaaaaaaaaa',my_es.insert_document(index_name='vosint', document=doc_es))
+                except:
+                    print('insert elastic search false')
 
             except:
                 print("An error occurred while pushing data to the database!")

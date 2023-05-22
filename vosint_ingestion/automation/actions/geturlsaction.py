@@ -77,6 +77,8 @@ class GetUrlsAction(BaseAction):
 
         if href is None:
             return None
-
-        url = f"{origin}{href}" if origin is not None and origin not in href else href
+        if 'http://' in href or 'www.' in href or 'https://' in href:
+            url = href
+        else:
+            url = f"{origin}{href}" if origin is not None and origin not in href else href
         return url
