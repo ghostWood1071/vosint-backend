@@ -8,7 +8,7 @@ from typing import List
 from models import MongoRepository
 from fastapi_jwt_auth import AuthJWT
 from fastapi.params import Body, Depends
-from vosint_ingestion.features.job.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
+from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
 my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
 
 job_controller = JobController()
@@ -60,6 +60,167 @@ def run_only_job(pipeline_id: str, mode_test = True):
 #     return JSONResponse(
 #         job_controller.get_result_job(News, order, page_number, page_size, start_date, end_date, sac_thai, language_source)
 #     )
+# from typing import Annotated
+# @router.get("/api/test__")
+# def test__(q: Annotated[list[str]):
+#     return JSONResponse({"a":1})
+@router.get("/api/get_event_from_newsletter_list_id")
+def get_event_from_newsletter_list_id(page_number = 1, page_size = 30, start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,news_letter_list_id: str = '', authorize: AuthJWT = Depends()): 
+    
+    try:
+        start_date = start_date.split('/')[2] +'-'+ start_date.split('/')[1] +'-'+ start_date.split('/')[0]+'T00:00:00Z'
+    except:
+        pass
+    try:
+        end_date = end_date.split('/')[2] +'-'+ end_date.split('/')[1] +'-'+ end_date.split('/')[0]+'T00:00:00Z'
+    except:
+        pass
+    result = []
+    news_letter_list_id = news_letter_list_id.split(',')
+    for news_letter_id in news_letter_list_id:
+        try:
+            a = MongoRepository().get_one(collection_name='newsletter',filter_spec={"_id":news_letter_id})
+            query = ''
+            first_flat = 1 
+            try:
+                for i in a['required_keyword']:
+                    if first_flat == 1:
+                        first_flat = 0 
+                        query += '('
+                    else:
+                        query += 'or ('
+                    j = i.split(',')
+                    
+                    for k in j:
+                        query += '+'+'\"' + k + '\"'
+                    query += ')'
+            except:
+                pass
+            try:
+                j = a['exclusion_keyword'].split(',')
+                for k in j:
+                    query += '-'+'\"' + k + '\"'
+            except:
+                pass
+        
+            pipeline_dtos = my_es.search_main(index_name='vosint',query=query,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai)
+            list_link = []
+            for i in pipeline_dtos:
+                list_link.append({"data:url":i['_source']['url']})
+            
+            a,_ = MongoRepository().get_many_d(collection_name='News',filter_spec={'$or': list_link.copy()}, filter_other={"_id":1})
+            list_id = []
+            for i in a:
+                list_id.append(str(i['_id']))
+            
+            a,_ = MongoRepository().get_many_d(collection_name='event')
+        
+            sk = []
+            for i in a:
+                kt = 0
+                print(i['new_list'])
+                print(list_id)
+                try:
+                    for j in i['new_list']:
+                        #print(j)
+                        if kt == 1:
+                            continue
+                        if j in list_id:
+                            i['_id']=str(i['_id']) 
+                            #result.append({news_letter_id:i})
+                            new_list = []
+                            for _ in i['new_list']:
+                                a_ = MongoRepository().get_one(collection_name='News',filter_spec={"_id":_},filter_other={"data:title":1,"data:url":1})
+                                try:
+                                    a_['_id'] = str(a_['_id'])
+                                    #a_['pub_date'] = str(a_['pub_date'])
+                                except:
+                                    pass
+                                new_list.append(a_)
+                            i['new_list'] = new_list
+                            sk.append(i)
+                            kt = 1 
+                        if kt == 1:
+                            continue
+                    #if kt == 1:
+                    #    continue
+                    
+                except:
+                    pass
+            result.append({news_letter_id:sk})
+        except:
+            pass
+    return JSONResponse({"success": True, "result": result[(int(page_number)-1)*int(page_size):(int(page_number))*int(page_size)]})
+
+
+@router.get("/api/get_news_from_newsletter_id")
+def get_event_from_newsletter_id(page_number = 1, page_size = 30, start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,news_letter_id: str = '', authorize: AuthJWT = Depends(),text_search = None,vital:str='',bookmarks:str=''): 
+    try:
+        start_date = start_date.split('/')[2] +'-'+ start_date.split('/')[1] +'-'+ start_date.split('/')[0]+'T00:00:00Z'
+    except:
+        pass
+    try:
+        end_date = end_date.split('/')[2] +'-'+ end_date.split('/')[1] +'-'+ end_date.split('/')[0]+'T00:00:00Z'
+    except:
+        pass
+
+    a = MongoRepository().get_one(collection_name='newsletter',filter_spec={"_id":news_letter_id})
+    #print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaâ',a)
+    query = ''
+    first_flat = 1 
+    try:
+        for i in a['required_keyword']:
+            if first_flat == 1:
+                first_flat = 0 
+                query += '('
+            else:
+                query += '| ('
+            j = i.split(',')
+            
+            for k in j:
+                query += '+'+'\"' + k + '\"'
+            query += ')'
+    except:
+        pass
+    try:
+        j = a['exclusion_keyword'].split(',')
+        for k in j:
+            query += '-'+'\"' + k + '\"'
+    except:
+        pass
+
+    if text_search != None:
+        query += '+(' + text_search + ')'
+ 
+    pipeline_dtos = my_es.search_main(index_name='vosint',query=query,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai)
+    # list_link = []
+    # for i in pipeline_dtos:
+    #     list_link.append({"data:url":i['_source']['url']})
+    
+    # a,_ = MongoRepository().get_many_d(collection_name='News',filter_spec={'$or': list_link.copy()}, filter_other={"_id":1})
+    # list_id = []
+    # for i in a:
+    #     list_id.append(str(i['_id']))
+    
+    # a,_ = MongoRepository().get_many_d(collection_name='event')
+ 
+    # result = []
+    # for i in a:
+    #     kt = 0
+    #     try:
+    #         for j in i['new_list']:
+    #             print(j)
+    #             if j in list_id:
+    #                 i['_id']=str(i['_id']) 
+    #                 result.append(i)
+    #                 kt = 1 
+    #             if kt == 1:
+    #                 continue
+    #         if kt == 1:
+    #             continue
+    #     except:
+    #         pass
+    return JSONResponse({"success": True, "result": pipeline_dtos[(int(page_number)-1)*int(page_size):(int(page_number))*int(page_size)]})
 
 @router.get("/api/get_result_job/News_search")
 def News_search(text_search = '*', page_number = 1, page_size = 30, start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,news_letter_id: str = '', authorize: AuthJWT = Depends(),vital:str='',bookmarks:str=''): 
@@ -195,10 +356,15 @@ def get_result_job(order = None,text_search = '', page_number = None, page_size 
                     query['$and'].append({'khong_lay_gi':'bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka'})
         elif text_search != '':
             tmp = (my_es.search_main(index_name="vosint", query=text_search))
+            # print(text_search)
+            # print(tmp)
             list_link =[]
             for k in tmp:
                 list_link.append({'data:url':k["_source"]["url"]})
-            query['$and'].append({'$or': list_link.copy()})
+            if len(list_link) != 0:
+                query['$and'].append({'$or': list_link.copy()})
+            else:
+                query['$and'].append({'khong_lay_gi':'bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka'})
     except:
         query = {}
     if str(query) == "{'$and': []}":
