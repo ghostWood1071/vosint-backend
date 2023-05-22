@@ -51,6 +51,7 @@ async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depen
     user_id = authorize.get_jwt_subject()
     event = data.dict()
     event["user_id"] = user_id
+    event["date_created"] = datetime.strptime(event["date_created"], "%d/%m/%Y")
     if event["system_created"] == True:
         exist_event_system = await client3.find_one({"event_name": event["event_name"]})
         event["user_id"] = 0
