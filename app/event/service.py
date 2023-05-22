@@ -116,8 +116,11 @@ async def search_event(
     offset = (skip - 1) * limit if skip > 0 else 0
     list_event = []
     query = {}
+    _start_date = datetime.strptime(start_date, "%d/%m/%Y")
+    _end_date = datetime.strptime(end_date, "%d/%m/%Y")
+    
     if start_date and end_date:
-        query = {"date_created": {"$gte": start_date, "$lte": end_date}}
+        query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
     if event_name:
         query["$or"] = [{"event_name": {"$regex": event_name, "$options": "-i"}}]
     if data:
@@ -129,10 +132,12 @@ async def search_event(
     if not query:
         query = {}
     async for item in client.find(query).sort("_id").skip(offset).limit(limit):
+        item["date_created"] = str(item["date_created"])
         item["total_new"] = len(item["new_list"])
         items = json(item)
         list_event.append(items)
     async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
+        item["date_created"] = str(item["date_created"])
         item["total_new"] = len(item["new_list"])
         items = json(item)
         list_event.append(items)
@@ -140,6 +145,9 @@ async def search_event(
 
 
 async def search_result(name, id_new, chu_the, khach_the, start_date, end_date):
+    _start_date = datetime.strptime(start_date, "%d/%m/%Y")
+    _end_date = datetime.strptime(end_date, "%d/%m/%Y")
+    
     query = {}
     if name:
         query["event_name"] = {"$regex": name, "$options": "-i"}
@@ -150,7 +158,7 @@ async def search_result(name, id_new, chu_the, khach_the, start_date, end_date):
     if khach_the:
         query = {"khach_the": {"$regex": khach_the, "$options": "-i"}}
     if start_date and end_date:
-        query = {"date_created": {"$gte": start_date, "$lte": end_date}}
+        query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
     if not query:
         query = {}
     count = {
