@@ -86,7 +86,7 @@ async def get_event(data):
                 
                 # Query the events collection
                 query = {
-                    "$or": [
+                    "$and": [
                         {"list_linh_vuc": data_model.id_linh_vuc},
                         {"date_created": {"$gte": datetime_start, "$lte": datetime_end}},
                     ]
@@ -96,7 +96,7 @@ async def get_event(data):
                     # Convert date_created field to datetime object
                     if "date_created" in event_doc:
                         try:
-                            event_doc["date_created"] = datetime.strptime(event_doc["date_created"], "%d/%m/%Y")
+                            event_doc["date_created"] = str(event_doc["date_created"])
                         except ValueError:
                             pass
                     
@@ -128,7 +128,7 @@ async def get_event(data):
                     # Convert date_created field to datetime object
                     if "date_created" in event_doc:
                         try:
-                            event_doc["date_created"] = datetime.strptime(event_doc["date_created"], "%d/%m/%Y")
+                            event_doc["date_created"] = str(event_doc["date_created"])
                         except ValueError:
                             pass
                     

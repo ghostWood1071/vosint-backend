@@ -12,7 +12,7 @@ from app.social_media.routers import router as SocialMediaRouter
 from app.upload.upload_file import router as UploadFileRouter
 from app.user.routers import router as UserRouter
 from vosint_ingestion.features.job.routers import router as Job
-from vosint_ingestion.features.nlp.routers import router as Nlp
+# from vosint_ingestion.features.nlp.routers import router as Nlp
 from vosint_ingestion.features.pipeline.routers import router as PipeLine
 
 ROUTE_LIST = [
@@ -24,7 +24,6 @@ ROUTE_LIST = [
     {"route": ObjectRouter, "tags": ["Object"], "prefix": "/object"},
     {"route": Job, "tags": ["Job"], "prefix": "/Job"},
     {"route": PipeLine, "tags": ["Pipeline"], "prefix": "/Pipeline"},
-    {"route": Nlp, "tags": ["Nlp"], "prefix": "/Nlp"},
     {"route": ProxyRouter, "tags": ["Proxy"], "prefix": "/Proxy"},
     {"route": InformationRouter, "tags": ["Source"], "prefix": "/Source"},
     {"route": ManageNewsRouter, "tags": ["Source-group"], "prefix": "/Source-group"},
