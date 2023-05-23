@@ -24,6 +24,7 @@ ROUTE_LIST = [
     {"route": ObjectRouter, "tags": ["Object"], "prefix": "/object"},
     {"route": Job, "tags": ["Job"], "prefix": "/Job"},
     {"route": PipeLine, "tags": ["Pipeline"], "prefix": "/Pipeline"},
+    # {"route": Nlp, "tags": ["Nlp"], "prefix": "/Nlp"},
     {"route": ProxyRouter, "tags": ["Proxy"], "prefix": "/Proxy"},
     {"route": InformationRouter, "tags": ["Source"], "prefix": "/Source"},
     {"route": ManageNewsRouter, "tags": ["Source-group"], "prefix": "/Source-group"},

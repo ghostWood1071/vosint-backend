@@ -56,8 +56,8 @@ async def get_all_by_paginate(filter, skip: int, limit: int):
             async for new in client2.find(id_new, projection):
                 gg = json(new)
                 ll.append(gg)
-        item["date_created"] = str(item["date_created"])
         item["new_list"] = ll
+        item["date_created"] = str(item["date_created"])
         item["total_new"] = len(item["new_list"])
         item = json(item)
         list_event.append(item)
@@ -138,11 +138,13 @@ async def search_event(
         item["total_new"] = len(item["new_list"])
         items = json(item)
         list_event.append(items)
+        
     async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
         item["date_created"] = str(item["date_created"])
         item["total_new"] = len(item["new_list"])
         items = json(item)
         list_event.append(items)
+        
     return list_event
 
 

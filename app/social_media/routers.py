@@ -1,9 +1,11 @@
 from typing import List, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Body, HTTPException, Path, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
 from fastapi.responses import JSONResponse
+from fastapi_jwt_auth import AuthJWT
 
+from app.user.services import find_user_by_id
 from db.init_db import get_collection_client
 
 from .models import AddFollowed, CreateSocialModel, UpdateSocial, UpdateStatus
@@ -12,6 +14,7 @@ from .services import (
     create_social_media,
     delete_followed_by,
     delete_user_by_id,
+    find_object_by_filter,
     find_object_by_filter_and_paginate,
     update_followed_by,
     update_social_account,
@@ -19,6 +22,7 @@ from .services import (
 )
 
 client = get_collection_client("social_media")
+client2 = get_collection_client("users")
 
 router = APIRouter()
 
@@ -109,15 +113,40 @@ async def get_social_types(
     social_name: str = "",
     page: int = 0,
     limit: int = 10,
+    authorize: AuthJWT = Depends(),
 ):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    user = await find_user_by_id(ObjectId(user_id))
+    if user is None:
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"result": []})
+
+    if "interested_list" not in user:
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"result": []})
+
+    filter = {"_id": {"$in": user["interested_list"]}}
+    if social_type:
+        filter["social_type"] = social_type
+    if social_name:
+        filter["social_name"] = {"$regex": f"{social_name.lower()}"}
+
     filter_object = {"social_type": social_type}
     if social_name:
         filter_object["social_name"] = {"$regex": f"{social_name}", "$options": "i"}
-    results = await find_object_by_filter_and_paginate(filter_object, page, limit)
-    count = await count_object(filter_object)
+    # results = await find_object_by_filter_and_paginate(filter_object, page, limit)
+    # count = await count_object(filter_object)
+    # filter
+    items = await find_object_by_filter(filter_object)
+    objects = await find_object_by_filter(filter)
+    results = [item for item in items if item not in objects]
 
     return JSONResponse(
-        status_code=status.HTTP_200_OK, content={"data": results, "total_result": count}
+        status_code=status.HTTP_200_OK,
+        content={
+            # "data": results,
+            # filtered results
+            "data": results,
+        },
     )
 
 
