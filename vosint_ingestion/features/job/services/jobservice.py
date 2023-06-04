@@ -8,6 +8,10 @@ from logger import Logger
 from models import HBaseRepository, MongoRepository
 from scheduler import Scheduler
 from utils import get_time_now_string
+# from models import MongoRepository
+from features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
+# from nlp.hieu.vosint_v3_document_clustering_main_16_3.create_keyword import Create_vocab_corpus
+# from nlp.keyword_extraction.keywords_ext import Keywords_Ext
 
 
 def start_job(actions: list[dict], pipeline_id=None):
@@ -25,6 +29,7 @@ class JobService:
     def __init__(self):
         self.__pipeline_service = PipelineService()
         self.__mongo_repo = MongoRepository()
+        self.__elastic_search = My_ElasticSearch()
 
     def run_only(self, id: str, mode_test = None):
         pipeline_dto = self.__pipeline_service.get_pipeline_by_id(id)
@@ -150,6 +155,73 @@ class JobService:
 
     def stop_job(self, id: str):
         Scheduler.instance().remove_job(id)
+    
+    # def create_required_keyword(self,newsletter_id):
+    #     a = self.__mongo_repo.get_one(collection_name="newsletter",filter_spec={"_id":newsletter_id})['news_samples']
+    #     #print('len aaaaaaaaaa',len(a))
+    #     list_keyword = []
+    #     for i in a:
+    #         #print(i['title']+i['content'])
+    #         b = Keywords_Ext().extracting(document=i['title']+i['content'],num_keywords= 3)
+    #         #print('aaaaaaaaaaaaaaa',b)
+    #         list_keyword.append(",".join(b))
+    
+    #     doc = self.__mongo_repo.get_one(collection_name="newsletter",filter_spec={"_id":newsletter_id})
+    #     doc['required_keyword_extract'] = list_keyword
+    #     self.__mongo_repo.update_one(collection_name="newsletter",doc=doc)
+
+    def get_news_from_id_source(sefl, id, type,page_number,page_size,start_date,end_date,sac_thai,language_source,text_search ):
+        size = page_number*page_size
+        if type == 'source':
+            name = sefl.__mongo_repo.get_one(collection_name="infor",filter_spec={"_id":id})['name']
+            list_source_name =[]
+            list_source_name.append(name)
+            if list_source_name == []:
+                return []
+            # print(name)
+            # query = {
+            #     'query': {
+            #         'match': {
+            #             'source_name': name
+            #         }
+            #     },
+            #     'size':size
+            # }
+            # a = sefl.__elastic_search.query(index_name='vosint',query=query)
+            a =sefl.__elastic_search.search_main(index_name='vosint',query=text_search,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai,list_source_name=list_source_name)
+            for i in range(len(a)):
+                a[i]['_source']['_id'] = a[i]['_source']['id']
+                a[i] = a[i]['_source']
+            return a
+
+        elif type == 'source_group':
+            name = sefl.__mongo_repo.get_one(collection_name="Source",filter_spec={"_id":id})['news']
+            #value = []
+            list_source_name =[]
+            for i in name:
+                list_source_name.append(i["name"])
+            
+            if list_source_name == []:
+                return []
+            # print(value)
+            # query = {
+            #     'query': {
+            #         'terms': {
+            #             'source_name': value
+            #         }
+            #     },
+            #     'size':size
+            # }
+            # a = sefl.__elastic_search.query(index_name='vosint',query=query)
+            a =sefl.__elastic_search.search_main(index_name='vosint',query=text_search,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai,list_source_name=list_source_name)
+            for i in range(len(a)):
+                a[i]['_source']['_id'] = a[i]['_source']['id']
+                a[i] = a[i]['_source']
+            return a
+
+            
+
+
 
     def stop_all_jobs(self, pipeline_ids: list[str] = None):
         # Split pipeline_ids from string to list of strings

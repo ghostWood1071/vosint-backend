@@ -16,6 +16,7 @@ import requests
 import json
 from elasticsearch import Elasticsearch
 from features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
+import time
 
 my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
 
@@ -165,7 +166,8 @@ class GetNewsInfoAction(BaseAction):
             elems = self.driver.select(page, by, author_expr)
             if len(elems) > 0:
                 news_info["data:author"] = self.driver.get_content(elems[0])
-        if time_expr != "None" and time_expr !="":
+        #if time_expr != "None" and time_expr !="":
+        if True:
             try:
                 #print('time_expr',time_expr)
                 elems = self.driver.select(page, by, time_expr)
@@ -257,7 +259,7 @@ class GetNewsInfoAction(BaseAction):
                 try:
                     kq = topic_sentiment_classification(news_info["data:content"])
                     if str(kq['sentiment_label']) == 'tieu_cuc':
-                        kq = '-1'
+                        kq = '2'
                     elif str(kq['sentiment_label']) == 'trung_tinh':
                         kq = '0'
                     elif str(kq['sentiment_label']) == 'tich_cuc':
@@ -289,13 +291,24 @@ class GetNewsInfoAction(BaseAction):
 
         if check_content and check_url_exist == '0':
             try:
-                MongoRepository().insert_one(collection_name=collection_name, doc=news_info)
+                _id = MongoRepository().insert_one(collection_name=collection_name, doc=news_info)
+                #print(type(_id))
             except:
                 print("An error occurred while pushing data to the database!")
 
             #elastícearch
             try:
-                doc_es = {}
+                #doc_es = {}
+                doc_es = news_info.copy()
+                # try:
+                #     doc_es['_id'] = _id
+                # except:
+                #     pass
+                try:
+                    doc_es['id'] = str(doc_es['_id'])
+                    doc_es.pop("_id", None)
+                except:
+                    pass
                 try:
                     doc_es['data:title'] = news_info['data:title']
                 except:
@@ -384,13 +397,14 @@ class GetNewsInfoAction(BaseAction):
                     doc_es['data:content_translate'] = news_info['data:content_translate']
                 except:
                     pass
+                #print(doc_es)
                 try:
-                    print('aaaaaaaaaaaaaa',my_es.insert_document(index_name='vosint', document=doc_es))
+                    print('aaaaaaaaaaaaaa',my_es.insert_document(index_name='vosint',id=doc_es['id'], document=doc_es))
                 except:
                     print('insert elastic search false')
-
             except:
                 print("An error occurred while pushing data to the database!")
+            
 
         # if check_content and check_url_exist == '1':
         #     print('aaaaaaaaaaaaaaaaaaaaaa')

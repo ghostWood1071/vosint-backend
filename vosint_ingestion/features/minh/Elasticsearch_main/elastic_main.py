@@ -9,7 +9,7 @@ import json
 # warnings.simplefilter('ignore', ElasticsearchWarning)
 
 class My_ElasticSearch:
-    def __init__(self, host, user, password, verify_certs):
+    def __init__(self, host = ['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False):
         """Constructor function that initializes the ElasticSearch object with connection parameters."""
         self.host = host
         self.user = user
@@ -202,7 +202,7 @@ class My_ElasticSearch:
         
     
 
-    def insert_document(self, index_name:str, document:dict):
+    def insert_document(self, index_name:str, document:dict, id =''):
         """
         Thêm document vào index
         Args:
@@ -248,7 +248,10 @@ class My_ElasticSearch:
                         }
         """
         try:
-            self.es.index(index=index_name,doc_type='_doc', body=document)
+            if id != '':
+                self.es.index(index=index_name,id = id,doc_type='_doc', body=document)
+            else:
+                self.es.index(index=index_name,doc_type='_doc', body=document)
             return 'Document đã được thêm vào Index'
         except elasticsearch.exceptions.RequestError as e:
             return (f"Error: {e} \n Có thể lỗi là do bạn truyền Document không đúng định dạng được định nghĩa trong Index !")
@@ -405,7 +408,7 @@ class My_ElasticSearch:
     
     
     
-    def search_main(self,index_name, query='*',k=None ,sentiment=None,lang=None, gte=None, lte=None):
+    def search_main(self,index_name, query='*',k=None ,sentiment=None,lang=None, gte=None, lte=None, list_source_name = None,size = 100, list_id = None):
         """ Tìm kiếm document theo query
         Args:
             index_name (str): Tên index
@@ -416,6 +419,8 @@ class My_ElasticSearch:
         Returns:
             Log : list[doc] | None
         """
+        if query is None:
+            query="*"
         _query_string = self.query_process(query)
         #print(_query_string)
         _fields = ["data:title^2", "data:content"]
@@ -480,10 +485,30 @@ class My_ElasticSearch:
                         "order": "desc"
                     }
                 }
-            ]
+                ],
+                "size": size
         }
-        
-        # print(filter)
+        if list_source_name != None:
+            _id_query_source_name = " OR ".join(list_source_name)
+            a = {
+                "query_string":{
+                    "query": _id_query_source_name,
+                    "default_field": "source_name"
+                }
+            }
+            simple_filter["query"]["bool"]["must"].append(a)
+
+        if list_id != None:
+            _id_query_list_id = " OR ".join(list_id)
+            a = {
+                "query_string":{
+                    "query": _id_query_list_id,
+                    "default_field": "id"
+                }
+            }
+            simple_filter["query"]["bool"]["must"].append(a)
+
+        print(simple_filter)
         
         
         searched = self.es.search(index=index_name, body=simple_filter)
@@ -502,3 +527,15 @@ class My_ElasticSearch:
         else:
             return result[:k]
             
+    def query(self,index_name = '',query=''):
+        searched = self.es.search(index=index_name, body=query)
+        #print(searched)
+        #result = []
+        #print(searched['hits'])
+        #print(searched['hits']['hits'])
+        hits = searched['hits']['hits']
+        if hits:
+            return hits
+        else:
+            #print("Không tìm thấy Document nào")
+            return []
