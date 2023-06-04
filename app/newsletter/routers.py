@@ -96,6 +96,10 @@ async def read(title: str = "", authorize: AuthJWT = Depends()):
         "tag": True,
         "title": True,
         "user_id": True,
+        "keyword_vi": True,
+        "keyword_en": True,
+        "keyword_cn": True,
+        "keyword_ru": True,
         "_id": True,
         "parent_id": True,
     }
@@ -146,13 +150,13 @@ async def get_details_newsletter(newsletter_id: str, authorize: AuthJWT = Depend
             status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
         )
 
-    news_samples = []
-    if "news_samples" in newsletter:
-        news_samples = await find_news_by_filter(
-            {"_id": {"$in": newsletter["news_samples"]}}, projection
-        )
+    # news_samples = []
+    # if "news_samples" in newsletter:
+    #     news_samples = await find_news_by_filter(
+    #         {"_id": {"$in": newsletter["news_samples"]}}, projection
+    #     )
 
-        newsletter["news_samples"] = news_samples
+    #     newsletter["news_samples"] = news_samples
 
     return JSONResponse(
         status_code=status.HTTP_200_OK, content=newsletter_to_json(newsletter)
