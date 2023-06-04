@@ -21,6 +21,11 @@ class NewsLetterModel(BaseModel):
     required_keyword: List[str]
     exclusion_keyword: str
 
+class NewsSampleModel(BaseModel):
+    id: str
+    title: str
+    content: str
+    link: Optional[str]
 
 class NewsLetterCreateModel(BaseModel):
     parent_id: str | None
@@ -28,7 +33,12 @@ class NewsLetterCreateModel(BaseModel):
     tag: Tag
     required_keyword: Optional[list[str]]
     exclusion_keyword: Optional[str]
-    news_samples: Optional[list[str]]
+    keyword_vi: Optional[object]
+    keyword_en: Optional[object]
+    keyword_cn: Optional[object]
+    keyword_ru: Optional[object]
+    is_sample: Optional[bool]
+    news_samples: Optional[List[NewsSampleModel]]
 
 
 class NewsLetterUpdateModel(BaseModel):
@@ -37,7 +47,12 @@ class NewsLetterUpdateModel(BaseModel):
     tag: Optional[Tag]
     required_keyword: Optional[list[str]]
     exclusion_keyword: Optional[str]
-    news_samples: Optional[list[str]]
+    keyword_vi: Optional[object]
+    keyword_en: Optional[object]
+    keyword_cn: Optional[object]
+    keyword_ru: Optional[object]
+    is_sample: Optional[bool]
+    news_samples: Optional[List[NewsSampleModel]]
 
 
 class NewsletterDeleteMany(BaseModel):

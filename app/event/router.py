@@ -249,6 +249,7 @@ async def update(
         data["user_id"] = 0
     if data["system_created"] == False:
         data["user_id"] = user_id
+    data["date_created"] = datetime.strptime(data["date_created"], "%d/%m/%Y")
     data["total_new"] = len(data["new_list"])
     updated_event = await update_event(id, data)
     if updated_event:

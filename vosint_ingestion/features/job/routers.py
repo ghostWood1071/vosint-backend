@@ -65,7 +65,7 @@ def run_only_job(pipeline_id: str, mode_test = True):
 # def test__(q: Annotated[list[str]):
 #     return JSONResponse({"a":1})
 @router.get("/api/get_event_from_newsletter_list_id")
-def get_event_from_newsletter_list_id(page_number = 1, page_size = 30, start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,news_letter_list_id: str = '', authorize: AuthJWT = Depends()): 
+def get_event_from_newsletter_list_id(page_number = 1, page_size = 30, start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,news_letter_list_id: str = '', authorize: AuthJWT = Depends(),event_number = None): 
     
     try:
         start_date = start_date.split('/')[2] +'-'+ start_date.split('/')[1] +'-'+ start_date.split('/')[0]+'T00:00:00Z'
@@ -106,7 +106,7 @@ def get_event_from_newsletter_list_id(page_number = 1, page_size = 30, start_dat
             pipeline_dtos = my_es.search_main(index_name='vosint',query=query,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai)
             list_link = []
             for i in pipeline_dtos:
-                list_link.append({"data:url":i['_source']['url']})
+                list_link.append({"data:url":i['_source']['data:url']})
             
             a,_ = MongoRepository().get_many_d(collection_name='News',filter_spec={'$or': list_link.copy()}, filter_other={"_id":1})
             list_id = []
@@ -114,9 +114,14 @@ def get_event_from_newsletter_list_id(page_number = 1, page_size = 30, start_dat
                 list_id.append(str(i['_id']))
             
             a,_ = MongoRepository().get_many_d(collection_name='event')
+
         
             sk = []
             for i in a:
+                try:
+                    i['date_created'] = str(i['date_created'])
+                except:
+                    pass
                 kt = 0
                 print(i['new_list'])
                 print(list_id)
@@ -133,7 +138,7 @@ def get_event_from_newsletter_list_id(page_number = 1, page_size = 30, start_dat
                                 a_ = MongoRepository().get_one(collection_name='News',filter_spec={"_id":_},filter_other={"data:title":1,"data:url":1})
                                 try:
                                     a_['_id'] = str(a_['_id'])
-                                    #a_['pub_date'] = str(a_['pub_date'])
+                                    # a_['pub_date'] = str(a_['pub_date'])
                                 except:
                                     pass
                                 new_list.append(a_)
@@ -147,7 +152,10 @@ def get_event_from_newsletter_list_id(page_number = 1, page_size = 30, start_dat
                     
                 except:
                     pass
-            result.append({news_letter_id:sk})
+            if event_number != None:
+                result.append({news_letter_id:sk[:int(event_number)]})
+            else:
+                result.append({news_letter_id:sk})
         except:
             pass
     return JSONResponse({"success": True, "result": result[(int(page_number)-1)*int(page_size):(int(page_number))*int(page_size)]})
@@ -220,7 +228,14 @@ def get_event_from_newsletter_id(page_number = 1, page_size = 30, start_date : s
     #             continue
     #     except:
     #         pass
-    return JSONResponse({"success": True, "result": pipeline_dtos[['_source']][(int(page_number)-1)*int(page_size):(int(page_number))*int(page_size)]})
+    for i in range(len(pipeline_dtos)):
+        try:
+            pipeline_dtos[i]['_source']['_id'] = pipeline_dtos[i]['_source']['id']
+        except:
+            pass
+        pipeline_dtos[i] = pipeline_dtos[i]['_source'].copy()
+
+    return JSONResponse({"success": True, "result": pipeline_dtos[(int(page_number)-1)*int(page_size):(int(page_number))*int(page_size)]})
 
 @router.get("/api/get_result_job/News_search")
 def News_search(text_search = '*', page_number = 1, page_size = 30, start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,news_letter_id: str = '', authorize: AuthJWT = Depends(),vital:str='',bookmarks:str=''): 
@@ -360,7 +375,7 @@ def get_result_job(order = None,text_search = '', page_number = None, page_size 
             # print(tmp)
             list_link =[]
             for k in tmp:
-                list_link.append({'data:url':k["_source"]["url"]})
+                list_link.append({'data:url':k["_source"]["data:url"]})
             if len(list_link) != 0:
                 query['$and'].append({'$or': list_link.copy()})
             else:

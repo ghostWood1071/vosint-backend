@@ -98,6 +98,7 @@ async def search_id(user_id: str):
             async for new in client2.find(id_new, projection):
                 gg = json(new)
                 ll.append(gg)
+        item["date_created"] = str(item["date_created"])
         item["new_list"] = ll
         item["total_new"] = len(item["new_list"])
         item = json(item)

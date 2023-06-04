@@ -183,7 +183,7 @@ class My_ElasticSearch:
         if self.es.indices.exists(index=index_name):
             return 'Index đã tồn tại'
         else :
-            self.es.indices.create(index=index_name, body=body_schema)
+            self.es.indices.create(index=index_name)#, body=body_schema)
             return 'Index được khởi tạo thành công'
         
     def delete_index(self, index_name:str):
@@ -418,7 +418,7 @@ class My_ElasticSearch:
         """
         _query_string = self.query_process(query)
         #print(_query_string)
-        _fields = ["title^2", "content"]
+        _fields = ["data:title^2", "data:content"]
         if gte is None:
             _gte = "1990-03-28T00:00:00Z"
         else:
@@ -460,7 +460,7 @@ class My_ElasticSearch:
                             {
                                 "query_string":{
                                     "query": _sentiment,
-                                    "default_field": "class_sacthai"
+                                    "default_field": "data:class_sacthai"
                                 }
                             }
                         ],
@@ -476,7 +476,7 @@ class My_ElasticSearch:
                 },
                 "sort": [
                 {
-                    "created_at": {
+                    "pub_date": {
                         "order": "desc"
                     }
                 }

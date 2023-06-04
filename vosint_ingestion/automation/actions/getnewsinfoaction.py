@@ -1,22 +1,21 @@
-import json
-from datetime import datetime
-
-import requests
 from common.internalerror import *
-from elasticsearch import Elasticsearch
-from features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
 from models import HBaseRepository, MongoRepository
-from models.mongorepository import MongoRepository
-
-# from nlp.hieu.vosintv3_text_clustering_main_15_3.src.inference import text_clustering
-# from nlp.keyword_extraction.keywords_ext import Keywords_Ext
-# from nlp.toan.v_osint_topic_sentiment_main.sentiment_analysis import (
-#     topic_sentiment_classification,
-# )
-from utils import get_time_now_string_y_m_now
 
 from ..common import ActionInfo, ActionType, ParamInfo, SelectorBy
 from .baseaction import BaseAction
+from models.mongorepository import MongoRepository
+from datetime import datetime
+from utils import get_time_now_string_y_m_now
+
+# from nlp.keyword_extraction.keywords_ext import Keywords_Ext
+# from nlp.toan.v_osint_topic_sentiment_main.sentiment_analysis import topic_sentiment_classification
+# from nlp.hieu.vosintv3_text_clustering_main_15_3.src.inference import text_clustering
+
+import requests
+
+import json
+from elasticsearch import Elasticsearch
+from features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
 
 my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
 
@@ -298,15 +297,15 @@ class GetNewsInfoAction(BaseAction):
             try:
                 doc_es = {}
                 try:
-                    doc_es['title'] = news_info['data:title']
+                    doc_es['data:title'] = news_info['data:title']
                 except:
                     pass
                 try:
-                    doc_es['author'] = news_info['data:author']
+                    doc_es['data:author'] = news_info['data:author']
                 except:
                     pass
                 try:
-                    doc_es['time'] = news_info['data:time']
+                    doc_es['data:time'] = news_info['data:time']
                 except:
                     pass
                 try:
@@ -314,7 +313,7 @@ class GetNewsInfoAction(BaseAction):
                 except:
                     pass
                 try:
-                    doc_es['content'] = news_info['data:content']
+                    doc_es['data:content'] = news_info['data:content']
                 except:
                     pass
                 try:
@@ -322,19 +321,19 @@ class GetNewsInfoAction(BaseAction):
                 except:
                     pass
                 try:
-                    doc_es['url'] = news_info['data:url']
+                    doc_es['data:url'] = news_info['data:url']
                 except:
                     pass
                 try:
-                    doc_es['html'] = news_info['data:html']
+                    doc_es['data:html'] = news_info['data:html']
                 except:
                     pass
                 try:
-                    doc_es['class_chude'] = news_info['data:class_chude']
+                    doc_es['data:class_chude'] = news_info['data:class_chude']
                 except:
                     pass
                 try:
-                    doc_es['class_linhvuc'] = news_info['data:class_linhvuc']
+                    doc_es['data:class_linhvuc'] = news_info['data:class_linhvuc']
                 except:
                     pass
                 try:
@@ -366,7 +365,7 @@ class GetNewsInfoAction(BaseAction):
                 except:
                     pass
                 try:
-                    doc_es['class_sacthai'] = news_info['data:class_sacthai']
+                    doc_es['data:class_sacthai'] = news_info['data:class_sacthai']
                 except:
                     pass
                 try:
@@ -375,6 +374,14 @@ class GetNewsInfoAction(BaseAction):
                     pass
                 try:
                     doc_es['class_object'] = news_info['class_object']
+                except:
+                    pass
+                try:
+                    doc_es['data:title_translate'] = news_info['data:title_translate']
+                except:
+                    pass
+                try:
+                    doc_es['data:content_translate'] = news_info['data:content_translate']
                 except:
                     pass
                 try:
