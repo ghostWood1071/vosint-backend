@@ -21,10 +21,26 @@
 # for hit in response['hits']['hits']:
 #     print((hit['_source']))
    
-import json
-from elasticsearch import Elasticsearch
-from features.job.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
-# from elastic_main import My_ElasticSearch
+# import json
+# from elasticsearch import Elasticsearch
+# from features.job.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
+# # from elastic_main import My_ElasticSearch
 
-my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
-print(my_es.search_main(index_name="vosint", query='"nghệ sĩ" + "con gái"', k=10))
+# my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
+# print(my_es.search_main(index_name="vosint", query='"nghệ sĩ" + "con gái"', k=10))
+
+
+import requests
+
+url = 'http://vosint.aiacademy.edu.vn/api/pipeline/Job/api/create_required_keyword'
+params = {'newsletter_id': '642e78353515902f1620006a'}
+
+response = requests.post(url, params=params)
+
+if response.status_code == 200:
+    # API call successful
+    data = response.json()
+    print(data)
+else:
+    # API call unsuccessful
+    print('Error:', response.status_code)

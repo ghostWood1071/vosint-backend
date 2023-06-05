@@ -27,6 +27,12 @@ class NewsSampleModel(BaseModel):
     content: str
     link: Optional[str]
 
+class NewsSampleModel(BaseModel):
+    id: str
+    title: str
+    content: str
+    link: Optional[str]
+
 class NewsLetterCreateModel(BaseModel):
     parent_id: str | None
     title: str
@@ -38,7 +44,7 @@ class NewsLetterCreateModel(BaseModel):
     keyword_cn: Optional[object]
     keyword_ru: Optional[object]
     is_sample: Optional[bool]
-    news_samples: Optional[List[NewsSampleModel]]
+    news_samples: Optional[list[NewsSampleModel]]
 
 
 class NewsLetterUpdateModel(BaseModel):
@@ -52,7 +58,8 @@ class NewsLetterUpdateModel(BaseModel):
     keyword_cn: Optional[object]
     keyword_ru: Optional[object]
     is_sample: Optional[bool]
-    news_samples: Optional[List[NewsSampleModel]]
+    news_samples: Optional[list[NewsSampleModel]]
+
 
 
 class NewsletterDeleteMany(BaseModel):

@@ -1,5 +1,5 @@
 from typing import List
-
+import requests
 from bson.objectid import ObjectId
 from fastapi import APIRouter, status
 from fastapi.params import Body, Depends
@@ -56,8 +56,13 @@ async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
     newsletter_dict = body.dict()
     newsletter_dict["user_id"] = user_id
 
-    await create_newsletter(newsletter_to_object_id(newsletter_dict))
+    a = await create_newsletter(newsletter_to_object_id(newsletter_dict))
+    url = 'http://vosint.aiacademy.edu.vn/api/pipeline/Job/api/create_required_keyword}'
+    headers = {'accept': 'application/json'}
+    params = {'newsletter_id': str(a.inserted_id)}
 
+    requests.post(url, headers=headers, params=params)
+    
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
 
@@ -208,6 +213,12 @@ async def update(
 
     parsed_newsletter = newsletter_to_object_id(body.dict())
     await update_newsletter(ObjectId(newsletter_id), parsed_newsletter)
+    url = 'http://vosint.aiacademy.edu.vn/api/pipeline/Job/api/create_required_keyword}'
+    headers = {'accept': 'application/json'}
+    params = {'newsletter_id': str(newsletter_id)}
+
+    requests.post(url, headers=headers, params=params)
+
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
 
