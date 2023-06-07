@@ -1,22 +1,23 @@
+import json
+import time
+from datetime import datetime
+
+import requests
 from common.internalerror import *
+from elasticsearch import Elasticsearch
+from features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
 from models import HBaseRepository, MongoRepository
+from models.mongorepository import MongoRepository
+from utils import get_time_now_string_y_m_now
 
 from ..common import ActionInfo, ActionType, ParamInfo, SelectorBy
 from .baseaction import BaseAction
-from models.mongorepository import MongoRepository
-from datetime import datetime
-from utils import get_time_now_string_y_m_now
 
 # from nlp.keyword_extraction.keywords_ext import Keywords_Ext
 # from nlp.toan.v_osint_topic_sentiment_main.sentiment_analysis import topic_sentiment_classification
 # from nlp.hieu.vosintv3_text_clustering_main_15_3.src.inference import text_clustering
 
-import requests
 
-import json
-from elasticsearch import Elasticsearch
-from features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
-import time
 
 my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
 

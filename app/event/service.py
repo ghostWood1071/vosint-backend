@@ -149,7 +149,7 @@ async def search_event(
     return list_event
 
 
-async def search_result(name, id_new, chu_the, khach_the, start_date, end_date):
+async def search_result(name, id_new, chu_the, khach_the, start_date, end_date): 
     query = {}
     if name:
         query["event_name"] = {"$regex": name, "$options": "-i"}
@@ -172,7 +172,6 @@ async def search_result(name, id_new, chu_the, khach_the, start_date, end_date):
     total = sum(count.values())
     return total
 
-
 async def event_detail(id) -> dict:
     ev_detail = await client.find_one({"_id": ObjectId(id)})
     new_list = []
@@ -189,7 +188,6 @@ async def event_detail(id) -> dict:
         ev_detail["total_new"] = len(ev_detail["new_list"])
         ev = json(ev_detail)
         return ev
-
 
 async def event_detail_system(id) -> dict:
     ev_detail = await client3.find_one({"_id": ObjectId(id)})

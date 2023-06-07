@@ -9,10 +9,12 @@ from app.manage_news.model import SourceGroupSchema
 from app.manage_news.service import (
     count_search_source_group,
     count_source,
+    count_source_group,
     create_source_group,
     delete_source_group,
     find_by_filter_and_paginate,
     get,
+    get_by_user_id,
     search_by_filter_and_paginate,
     update_source_group,
 )
@@ -60,7 +62,16 @@ async def search(name, skip=1, limit=10):
         status_code=status.HTTP_200_OK,
         content={"data": search_source_group, "total_record": count_source},
     )
-
+    
+@router.get("/get_by_user/")
+async def get_by_user(authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    search_source_group = await get_by_user_id(user_id)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"data": search_source_group},
+    )
 
 @router.put("/{id}")
 async def update_all(
