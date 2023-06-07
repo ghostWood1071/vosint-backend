@@ -187,7 +187,10 @@ async def search_by_name(
     end_date: Optional[str] = "",
     skip=1,
     limit=10,
+    authorize: AuthJWT = Depends()
 ):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
     search_list = await search_event(
         event_name,
         id_new,
@@ -195,11 +198,12 @@ async def search_by_name(
         khach_the,
         start_date,
         end_date,
+        user_id,
         int(skip),
         int(limit),
     )
     count = await search_result(
-        event_name, id_new, chu_the, khach_the, start_date, end_date
+        event_name, id_new, chu_the, khach_the, start_date, end_date, user_id
     )
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": search_list, "total": count}
