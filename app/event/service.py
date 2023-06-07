@@ -113,6 +113,7 @@ async def search_event(
     khach_the: str,
     start_date: str,
     end_date: str,
+    user_id,
     skip: int,
     limit: int,
 ):
@@ -120,6 +121,8 @@ async def search_event(
     list_event = []
     query = {}
     
+    if user_id:
+        query = {"user_id": user_id}
     if start_date and end_date:
         _start_date = datetime.strptime(start_date, "%d/%m/%Y")
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
@@ -149,7 +152,7 @@ async def search_event(
     return list_event
 
 
-async def search_result(name, id_new, chu_the, khach_the, start_date, end_date): 
+async def search_result(name, id_new, chu_the, khach_the, start_date, end_date, user_id): 
     query = {}
     if name:
         query["event_name"] = {"$regex": name, "$options": "-i"}
@@ -163,6 +166,8 @@ async def search_result(name, id_new, chu_the, khach_the, start_date, end_date):
         _start_date = datetime.strptime(start_date, "%d/%m/%Y")
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
         query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
+    if user_id:
+        query = {"user_id": user_id}
     if not query:
         query = {}
     count = {

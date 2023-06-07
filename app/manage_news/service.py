@@ -38,11 +38,18 @@ async def count_source(filter):
     return await db.count_documents(filter)
 
 
-async def search_by_filter_and_paginate(name, skip: int, limit: int):
+async def search_by_filter_and_paginate(name, user_id, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_source_group = []
     async for item in db.find(
-        {"$or": [{"source_name": {"$regex": name, "$options": "i"}}]}
+        {"$and": [
+            {
+                "source_name": {"$regex": name, "$options": "i"}
+            },
+            {
+                "user_id": user_id
+            }
+        ]}
     ).sort("_id").skip(offset).limit(limit):
         item = source_group_to_json(item)
         list_source_group.append(item)
@@ -64,8 +71,17 @@ def source_group_to_json(source_group) -> dict:
     return source_group
 
 
-async def count_search_source_group(name):
-    filter = {"source_name": {"$regex": name, "$options": "i"}}
+async def count_search_source_group(name, user_id):
+    filter = {
+        "$and": [
+            {
+                "source_name": {"$regex": name, "$options": "i"}
+            },
+            {
+                "user_id": user_id
+            }
+        ]
+    }
     return await db.count_documents(filter)
 
 
