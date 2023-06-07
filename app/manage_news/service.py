@@ -48,6 +48,16 @@ async def search_by_filter_and_paginate(name, skip: int, limit: int):
         list_source_group.append(item)
     return list_source_group
 
+async def get_by_user_id(user_id):
+    list_sg = []
+    async for item in db.find({"user_id": user_id}):
+        item = source_group_to_json(item)
+        list_sg.append(item)
+    return list_sg
+
+async def count_source_group(user_id):
+    filter = {"user_id": user_id}
+    return await db.count_documents(filter)
 
 def source_group_to_json(source_group) -> dict:
     source_group["_id"] = str(source_group["_id"])
