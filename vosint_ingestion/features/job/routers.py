@@ -68,10 +68,10 @@ def run_only_job(pipeline_id: str, mode_test = True):
     return JSONResponse(job_controller.run_only(pipeline_id, mode_test))
 
 
-# @router.post("/api/create_required_keyword}")
-# def create_required_keyword(newsletter_id: str):
+@router.post("/api/create_required_keyword}")
+def create_required_keyword(newsletter_id: str):
     
-#     return JSONResponse(job_controller.create_required_keyword(newsletter_id))
+    return JSONResponse(job_controller.create_required_keyword(newsletter_id))
 
 # @router.get("/api/run_only_job/{pipeline_id}")
 # def run_only_job(pipeline_id: str, mode_test = True):
@@ -490,7 +490,7 @@ def get_event_from_newsletter_id(page_number = 1, page_size = 30, start_date : s
             pass
         pipeline_dtos[i] = pipeline_dtos[i]['_source'].copy()
 
-    return JSONResponse({"success": True, "result": pipeline_dtos[(int(page_number)-1)*int(page_size):(int(page_number))*int(page_size)]})
+    return JSONResponse({"success": True,"total_record":len(pipeline_dtos), "result": pipeline_dtos[(int(page_number)-1)*int(page_size):(int(page_number))*int(page_size)]})
 
 @router.get("/api/get_result_job/News_search")
 def News_search(text_search = '*', page_number = 1, page_size = 30, start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,news_letter_id: str = '', authorize: AuthJWT = Depends(),vital:str='',bookmarks:str=''): 

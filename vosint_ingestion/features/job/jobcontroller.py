@@ -43,12 +43,12 @@ class JobController:
         result = self.__job_service.get_news_from_id_source(id,type,page_number,page_size,start_date,end_date,sac_thai,language_source,text_search)
         return {"total_record":len(result),"result":result[(int(page_number)-1)*int(page_size):(int(page_number))*int(page_size)]}
 
-    # def create_required_keyword(self, newsletter_id):
-    #     try:
-    #         self.__job_service.create_required_keyword(newsletter_id)
-    #         return {"success":True}
-    #     except:
-    #         return {"success":True}
+    def create_required_keyword(self, newsletter_id):
+        try:
+            self.__job_service.create_required_keyword(newsletter_id)
+            return {"success":True}
+        except:
+            return {"success":True}
 
     def run_only(self, pipeline_id: str, mode_test):
         result = self.__job_service.run_only(pipeline_id,mode_test)

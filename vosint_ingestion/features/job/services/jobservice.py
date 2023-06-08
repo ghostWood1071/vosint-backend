@@ -156,19 +156,19 @@ class JobService:
     def stop_job(self, id: str):
         Scheduler.instance().remove_job(id)
     
-    # def create_required_keyword(self,newsletter_id):
-    #     a = self.__mongo_repo.get_one(collection_name="newsletter",filter_spec={"_id":newsletter_id})['news_samples']
-    #     #print('len aaaaaaaaaa',len(a))
-    #     list_keyword = []
-    #     for i in a:
-    #         #print(i['title']+i['content'])
-    #         b = Keywords_Ext().extracting(document=i['title']+i['content'],num_keywords= 3)
-    #         #print('aaaaaaaaaaaaaaa',b)
-    #         list_keyword.append(",".join(b))
+    def create_required_keyword(self,newsletter_id):
+        a = self.__mongo_repo.get_one(collection_name="newsletter",filter_spec={"_id":newsletter_id})['news_samples']
+        #print('len aaaaaaaaaa',len(a))
+        list_keyword = []
+        for i in a:
+            #print(i['title']+i['content'])
+            b = Keywords_Ext().extracting(document=i['title']+i['content'],num_keywords= 10)
+            #print('aaaaaaaaaaaaaaa',b)
+            list_keyword.append(",".join(b))
     
-    #     doc = self.__mongo_repo.get_one(collection_name="newsletter",filter_spec={"_id":newsletter_id})
-    #     doc['required_keyword_extract'] = list_keyword
-    #     self.__mongo_repo.update_one(collection_name="newsletter",doc=doc)
+        doc = self.__mongo_repo.get_one(collection_name="newsletter",filter_spec={"_id":newsletter_id})
+        doc['required_keyword_extract'] = list_keyword
+        self.__mongo_repo.update_one(collection_name="newsletter",doc=doc)
 
     def get_news_from_id_source(sefl, id, type,page_number,page_size,start_date,end_date,sac_thai,language_source,text_search ):
         size = page_number*page_size
