@@ -187,7 +187,7 @@ def fetch_fast_new():
             timestamp = page.query_selector("span.spADate").inner_text()
             
             datetime_obj = datetime.strptime(timestamp, "%d/%m/%Y %H:%M")
-            
+                   
             data = {
                 "href": href,
                 "data-id": data_id,
