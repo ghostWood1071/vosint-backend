@@ -54,15 +54,41 @@ async def get_report(id: str):
 
 
 async def create_report(report):
-    return await report_client.insert_one(report)
-
+    created_rp = await report_client.insert_one(report)
+    id_rp = str(created_rp.inserted_id)
+    filter_rp = await report_client.find_one({"_id": ObjectId(id_rp)})
+    eventList = report.get("event_list", [])
+    await event_client.update_many(
+        {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
+        {"$addToSet": {"list_report": id_rp}},
+    )
+    return created_rp
 
 async def update_report(id: str, report: dict):
-    return await report_client.update_one({"_id": ObjectId(id)}, {"$set": report})
+    eventList = report.get("event_list", [])
+    await event_client.update_many(
+        {"list_report": id},
+        {"$pull": {"list_report": {"$in": [id]}}},
+    )
+    for ev in eventList:
+        ev_id = ev
+        await event_client.update_one(
+            {"_id": ObjectId(ev_id)},
+            {
+                "$addToSet": {"list_report": id}
+            }
+        )
+    updated_rp = await report_client.update_one({"_id": ObjectId(id)}, {"$set": report})
+    return updated_rp
 
 
 async def delete_report(id: str):
-    return await report_client.delete_one({"_id": ObjectId(id)})
+    deleted_rp = await report_client.delete_one({"_id": ObjectId(id)})
+    await event_client.update_many(
+        {"list_report": id},
+        {"$pull": {"list_report": {"$in": [id]}}},
+    )
+    return deleted_rp
 
 async def get_event(data):
     list_ev = []
