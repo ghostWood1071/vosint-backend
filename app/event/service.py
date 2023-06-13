@@ -15,9 +15,10 @@ pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 client = get_collection_client("event")
 client2 = get_collection_client("news")
 client3 = get_collection_client("event_system")
+report_client = get_collection_client("report")
 
 projection = {"_id": True, "data:title": True, "data:url": True}
-
+projection_rp = {"_id": True, "title": True}
 
 async def add_event(event):
     if event["system_created"] == True:
@@ -26,10 +27,15 @@ async def add_event(event):
         filter_event = await client3.find_one({"_id": ObjectId(id_event)})
         event_name = filter_event["event_name"]
         newsList = event.get("new_list", [])
+        listReport = event.get("list_report", [])
         await client2.update_many(
             {"_id": {"$in": [ObjectId(event_id) for event_id in newsList]}},
             {"$addToSet": {"event_list": {"event_id": id_event, "event_name": event_name}}},
-        )       
+        )  
+        await report_client.update_many(
+            {"_id": {"$in": [ObjectId(report_id) for report_id in listReport]}},
+            {"$addToSet": {"event_list": id_event}},
+        )     
         return created_event
     
     if event["system_created"] == False:
@@ -38,10 +44,15 @@ async def add_event(event):
         filter_event = await client.find_one({"_id": ObjectId(id_event)})
         event_name = filter_event["event_name"]
         newsList = event.get("new_list", [])
+        listReport = event.get("list_report", [])
         await client2.update_many(
             {"_id": {"$in": [ObjectId(event_id) for event_id in newsList]}},
             {"$addToSet": {"event_list": {"event_id": id_event, "event_name": event_name}}},
         )
+        await report_client.update_many(
+            {"_id": {"$in": [ObjectId(report_id) for report_id in listReport]}},
+            {"$addToSet": {"event_list": id_event}},
+        )   
         return created_event
     
 
@@ -51,12 +62,19 @@ async def get_all_by_paginate(filter, skip: int, limit: int):
 
     async for item in client.find(filter).sort("_id").skip(offset).limit(limit):
         ll = []
+        ls_rp = []
         for Item in item["new_list"]:
             id_new = {"_id": ObjectId(Item)}
             async for new in client2.find(id_new, projection):
                 gg = json(new)
                 ll.append(gg)
+        for Item2 in item["list_report"]:
+            id_report = {"_id": ObjectId(Item2)}
+            async for rp in report_client.find(id_report, projection_rp):
+                reports = json(rp)
+                ls_rp.append(reports)
         item["new_list"] = ll
+        item["list_report"] = ls_rp
         item["date_created"] = str(item["date_created"])
         item["total_new"] = len(item["new_list"])
         item = json(item)
@@ -286,6 +304,7 @@ async def update_event(id: str, data: dict):
     if event:
         event_name = event["event_name"]
         newsList = data.get("new_list", [])
+        reportList = data.get("list_report", [])
 
         await client2.update_many(
             {"event_list.event_id": id_event, "event_list.event_name": event_name},
@@ -301,6 +320,20 @@ async def update_event(id: str, data: dict):
                     }
                 },
             )
+            
+        await report_client.update_many(
+            {"event_list": id_event},
+            {"$pull": {"event_list": {"$in": [id_event]}}},
+        )
+        for rp in reportList:
+            rp_id = rp
+            await report_client.update_one(
+                {"_id": ObjectId(rp_id)},
+                {
+                    "$addToSet": {"event_list": id_event}
+                }
+            )
+        
         for item in list_event_1:
             if item["_id"] != event["_id"] and item["event_name"] == data["event_name"]:
                 raise HTTPException(
@@ -334,6 +367,20 @@ async def update_event(id: str, data: dict):
                     }
                 },
             )
+            
+        await report_client.update_many(
+            {"event_list": id_event},
+            {"$pull": {"event_list": {"$in": [id_event]}}},
+        )
+        for rp in reportList:
+            rp_id = rp
+            await report_client.update_one(
+                {"_id": ObjectId(rp_id)},
+                {
+                    "$addToSet": {"event_list": id_event}
+                }
+            )
+            
         for item in list_event_2:
             if (
                 item["_id"] != event_2["_id"]
@@ -615,6 +662,10 @@ async def delete_event(id):
             {"event_list.event_id": id_event, "event_list.event_name": event_name},
             {"$pull": {"event_list": {"event_id": id_event, "event_name": event_name}}},
         )
+        await report_client.update_many(
+            {"event_list": id_event},
+            {"$pull": {"event_list": {"$in": [id_event]}}},
+        )
         await client.delete_one({"_id": ObjectId(id)})
         return 200
     if event_2:
@@ -626,6 +677,10 @@ async def delete_event(id):
                     "event_list": {"event_id": id_event, "event_name": event_name_2}
                 }
             },
+        )
+        await report_client.update_many(
+            {"event_list": id_event},
+            {"$pull": {"event_list": {"$in": [id_event]}}},
         )
         await client3.delete_one({"_id": ObjectId(id)})
         return 200

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 class CreateReport(BaseModel):
     title: str = Field()
     headings: Optional[Any]
+    event_list: Optional[Any] = []
 
 class GetEvents(BaseModel):
     id_linh_vuc: str
@@ -16,7 +17,7 @@ class GetEvents(BaseModel):
 class UpdateReport(BaseModel):
     title: Optional[Any] = Field(default=None, description="The title of the report")
     headings: Optional[Any]
-
+    event_list: Optional[Any] = []
 
 class EventsDto(BaseModel):
     _id: str
