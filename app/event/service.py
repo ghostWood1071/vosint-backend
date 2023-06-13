@@ -156,12 +156,40 @@ async def search_event(
     if not query:
         query = {}
     async for item in client.find(query).sort("_id").skip(offset).limit(limit):
+        ll = []
+        ls_rp = []
+        for Item in item["new_list"]:
+            id_new = {"_id": ObjectId(Item)}
+            async for new in client2.find(id_new, projection):
+                gg = json(new)
+                ll.append(gg)
+        for Item2 in item["list_report"]:
+            id_report = {"_id": ObjectId(Item2)}
+            async for rp in report_client.find(id_report, projection_rp):
+                reports = json(rp)
+                ls_rp.append(reports)
+        item["new_list"] = ll
+        item["list_report"] = ls_rp
         item["date_created"] = str(item["date_created"])
         item["total_new"] = len(item["new_list"])
         items = json(item)
         list_event.append(items)
         
     async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
+        ll = []
+        ls_rp = []
+        for Item in item["new_list"]:
+            id_new = {"_id": ObjectId(Item)}
+            async for new in client2.find(id_new, projection):
+                gg = json(new)
+                ll.append(gg)
+        for Item2 in item["list_report"]:
+            id_report = {"_id": ObjectId(Item2)}
+            async for rp in report_client.find(id_report, projection_rp):
+                reports = json(rp)
+                ls_rp.append(reports)
+        item["new_list"] = ll
+        item["list_report"] = ls_rp
         item["date_created"] = str(item["date_created"])
         item["total_new"] = len(item["new_list"])
         items = json(item)
