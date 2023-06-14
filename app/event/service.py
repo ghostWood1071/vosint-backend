@@ -238,6 +238,54 @@ async def event_detail(id) -> dict:
         ev = json(ev_detail)
         return ev
 
+async def get_by_new_id(new_id) -> dict:
+    list_event = []
+
+    async for item in client.find({"new_list": new_id}).sort("_id"):
+        ll = []
+        ls_rp = []
+        for Item in item["new_list"]:
+            id_new = {"_id": ObjectId(Item)}
+            async for new in client2.find(id_new, projection):
+                gg = json(new)
+                ll.append(gg)
+        for Item2 in item["list_report"]:
+            id_report = {"_id": ObjectId(Item2)}
+            async for rp in report_client.find(id_report, projection_rp):
+                reports = json(rp)
+                ls_rp.append(reports)
+        item["new_list"] = ll
+        item["list_report"] = ls_rp
+        item["date_created"] = str(item["date_created"])
+        item["total_new"] = len(item["new_list"])
+        item = json(item)
+        list_event.append(item)
+    return list_event
+
+async def get_system_by_new_id(new_id) -> dict:
+    list_event = []
+
+    async for item in client3.find({"new_list": new_id}).sort("_id"):
+        ll = []
+        ls_rp = []
+        for Item in item["new_list"]:
+            id_new = {"_id": ObjectId(Item)}
+            async for new in client2.find(id_new, projection):
+                gg = json(new)
+                ll.append(gg)
+        for Item2 in item["list_report"]:
+            id_report = {"_id": ObjectId(Item2)}
+            async for rp in report_client.find(id_report, projection_rp):
+                reports = json(rp)
+                ls_rp.append(reports)
+        item["new_list"] = ll
+        item["list_report"] = ls_rp
+        item["date_created"] = str(item["date_created"])
+        item["total_new"] = len(item["new_list"])
+        item = json(item)
+        list_event.append(item)
+    return list_event
+
 async def event_detail_system(id) -> dict:
     ev_detail = await client3.find_one({"_id": ObjectId(id)})
     new_list = []
