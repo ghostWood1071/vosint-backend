@@ -6,8 +6,6 @@ from pydantic import BaseModel, Field
 class CreateReport(BaseModel):
     title: str = Field()
     headings: Optional[Any]
-    event_list: Optional[Any] = []
-
 class GetEvents(BaseModel):
     id_linh_vuc: str
     start: Optional[str] = ""

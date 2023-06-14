@@ -13,7 +13,7 @@ from db.init_db import get_collection_client
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 
 client = get_collection_client("event")
-client2 = get_collection_client("news")
+client2 = get_collection_client("News")
 client3 = get_collection_client("event_system")
 report_client = get_collection_client("report")
 
@@ -127,8 +127,6 @@ async def search_id(user_id: str):
 async def search_event(
     event_name: str,
     data: ObjectId,
-    chu_the: str,
-    khach_the: str,
     start_date: str,
     end_date: str,
     user_id,
@@ -146,13 +144,13 @@ async def search_event(
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
         query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
     if event_name:
-        query["$or"] = [{"event_name": {"$regex": event_name, "$options": "-i"}}]
+        query["$or"] = [
+            {"event_name": {"$regex": event_name, "$options": "-i"}},
+            {"chu_the": {"$regex": event_name, "$options": "-i"}},
+            {"khach_the": {"$regex": event_name, "$options": "-i"}}
+        ]
     if data:
         query["new_list"] = {"$nin": [data]}
-    if chu_the:
-        query = {"chu_the": {"$regex": chu_the, "$options": "-i"}}
-    if khach_the:
-        query = {"khach_the": {"$regex": khach_the, "$options": "-i"}}
     if not query:
         query = {}
     async for item in client.find(query).sort("_id").skip(offset).limit(limit):
@@ -198,16 +196,16 @@ async def search_event(
     return list_event
 
 
-async def search_result(name, id_new, chu_the, khach_the, start_date, end_date, user_id): 
+async def search_result(name, id_new, start_date, end_date, user_id): 
     query = {}
     if name:
-        query["event_name"] = {"$regex": name, "$options": "-i"}
+        query["$or"] = [
+            {"event_name": {"$regex": name, "$options": "-i"}},
+            {"chu_the": {"$regex": name, "$options": "-i"}},
+            {"khach_the": {"$regex": name, "$options": "-i"}}
+        ]
     if id_new:
         query["new_list"] = {"$nin": [id_new]}
-    if chu_the:
-        query = {"chu_the": {"$regex": chu_the, "$options": "-i"}}
-    if khach_the:
-        query = {"khach_the": {"$regex": khach_the, "$options": "-i"}}
     if start_date and end_date:
         _start_date = datetime.strptime(start_date, "%d/%m/%Y")
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
