@@ -20,6 +20,7 @@ from app.event.service import (
     event_detail_system,
     get_all_by_paginate,
     get_all_by_system,
+    get_system_by_new_id,
     remove_list_event_id,
     remove_list_new_id,
     search_event,
@@ -28,6 +29,7 @@ from app.event.service import (
     update_add,
     update_add_system,
     update_event,
+    get_by_new_id
 )
 from db.init_db import get_collection_client
 
@@ -35,6 +37,8 @@ router = APIRouter()
 client = get_collection_client("event")
 client3 = get_collection_client("event_system")
 
+projection = {"_id": True, "data:title": True, "data:url": True}
+projection_rp = {"_id": True, "title": True}
 
 @router.get("/all-system-created/")
 async def get_all(skip=1, limit=10):
@@ -163,18 +167,22 @@ async def get_event(event_id: str):
 
 @router.get("/news/{news_id}")
 async def show_event_by_news(news_id: str):
-    result = await client.find({"new_list": news_id}).to_list(length=None)
-    for item in result:
-        item["total_new"] = len(item["new_list"])
-    return result
+    detail = await get_by_new_id(news_id)
+    if detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="event not exist"
+        )
+    return detail
 
 
 @router.get("/news/system/{news_id}")
 async def show_event_by_news_and_system(news_id: str):
-    result = await client3.find({"new_list": news_id}).to_list(length=None)
-    for item in result:
-        item["total_new"] = len(item["new_list"])
-    return result
+    detail = await get_system_by_new_id(news_id)
+    if detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="event not exist"
+        )
+    return detail
 
 
 @router.get("/search/")
