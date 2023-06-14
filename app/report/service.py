@@ -1,4 +1,5 @@
 from datetime import datetime, time, timedelta
+from typing import List
 
 import pydantic
 from bson.objectid import ObjectId
@@ -12,7 +13,7 @@ pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 report_client = get_collection_client("report")
 event_client = get_collection_client("event")
 event_system_client = get_collection_client("event_system")
-new_client = get_collection_client("news")
+new_client = get_collection_client("News")
 newsletter_client = get_collection_client("newsletter")
 
 projection = {
@@ -56,7 +57,6 @@ async def get_report(id: str):
 async def create_report(report):
     created_rp = await report_client.insert_one(report)
     id_rp = str(created_rp.inserted_id)
-    filter_rp = await report_client.find_one({"_id": ObjectId(id_rp)})
     eventList = report.get("event_list", [])
     await event_client.update_many(
         {"_id": {"$in": [ObjectId(event_id) for event_id in eventList]}},
@@ -65,19 +65,7 @@ async def create_report(report):
     return created_rp
 
 async def update_report(id: str, report: dict):
-    eventList = report.get("event_list", [])
-    await event_client.update_many(
-        {"list_report": id},
-        {"$pull": {"list_report": {"$in": [id]}}},
-    )
-    for ev in eventList:
-        ev_id = ev
-        await event_client.update_one(
-            {"_id": ObjectId(ev_id)},
-            {
-                "$addToSet": {"list_report": id}
-            }
-        )
+    
     updated_rp = await report_client.update_one({"_id": ObjectId(id)}, {"$set": report})
     return updated_rp
 
@@ -181,3 +169,46 @@ async def get_event(data):
     
     return list_ev
 
+async def remove_report(id_rp: str):
+    await report_client.delete_one({"_id": ObjectId(id_rp)})
+    await event_client.update_many(
+        {"list_report": id_rp},
+        {"$pull": {"list_report": {"$in": [id_rp]}}},
+    )
+        
+async def remove_heading_of_report(id_rp, id_heading: str):
+    report = await report_client.find_one({"_id": ObjectId(id_rp)})
+    headings = report["headings"]
+    for item in headings:
+        if id_heading == item["id"]:
+            await report_client.update_one(
+                {"_id": ObjectId(id_rp)},
+                {"$pull": {"headings": {"id": id_heading}}}
+            )
+        for id_ev in item["eventIds"]:
+            await event_client.update_many(
+                {"_id": ObjectId(id_ev)},
+                {"$pull": {"list_report": {"$in": [id_rp]}}},
+            )
+
+async def add_heading_of_report(id_rp, id_heading: str, list_id_event: List[ObjectId]):
+    report = await report_client.find_one({"_id": ObjectId(id_rp)})
+    headings = report["headings"]
+    for item in headings:
+        if id_heading == item["id"]:
+            await report_client.update_many(
+                {"_id": ObjectId(id_rp)},
+                {
+                    "$addToSet": {
+                        "headings.$[elem].eventIds": {
+                            "$each": [ObjectId(event_id) for event_id in list_id_event]
+                        }
+                    }
+                },
+                array_filters=[{"elem.id": id_heading}]
+            )
+        for id_ev in item["eventIds"]:
+            await event_client.update_many(
+                {"_id": ObjectId(id_ev)},
+                {"$addToSet": {"list_report": id_rp}},
+            )

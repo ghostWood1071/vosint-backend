@@ -181,8 +181,6 @@ async def show_event_by_news_and_system(news_id: str):
 async def search_by_name(
     event_name: Optional[str] = "",
     id_new: Optional[str] = "",
-    chu_the: Optional[str] = "",
-    khach_the: Optional[str] = "",
     start_date: Optional[str] = "",
     end_date: Optional[str] = "",
     skip=1,
@@ -194,8 +192,6 @@ async def search_by_name(
     search_list = await search_event(
         event_name,
         id_new,
-        chu_the,
-        khach_the,
         start_date,
         end_date,
         user_id,
@@ -203,7 +199,7 @@ async def search_by_name(
         int(limit),
     )
     count = await search_result(
-        event_name, id_new, chu_the, khach_the, start_date, end_date, user_id
+        event_name, id_new, start_date, end_date, user_id
     )
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": search_list, "total": count}
