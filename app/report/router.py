@@ -60,13 +60,13 @@ async def put_report(id: str, data: UpdateReport = Body(...)):
     event_list = data.event_list
     del data.event_list
     eventList = event_list
-    await event_client.update_many(
-        {"list_report": id},
-        {"$pull": {"list_report": {"$in": [id]}}},
-    )
+    # await event_client.update_many(
+    #     {"list_report": id},
+    #     {"$pull": {"list_report": {"$in": [id]}}},
+    # )
     for ev in eventList:
         ev_id = ev
-        await event_client.update_one(
+        await event_client.update_many(
             {"_id": ObjectId(ev_id)},
             {
                 "$addToSet": {"list_report": id}
@@ -77,7 +77,7 @@ async def put_report(id: str, data: UpdateReport = Body(...)):
     await update_report(id, report_dict)
     return id
 
-@router.put("/add-heading/")
+@router.put("/add-events-to-heading/")
 async def add_head(
     id_report: Optional[str] = "", 
     id_heading: Optional[str] = "", 

@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 
 from app.event.model import AddNewEvent, CreateEvent
 from app.news.services import find_news_by_filter
+from app.report.service import find_report_by_filter
 from db.init_db import get_collection_client
 
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
@@ -111,11 +112,18 @@ async def search_id(user_id: str):
     list_event = []
     async for item in client.find(query).sort("_id"):
         ll = []
+        ls_rp = []
         for Item in item["new_list"]:
             id_new = {"_id": ObjectId(Item)}
             async for new in client2.find(id_new, projection):
                 gg = json(new)
                 ll.append(gg)
+        for Item2 in item["list_report"]:
+            id_report = {"_id": ObjectId(Item2)}
+            async for rp in report_client.find(id_report, projection_rp):
+                reports = json(rp)
+                ls_rp.append(reports)
+        item["list_report"] = ls_rp
         item["date_created"] = str(item["date_created"])
         item["new_list"] = ll
         item["total_new"] = len(item["new_list"])
@@ -233,6 +241,14 @@ async def event_detail(id) -> dict:
             {"_id": 1, "data:title": 1, "data:url": 1},
         )
         ev_detail["new_list"] = new_list
+    
+    if "list_report" in ev_detail:
+        ls_rp = await find_report_by_filter(
+            {"_id": {"$in": convert_map_str_to_object_id(ev_detail["list_report"])}},
+            {"_id": 1, "title": 1},
+        )
+        ev_detail["list_report"] = ls_rp
+        
     if ev_detail:
         ev_detail["total_new"] = len(ev_detail["new_list"])
         ev = json(ev_detail)
