@@ -49,6 +49,13 @@ async def get_reports(filter, skip: int, limit: int):
 
     return list_report
 
+async def find_report_by_filter(filter, projection=None):
+    list_report = []
+    async for report in report_client.find(filter, projection).sort("_id"):
+        list_report.append(report)
+
+    return list_report
+
 
 async def get_report(id: str):
     return await report_client.find_one({"_id": ObjectId(id)})
