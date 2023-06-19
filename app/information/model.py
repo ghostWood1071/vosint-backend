@@ -9,6 +9,7 @@ class CreateInfor(BaseModel):
     language: str
     publishing_country: str
     source_type: str
+    event_detect: bool = True
 
     class config:
         orm_mode = True
@@ -20,6 +21,6 @@ class UpdateInfor(BaseModel):
     language: Optional[str]
     publishing_country: Optional[str]
     source_type: Optional[str]
-
+    event_detect: bool = True
     class config:
         orm_mode = True
