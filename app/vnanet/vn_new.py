@@ -1,10 +1,31 @@
 from datetime import datetime
+from typing import Optional
 
 from fastapi import APIRouter
 from playwright.sync_api import sync_playwright
 from pymongo import MongoClient
 
+from app.vnanet.service import get_all
+from db.init_db import get_collection_client
+
 router = APIRouter()
+client = get_collection_client("News_vnanet")
+
+@router.get("/get-craw-vnnew/")
+async def get_craw(
+    text_search: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    check_crawl: Optional[bool] = None,
+    skip = 1, 
+    limit = 10
+):
+    list_craw = await get_all(text_search, start_date, end_date, check_crawl, int(skip), int(limit))
+    return {
+        "data": list_craw
+    }
+    
+visited_data_ids = set()
 
 @router.get("/fetch-news-in-country")
 def fetch_new_in_country():
@@ -22,6 +43,13 @@ def fetch_new_in_country():
             href = link.get_attribute("href")
 
             data_id = link.get_attribute("data-id")
+            
+            if data_id in visited_data_ids:
+                continue 
+            
+            visited_data_ids.add(data_id)
+                
+            title = link.inner_text().strip()
 
             # Retrieve data-service
             data_service = link.get_attribute("data-service")
@@ -32,10 +60,12 @@ def fetch_new_in_country():
             datetime_obj = datetime.strptime(timestamp, "%d/%m/%Y %H:%M")
             
             data = {
+                "title": title,
                 "href": href,
-                "data-id": data_id,
-                "data-service": data_service,
-                "date": datetime_obj
+                "data_id": data_id,
+                "data_service": data_service,
+                "date": datetime_obj,
+                "is_crawled": False
             }
             list_new.append(data)
             
@@ -62,7 +92,14 @@ def fetch_new_in_world():
             href = link.get_attribute("href")
 
             data_id = link.get_attribute("data-id")
-
+            
+            if data_id in visited_data_ids:
+                continue 
+            
+            visited_data_ids.add(data_id)
+            
+            title = link.inner_text().strip()
+            
             # Retrieve data-service
             data_service = link.get_attribute("data-service")
 
@@ -72,10 +109,12 @@ def fetch_new_in_world():
             datetime_obj = datetime.strptime(timestamp, "%d/%m/%Y %H:%M")
             
             data = {
+                "title": title,
                 "href": href,
-                "data-id": data_id,
-                "data-service": data_service,
-                "date": datetime_obj
+                "data_id": data_id,
+                "data_service": data_service,
+                "date": datetime_obj,
+                "is_crawled": False
             }
             list_new.append(data)
             
@@ -101,6 +140,13 @@ def fetch_new_economics_news_in_country():
             href = link.get_attribute("href")
 
             data_id = link.get_attribute("data-id")
+            
+            if data_id in visited_data_ids:
+                continue 
+            
+            visited_data_ids.add(data_id)
+            
+            title = link.inner_text().strip()
 
             # Retrieve data-service
             data_service = link.get_attribute("data-service")
@@ -111,10 +157,12 @@ def fetch_new_economics_news_in_country():
             datetime_obj = datetime.strptime(timestamp, "%d/%m/%Y %H:%M")
             
             data = {
+                "title": title,
                 "href": href,
-                "data-id": data_id,
-                "data-service": data_service,
-                "date": datetime_obj
+                "data_id": data_id,
+                "data_service": data_service,
+                "date": datetime_obj,
+                "is_crawled": False
             }
             list_new.append(data)
             
@@ -140,6 +188,13 @@ def fetch_newe_conomics_news_in_world():
             href = link.get_attribute("href")
 
             data_id = link.get_attribute("data-id")
+            
+            if data_id in visited_data_ids:
+                continue 
+            
+            visited_data_ids.add(data_id)
+            
+            title = link.inner_text().strip()
 
             # Retrieve data-service
             data_service = link.get_attribute("data-service")
@@ -150,10 +205,12 @@ def fetch_newe_conomics_news_in_world():
             datetime_obj = datetime.strptime(timestamp, "%d/%m/%Y %H:%M")
             
             data = {
+                "title": title,
                 "href": href,
-                "data-id": data_id,
-                "data-service": data_service,
-                "date": datetime_obj
+                "data_id": data_id,
+                "data_service": data_service,
+                "date": datetime_obj,
+                "is_crawled": False
             }
             list_new.append(data)
             
@@ -179,6 +236,13 @@ def fetch_fast_new():
             href = link.get_attribute("href")
 
             data_id = link.get_attribute("data-id")
+            
+            if data_id in visited_data_ids:
+                continue 
+            
+            visited_data_ids.add(data_id)
+            
+            title = link.inner_text().strip()
 
             # Retrieve data-service
             data_service = link.get_attribute("data-service")
@@ -189,10 +253,12 @@ def fetch_fast_new():
             datetime_obj = datetime.strptime(timestamp, "%d/%m/%Y %H:%M")
                    
             data = {
+                "title": title,
                 "href": href,
-                "data-id": data_id,
-                "data-service": data_service,
-                "date": datetime_obj
+                "data_id": data_id,
+                "data_service": data_service,
+                "date": datetime_obj,
+                "is_crawled": False
             }
             list_new.append(data)
         
