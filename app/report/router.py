@@ -1,19 +1,27 @@
 from typing import Annotated, List, Optional
 
 from bson.objectid import ObjectId
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, status
+from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
+
+from db.init_db import get_collection_client
 
 from .model import CreateEvents, CreateReport, GetEvents, UpdateEvents, UpdateReport
 from .service import (
+    add_heading_of_report,
     count,
     create_report,
     delete_report,
     get_event,
     get_report,
     get_reports,
+    remove_heading_of_report,
+    remove_report,
     update_report,
 )
+
+event_client = get_collection_client("event")
 
 router = APIRouter()
 
@@ -49,10 +57,49 @@ async def post_report(report: CreateReport = Body(...)):
 
 @router.put("/{id}")
 async def put_report(id: str, data: UpdateReport = Body(...)):
+    event_list = data.event_list
+    del data.event_list
+    eventList = event_list
+    # await event_client.update_many(
+    #     {"list_report": id},
+    #     {"$pull": {"list_report": {"$in": [id]}}},
+    # )
+    for ev in eventList:
+        ev_id = ev
+        await event_client.update_many(
+            {"_id": ObjectId(ev_id)},
+            {
+                "$addToSet": {"list_report": id}
+            }
+        )
+    # insert id report to event item
     report_dict = {k: v for k, v in data.dict().items() if v is not None}
     await update_report(id, report_dict)
     return id
 
+@router.put("/add-events-to-heading/")
+async def add_head(
+    id_report: Optional[str] = "", 
+    id_heading: Optional[str] = "", 
+    list_id_event: List[str] = Body(...)
+):
+    list_new = []
+    for item in list_id_event:
+        list_new.append(ObjectId(item))
+    await add_heading_of_report(id_report, id_heading, list_id_event)
+    return 200
+
+@router.put("/remove-heading/")
+async def delete_heading(id_report: Optional[str] = "", id_heading: Optional[str] = ""):
+    if id_report and not id_heading:
+        await remove_report(id_report)
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content="Successful delete a report"
+            )
+    elif id_report and id_heading:
+        await remove_heading_of_report(id_report, id_heading)
+        return 200
 
 @router.delete("/{id}")
 async def delete(id: str):

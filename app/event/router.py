@@ -20,6 +20,7 @@ from app.event.service import (
     event_detail_system,
     get_all_by_paginate,
     get_all_by_system,
+    get_system_by_new_id,
     remove_list_event_id,
     remove_list_new_id,
     search_event,
@@ -28,6 +29,7 @@ from app.event.service import (
     update_add,
     update_add_system,
     update_event,
+    get_by_new_id
 )
 from db.init_db import get_collection_client
 
@@ -35,6 +37,8 @@ router = APIRouter()
 client = get_collection_client("event")
 client3 = get_collection_client("event_system")
 
+projection = {"_id": True, "data:title": True, "data:url": True}
+projection_rp = {"_id": True, "title": True}
 
 @router.get("/all-system-created/")
 async def get_all(skip=1, limit=10):
@@ -163,26 +167,28 @@ async def get_event(event_id: str):
 
 @router.get("/news/{news_id}")
 async def show_event_by_news(news_id: str):
-    result = await client.find({"new_list": news_id}).to_list(length=None)
-    for item in result:
-        item["total_new"] = len(item["new_list"])
-    return result
+    detail = await get_by_new_id(news_id)
+    if detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="event not exist"
+        )
+    return detail
 
 
 @router.get("/news/system/{news_id}")
 async def show_event_by_news_and_system(news_id: str):
-    result = await client3.find({"new_list": news_id}).to_list(length=None)
-    for item in result:
-        item["total_new"] = len(item["new_list"])
-    return result
+    detail = await get_system_by_new_id(news_id)
+    if detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="event not exist"
+        )
+    return detail
 
 
 @router.get("/search/")
 async def search_by_name(
     event_name: Optional[str] = "",
     id_new: Optional[str] = "",
-    chu_the: Optional[str] = "",
-    khach_the: Optional[str] = "",
     start_date: Optional[str] = "",
     end_date: Optional[str] = "",
     skip=1,
@@ -194,8 +200,6 @@ async def search_by_name(
     search_list = await search_event(
         event_name,
         id_new,
-        chu_the,
-        khach_the,
         start_date,
         end_date,
         user_id,
@@ -203,7 +207,7 @@ async def search_by_name(
         int(limit),
     )
     count = await search_result(
-        event_name, id_new, chu_the, khach_the, start_date, end_date, user_id
+        event_name, id_new, start_date, end_date, user_id
     )
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": search_list, "total": count}

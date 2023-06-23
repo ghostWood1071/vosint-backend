@@ -317,7 +317,6 @@ async def update_me(user_data: UserUpdateModel, authorize: AuthJWT = Depends()):
 async def update(id: str, body: UserUpdateModel = Body(...)):
     body_dict = {k: v for k, v in body.dict().items() if v is not None}
     user = await find_user_by_id(ObjectId(id))
-
     existing_user = await client.find_one({"username": body_dict["username"]})
     if existing_user:
         raise HTTPException(
