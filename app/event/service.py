@@ -153,9 +153,9 @@ async def search_event(
         query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
     if event_name:
         query["$or"] = [
-            {"event_name": {"$regex": event_name, "$options": "-i"}},
-            {"chu_the": {"$regex": event_name, "$options": "-i"}},
-            {"khach_the": {"$regex": event_name, "$options": "-i"}}
+            {"event_name": {"$regex": event_name, "$options": "i"}},
+            {"chu_the": {"$regex": event_name, "$options": "i"}},
+            {"khach_the": {"$regex": event_name, "$options": "i"}}
         ]
     if data:
         query["new_list"] = {"$nin": [data]}
@@ -163,7 +163,8 @@ async def search_event(
         query = {}
     if system_created == False:
         if user_id:
-            query = {"user_id": user_id}
+            query["user_id"] = user_id
+        
         async for item in client.find(query).sort("_id").skip(offset).limit(limit):
             ll = []
             ls_rp = []
@@ -190,27 +191,6 @@ async def search_event(
                       
     if system_created == True:
         async for item3 in client3.find(query).sort("_id").skip(offset).limit(limit):
-            # ll = []
-            # ls_rp = []
-            # for Item in item3["new_list"]:
-            #     id_new = {"_id": ObjectId(Item)}
-            #     async for new in client2.find(id_new, projection):
-            #         gg = json(new)
-            #         ll.append(gg)
-            # for Item2 in item3["list_report"]:
-            #     id_report = {"_id": ObjectId(Item2)}
-            #     async for rp in report_client.find(id_report, projection_rp):
-            #         reports = json(rp)
-            #         ls_rp.append(reports)
-            # item3["new_list"] = ll
-            # item3["list_report"] = ls_rp
-            # item3["date_created"] = str(item["date_created"])
-            # item3["total_new"] = len(item3["new_list"])
-            # items = json(item3)
-            # if "list_user_clone" not in item:
-            #     await client.aggregate([
-            #         {"$addFields": {"list_user_clone": []}}
-            #     ]).to_list(length=None)
             item3["_id"] = str(item3["time"])
             item3["time"] = str(item3["time"])
             list_event.append(item3)

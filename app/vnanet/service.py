@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from pymongo import DESCENDING
+
 from db.init_db import get_collection_client
 
 client = get_collection_client("News_vnanet")
@@ -22,7 +24,7 @@ async def get_all(text_search, start, end, check, skip: int, limit: int):
         query = {"is_crawled": False}
     if not query:
         query = {}
-    async for item in client.find(query).sort("_id").skip(offset).limit(limit): 
+    async for item in client.find(query).sort("date", DESCENDING).skip(offset).limit(limit): 
         list_craw.append(item)
     return list_craw
 
