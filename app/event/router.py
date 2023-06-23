@@ -20,6 +20,7 @@ from app.event.service import (
     event_detail_system,
     get_all_by_paginate,
     get_all_by_system,
+    get_by_new_id,
     get_system_by_new_id,
     remove_list_event_id,
     remove_list_new_id,
@@ -29,13 +30,12 @@ from app.event.service import (
     update_add,
     update_add_system,
     update_event,
-    get_by_new_id
 )
 from db.init_db import get_collection_client
 
 router = APIRouter()
 client = get_collection_client("event")
-client3 = get_collection_client("event_system")
+client3 = get_collection_client("events")
 
 projection = {"_id": True, "data:title": True, "data:url": True}
 projection_rp = {"_id": True, "title": True}
@@ -191,6 +191,7 @@ async def search_by_name(
     id_new: Optional[str] = "",
     start_date: Optional[str] = "",
     end_date: Optional[str] = "",
+    system_created: Optional[bool] = False,
     skip=1,
     limit=10,
     authorize: AuthJWT = Depends()
@@ -203,11 +204,12 @@ async def search_by_name(
         start_date,
         end_date,
         user_id,
+        system_created,
         int(skip),
         int(limit),
     )
     count = await search_result(
-        event_name, id_new, start_date, end_date, user_id
+        event_name, id_new, start_date, end_date, user_id, system_created
     )
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"data": search_list, "total": count}
@@ -221,6 +223,29 @@ async def search_based_id_system(authorize: AuthJWT = Depends()):
     search_list = await search_id(user_id)
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list})
 
+@router.put("/clone-event/{id_event}")
+async def clone_event(id_event: str, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    cursor = await client3.find_one({"_id": ObjectId(id_event)})
+    if cursor: 
+        existing_cloned = await client.find_one({"_id": ObjectId(id_event)})
+        if existing_cloned:
+            raise HTTPException(status_code=400, detail="Event already cloned")
+            
+        await client.insert_one(cursor)
+        await client3.update_one(
+            {"_id": ObjectId(id_event)},
+            {
+                "$addToSet": {
+                    "list_user_clone": user_id
+                }
+            },
+        )
+        return {"message: Event cloned successfully"}
+    else:
+        return {"message": "Event not found"}
+    
 
 @router.put("/update-to-add/{id}")
 async def update_to_add(
