@@ -153,9 +153,9 @@ async def search_event(
         query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
     if event_name:
         query["$or"] = [
-            {"event_name": {"$regex": event_name, "$options": "-i"}},
-            {"chu_the": {"$regex": event_name, "$options": "-i"}},
-            {"khach_the": {"$regex": event_name, "$options": "-i"}}
+            {"event_name": {"$regex": event_name, "$options": "i"}},
+            {"chu_the": {"$regex": event_name, "$options": "i"}},
+            {"khach_the": {"$regex": event_name, "$options": "i"}}
         ]
     if data:
         query["new_list"] = {"$nin": [data]}
@@ -205,29 +205,57 @@ async def search_event(
 
 
 async def search_result(name, id_new, start_date, end_date, user_id): 
+    # query = {}
+    # if name:
+    #     query["$or"] = [
+    #         {"event_name": {"$regex": name, "$options": "i"}},
+    #         {"chu_the": {"$regex": name, "$options": "i"}},
+    #         {"khach_the": {"$regex": name, "$options": "i"}}
+    #     ]
+    # if id_new:
+    #     query["new_list"] = {"$nin": [id_new]}
+    # if start_date and end_date:
+    #     _start_date = datetime.strptime(start_date, "%d/%m/%Y")
+    #     _end_date = datetime.strptime(end_date, "%d/%m/%Y")
+    #     query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
+    # if user_id:
+    #     query = {"user_id": user_id}
+    # if not query:
+    #     query = {}
+    # count = {
+    #     "client": await client.count_documents(query),
+    #     "client3": await client3.count_documents(query),
+    # }
+    # total = sum(count.values())
+    # return total
+    
     query = {}
+    conditions = []
+    
     if name:
-        query["$or"] = [
-            {"event_name": {"$regex": name, "$options": "-i"}},
-            {"chu_the": {"$regex": name, "$options": "-i"}},
-            {"khach_the": {"$regex": name, "$options": "-i"}}
-        ]
+        conditions.append(
+            {"$or": [
+                {"event_name": {"$regex": name, "$options": "i"}},
+                {"chu_the": {"$regex": name, "$options": "i"}},
+                {"khach_the": {"$regex": name, "$options": "i"}}
+            ]}
+        )
+        
     if id_new:
-        query["new_list"] = {"$nin": [id_new]}
+        conditions.append({"new_list": {"$nin": [id_new]}})
+        
     if start_date and end_date:
         _start_date = datetime.strptime(start_date, "%d/%m/%Y")
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
-        query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
+        conditions.append({"date_created": {"$gte": _start_date, "$lte": _end_date}})
+        
     if user_id:
-        query = {"user_id": user_id}
-    if not query:
-        query = {}
-    count = {
-        "client": await client.count_documents(query),
-        "client3": await client3.count_documents(query),
-    }
-    total = sum(count.values())
-    return total
+        conditions.append({"user_id": user_id})
+    
+    if conditions:
+        query["$and"] = conditions
+    
+    return await client.count_documents(query)
 
 async def event_detail(id) -> dict:
     ev_detail = await client.find_one({"_id": ObjectId(id)})
