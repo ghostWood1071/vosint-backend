@@ -15,7 +15,7 @@ pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 
 client = get_collection_client("event")
 client2 = get_collection_client("News")
-client3 = get_collection_client("event_system")
+client3 = get_collection_client("events")
 report_client = get_collection_client("report")
 
 projection = {"_id": True, "data:title": True, "data:url": True}
@@ -88,15 +88,16 @@ async def get_all_by_system(filter, skip: int, limit: int):
     list_event = []
 
     async for item in client3.find(filter).sort("_id").skip(offset).limit(limit):
-        ll = []
-        for Item in item["new_list"]:
-            id_new = {"_id": ObjectId(Item)}
-            async for new in client2.find(id_new, projection):
-                gg = json(new)
-                ll.append(gg)
-        item["date_created"] = str(item["date_created"])
-        item["new_list"] = ll
-        item["total_new"] = len(item["new_list"])
+        # ll = []
+        # for Item in item["new_list"]:
+        #     id_new = {"_id": ObjectId(Item)}
+        #     async for new in client2.find(id_new, projection):
+        #         gg = json(new)
+        #         ll.append(gg)
+        # item["date_created"] = str(item["date_created"])
+        # item["new_list"] = ll
+        # item["total_new"] = len(item["new_list"])
+        item["time"] = str(item["time"])
         item = json(item)
         list_event.append(item)
     return list_event
@@ -138,6 +139,7 @@ async def search_event(
     start_date: str,
     end_date: str,
     user_id,
+    system_created,
     skip: int,
     limit: int,
 ):
@@ -161,73 +163,114 @@ async def search_event(
         query["new_list"] = {"$nin": [data]}
     if not query:
         query = {}
-    async for item in client.find(query).sort("_id").skip(offset).limit(limit):
-        ll = []
-        ls_rp = []
-        for Item in item["new_list"]:
-            id_new = {"_id": ObjectId(Item)}
-            async for new in client2.find(id_new, projection):
-                gg = json(new)
-                ll.append(gg)
-        for Item2 in item["list_report"]:
-            id_report = {"_id": ObjectId(Item2)}
-            async for rp in report_client.find(id_report, projection_rp):
-                reports = json(rp)
-                ls_rp.append(reports)
-        item["new_list"] = ll
-        item["list_report"] = ls_rp
-        item["date_created"] = str(item["date_created"])
-        item["total_new"] = len(item["new_list"])
-        items = json(item)
-        list_event.append(items)
-        
-    async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
-        ll = []
-        ls_rp = []
-        for Item in item["new_list"]:
-            id_new = {"_id": ObjectId(Item)}
-            async for new in client2.find(id_new, projection):
-                gg = json(new)
-                ll.append(gg)
-        for Item2 in item["list_report"]:
-            id_report = {"_id": ObjectId(Item2)}
-            async for rp in report_client.find(id_report, projection_rp):
-                reports = json(rp)
-                ls_rp.append(reports)
-        item["new_list"] = ll
-        item["list_report"] = ls_rp
-        item["date_created"] = str(item["date_created"])
-        item["total_new"] = len(item["new_list"])
-        items = json(item)
-        list_event.append(items)
+    if system_created == False:
+        async for item in client.find(query).sort("_id").skip(offset).limit(limit):
+            ll = []
+            ls_rp = []
+            for Item in item["new_list"]:
+                id_new = {"_id": ObjectId(Item)}
+                async for new in client2.find(id_new, projection):
+                    gg = json(new)
+                    ll.append(gg)
+            for Item2 in item["list_report"]:
+                id_report = {"_id": ObjectId(Item2)}
+                async for rp in report_client.find(id_report, projection_rp):
+                    reports = json(rp)
+                    ls_rp.append(reports)
+            item["new_list"] = ll
+            item["list_report"] = ls_rp
+            item["date_created"] = str(item["date_created"])
+            item["total_new"] = len(item["new_list"])
+            items = json(item)
+            if "list_user_clone" not in item:
+                await client.aggregate([
+                    {"$addFields": {"list_user_clone": []}}
+                ]).to_list(length=None)
+            list_event.append(items)          
+    else:
+        async for item3 in client3.find(query).sort("_id").skip(offset).limit(limit):
+            ll = []
+            ls_rp = []
+            for Item in item3["new_list"]:
+                id_new = {"_id": ObjectId(Item)}
+                async for new in client2.find(id_new, projection):
+                    gg = json(new)
+                    ll.append(gg)
+            for Item2 in item["list_report"]:
+                id_report = {"_id": ObjectId(Item2)}
+                async for rp in report_client.find(id_report, projection_rp):
+                    reports = json(rp)
+                    ls_rp.append(reports)
+            item3["new_list"] = ll
+            item3["list_report"] = ls_rp
+            item3["date_created"] = str(item["date_created"])
+            item3["total_new"] = len(item3["new_list"])
+            items = json(item3)
+            if "list_user_clone" not in item:
+                await client.aggregate([
+                    {"$addFields": {"list_user_clone": []}}
+                ]).to_list(length=None)
+            list_event.append(items)
         
     return list_event
 
 
-async def search_result(name, id_new, start_date, end_date, user_id): 
+async def search_result(name, id_new, start_date, end_date, user_id, system_created): 
+    # query = {}
+    # if name:
+    #     query["$or"] = [
+    #         {"event_name": {"$regex": name, "$options": "i"}},
+    #         {"chu_the": {"$regex": name, "$options": "i"}},
+    #         {"khach_the": {"$regex": name, "$options": "i"}}
+    #     ]
+    # if id_new:
+    #     query["new_list"] = {"$nin": [id_new]}
+    # if start_date and end_date:
+    #     _start_date = datetime.strptime(start_date, "%d/%m/%Y")
+    #     _end_date = datetime.strptime(end_date, "%d/%m/%Y")
+    #     query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
+    # if user_id:
+    #     query = {"user_id": user_id}
+    # if not query:
+    #     query = {}
+    # count = {
+    #     "client": await client.count_documents(query),
+    #     "client3": await client3.count_documents(query),
+    # }
+    # total = sum(count.values())
+    # return total
+
     query = {}
+    conditions = []
+    
     if name:
-        query["$or"] = [
-            {"event_name": {"$regex": name, "$options": "-i"}},
-            {"chu_the": {"$regex": name, "$options": "-i"}},
-            {"khach_the": {"$regex": name, "$options": "-i"}}
-        ]
+        conditions.append(
+            {"$or": [
+                {"event_name": {"$regex": name, "$options": "i"}},
+                {"chu_the": {"$regex": name, "$options": "i"}},
+                {"khach_the": {"$regex": name, "$options": "i"}}
+            ]}
+        )
+        
     if id_new:
-        query["new_list"] = {"$nin": [id_new]}
+        conditions.append({"new_list": {"$nin": [id_new]}})
+        
     if start_date and end_date:
         _start_date = datetime.strptime(start_date, "%d/%m/%Y")
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
-        query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
+        conditions.append({"date_created": {"$gte": _start_date, "$lte": _end_date}})
+        
     if user_id:
-        query = {"user_id": user_id}
-    if not query:
-        query = {}
-    count = {
-        "client": await client.count_documents(query),
-        "client3": await client3.count_documents(query),
-    }
-    total = sum(count.values())
-    return total
+        conditions.append({"user_id": user_id})
+        
+    if system_created:
+        conditions.append({"system_created": system_created})
+    
+    if conditions:
+        query["$and"] = conditions
+    
+    return await client.count_documents(query)
+    
 
 async def event_detail(id) -> dict:
     ev_detail = await client.find_one({"_id": ObjectId(id)})

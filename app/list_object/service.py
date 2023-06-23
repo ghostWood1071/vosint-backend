@@ -1,6 +1,7 @@
 import pydantic
-from bson import ObjectId
+from bson import ObjectId, regex
 from fastapi import HTTPException, status
+from unidecode import unidecode
 
 from db.init_db import get_collection_client
 
