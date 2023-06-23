@@ -191,7 +191,7 @@ async def search_event(
                       
     if system_created == True:
         async for item3 in client3.find(query).sort("_id").skip(offset).limit(limit):
-            item3["_id"] = str(item3["time"])
+            item3["_id"] = str(item3["_id"])
             item3["time"] = str(item3["time"])
             list_event.append(item3)
         
