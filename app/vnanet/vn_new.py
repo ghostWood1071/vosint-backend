@@ -1,28 +1,31 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Path
 from playwright.sync_api import sync_playwright
 from pymongo import MongoClient
 
-from app.vnanet.service import get_all
+from app.vnanet.service import count, get_all
 from db.init_db import get_collection_client
 
 router = APIRouter()
 client = get_collection_client("News_vnanet")
 
-@router.get("/get-craw-vnnew/")
+@router.get("/get-craw-vnnew/{check_crawl}")
 async def get_craw(
     text_search: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    check_crawl: Optional[bool] = None,
+    check_crawl: Optional[str] = Path(
+        None, title="check crawl", enum=["all", "crawled", "not_crawl"]
+    ),
     skip = 1, 
     limit = 10
 ):
     list_craw = await get_all(text_search, start_date, end_date, check_crawl, int(skip), int(limit))
+    count_craw = await count(text_search, start_date, end_date, check_crawl, int(skip), int(limit))
     return {
-        "data": list_craw
+        "data": list_craw, "total": count_craw
     }
     
 visited_data_ids = set()
