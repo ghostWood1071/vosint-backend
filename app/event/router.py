@@ -232,7 +232,17 @@ async def clone_event(id_event: str, authorize: AuthJWT = Depends()):
         existing_cloned = await client.find_one({"_id": ObjectId(id_event)})
         if existing_cloned:
             raise HTTPException(status_code=400, detail="Event already cloned")
-            
+        
+        cursor["event_content"].replace("", "\\")
+        cursor["event_content"] = (
+            '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"'
+            + cursor["event_content"]
+            + '","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}'
+        )
+        cursor["user_id"] = user_id
+        if cursor["new_list"] == [""]:
+            cursor["new_list"] = []
+        
         await client.insert_one(cursor)
         await client3.update_one(
             {"_id": ObjectId(id_event)},
@@ -246,6 +256,18 @@ async def clone_event(id_event: str, authorize: AuthJWT = Depends()):
     else:
         return {"message": "Event not found"}
     
+@router.put("/delete-cloned-event/{id_event}")
+async def delete_clone(id_event: str, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    await client.delete_one({"_id": ObjectId(id_event)})
+    await client3.update_one(
+        {"_id": ObjectId(id_event)},
+        {
+            "$pull": {"list_user_clone": {"$in": [user_id]}},
+        }
+    )
+    return {"message": "Remove event cloned successfully"}
 
 @router.put("/update-to-add/{id}")
 async def update_to_add(
