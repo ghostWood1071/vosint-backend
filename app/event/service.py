@@ -106,7 +106,7 @@ async def get_all_by_system(filter, skip: int, limit: int):
         # item["date_created"] = str(item["date_created"])
         # item["new_list"] = ll
         # item["total_new"] = len(item["new_list"])
-        item["time"] = str(item["time"])
+        item["date_created"] = str(item["date_created"])
         item = json(item)
         list_event.append(item)
     return list_event
@@ -193,16 +193,16 @@ async def search_event(
             item["date_created"] = str(item["date_created"])
             item["total_new"] = len(item["new_list"])
             items = json(item)
-            if "list_user_clone" not in item:
-                await client.aggregate(
-                    [{"$addFields": {"list_user_clone": []}}]
-                ).to_list(length=None)
             list_event.append(items)
 
     if system_created == True:
         async for item3 in client3.find(query).sort("_id").skip(offset).limit(limit):
             item3["_id"] = str(item3["_id"])
-            item3["time"] = str(item3["time"])
+            item3["date_created"] = str(item3["date_created"])
+            if "list_user_clone" not in item3:
+                await client.aggregate([
+                    {"$addFields": {"list_user_clone": []}}
+                ]).to_list(length=None)
             list_event.append(item3)
 
     return list_event
