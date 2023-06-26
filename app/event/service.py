@@ -163,7 +163,7 @@ async def search_event(
         query = {}
     if system_created == False:
         if user_id:
-            query = {"user_id": user_id}
+            query["user_id"] = user_id
         async for item in client.find(query).sort("_id").skip(offset).limit(limit):
             ll = []
             ls_rp = []
@@ -186,34 +186,34 @@ async def search_event(
                 await client.aggregate([
                     {"$addFields": {"list_user_clone": []}}
                 ]).to_list(length=None)
-            list_event.append(items)          
-    
-    async for item3 in client3.find(query).sort("_id").skip(offset).limit(limit):
-        # ll = []
-        # ls_rp = []
-        # for Item in item3["new_list"]:
-        #     id_new = {"_id": ObjectId(Item)}
-        #     async for new in client2.find(id_new, projection):
-        #         gg = json(new)
-        #         ll.append(gg)
-        # for Item2 in item3["list_report"]:
-        #     id_report = {"_id": ObjectId(Item2)}
-        #     async for rp in report_client.find(id_report, projection_rp):
-        #         reports = json(rp)
-        #         ls_rp.append(reports)
-        # item3["new_list"] = ll
-        # item3["list_report"] = ls_rp
-        # item3["date_created"] = str(item["date_created"])
-        # item3["total_new"] = len(item3["new_list"])
-        # items = json(item3)
-        # if "list_user_clone" not in item:
-        #     await client.aggregate([
-        #         {"$addFields": {"list_user_clone": []}}
-        #     ]).to_list(length=None)
-        # list_event.append(items)
-        item3["_id"] = str(item3["time"])
-        item3["time"] = str(item3["time"])
-        list_event.append(item3)
+            list_event.append(items)
+                      
+    if system_created == True:
+        async for item3 in client3.find(query).sort("_id").skip(offset).limit(limit):
+            # ll = []
+            # ls_rp = []
+            # for Item in item3["new_list"]:
+            #     id_new = {"_id": ObjectId(Item)}
+            #     async for new in client2.find(id_new, projection):
+            #         gg = json(new)
+            #         ll.append(gg)
+            # for Item2 in item3["list_report"]:
+            #     id_report = {"_id": ObjectId(Item2)}
+            #     async for rp in report_client.find(id_report, projection_rp):
+            #         reports = json(rp)
+            #         ls_rp.append(reports)
+            # item3["new_list"] = ll
+            # item3["list_report"] = ls_rp
+            # item3["date_created"] = str(item["date_created"])
+            # item3["total_new"] = len(item3["new_list"])
+            # items = json(item3)
+            # if "list_user_clone" not in item:
+            #     await client.aggregate([
+            #         {"$addFields": {"list_user_clone": []}}
+            #     ]).to_list(length=None)
+            item3["_id"] = str(item3["_id"])
+            item3["time"] = str(item3["time"])
+            list_event.append(item3)
         
     return list_event
 
@@ -270,6 +270,7 @@ async def search_result(name, id_new, start_date, end_date, user_id, system_crea
             query["$and"] = conditions
         
         return await client3.count_documents(query)
+    
 
 async def event_detail(id) -> dict:
     ev_detail = await client.find_one({"_id": ObjectId(id)})
