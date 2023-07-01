@@ -780,7 +780,7 @@ async def delete_list_new(id: str, data: List[AddNewEvent]):
     )
 
 
-async def delete_event(id):
+async def delete_event(id, user_id):
     id_event = str(id)
     event = await client.find_one({"_id": ObjectId(id)})
     event_2 = await client3.find_one({"_id": ObjectId(id)})
@@ -796,6 +796,12 @@ async def delete_event(id):
             {"$pull": {"event_list": {"$in": [id_event]}}},
         )
         await client.delete_one({"_id": ObjectId(id)})
+        await client3.update_one(
+            {"_id": ObjectId(id_event)},
+            {
+                "$pull": {"list_user_clone": {"$in": [user_id]}},
+            }
+        )
         return 200
     if event_2:
         event_name_2 = event_2["event_name"]
