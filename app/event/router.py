@@ -240,8 +240,12 @@ async def clone_event(id_event: str, authorize: AuthJWT = Depends()):
             + '","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}'
         )
         cursor["user_id"] = user_id
-        if cursor["new_list"] == [""]:
-            cursor["new_list"] = []
+
+        for item in cursor["new_list"]:
+            if item == "":
+                cursor["new_list"] = []
+                break
+                
         
         await client.insert_one(cursor)
         await client3.update_one(
@@ -313,8 +317,10 @@ async def update(
 
 
 @router.delete("/{id}")
-async def remove_event(id):
-    deleted = await delete_event(id)
+async def remove_event(id, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    deleted = await delete_event(id, user_id)
     if deleted:
         return {"messsage": "event deleted successful"}
     return status.HTTP_403_FORBIDDEN

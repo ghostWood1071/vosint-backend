@@ -3,7 +3,6 @@ from typing import List
 
 import pydantic
 from bson.objectid import ObjectId
-from dateutil import parser
 
 from db.init_db import get_collection_client
 

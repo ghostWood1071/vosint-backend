@@ -27,3 +27,7 @@ black
 isort
 pytest
 pytest-asyncio
+requests
+kafka-python
+elasticsearch
+feedparser
