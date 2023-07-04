@@ -21,9 +21,11 @@ from app.event.service import (
     get_all_by_paginate,
     get_all_by_system,
     get_by_new_id,
+    get_chu_khach,
     get_system_by_new_id,
     remove_list_event_id,
     remove_list_new_id,
+    search_chu_khach,
     search_event,
     search_id,
     search_result,
@@ -222,6 +224,20 @@ async def search_based_id_system(authorize: AuthJWT = Depends()):
     user_id = authorize.get_jwt_subject()
     search_list = await search_id(user_id)
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list})
+
+@router.get("/get-chu-the-khach-the/")
+async def get_chu_khach_the(authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    list_c_k = await get_chu_khach(user_id)
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"data": list_c_k})
+
+@router.get("/search-based-chu-the-khach-the/")
+async def search_base_chu_khach(chu_the: Optional[str] = None, khach_the: Optional[str] = None, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    list_ev = await search_chu_khach(user_id, chu_the, khach_the)
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": list_ev})
 
 @router.put("/clone-event/{id_event}")
 async def clone_event(id_event: str, authorize: AuthJWT = Depends()):

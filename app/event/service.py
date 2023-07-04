@@ -142,6 +142,75 @@ async def search_id(user_id: str):
     return list_event
 
 
+async def get_chu_khach(user_id: str):
+    query = {"user_id": {"$eq": user_id}}
+    list_ck = []
+    async for item in client.find(query).sort("_id"):
+        item["date_created"] = str(item["date_created"])
+        item.pop("event_name")
+        item.pop("event_content")
+        item.pop("date_created")
+        item.pop("new_list")
+        item.pop("user_id")
+        item.pop("list_linh_vuc")
+        item.pop("news_added_by_user")
+        item.pop("list_report")
+        if "system_created" in item:
+            item.pop("system_created")
+        if "total_new" in item:
+            item.pop("total_new")
+        if "list_user_clone" in item:
+            item.pop("list_user_clone")
+        if "location" in item:
+            item.pop("location")
+        if "created_at" in item:
+            item.pop("created_at")
+        if "modified_at" in item:
+            item.pop("modified_at")
+        items = json(item)
+        list_ck.append(items)
+        
+    return list_ck
+
+
+async def search_chu_khach(user_id: str, chu_the, khach_the):
+    list_ev = []
+    query = {}
+    if chu_the and khach_the:
+        query["$and"] = [
+            {"chu_the": {"$regex": chu_the, "$options": "i"}},
+            {"khach_the": {"$regex": khach_the, "$options": "i"}},
+        ]
+    else:
+        if chu_the:
+            query = {"chu_the": {"$regex": chu_the, "$options": "i"}}
+        if khach_the:
+            query = {"khach_the": {"$regex": khach_the, "$options": "i"}}
+    if user_id:
+        query["user_id"] = user_id
+
+    async for item in client.find(query).sort("date_created", -1):
+        ll = []
+        ls_rp = []
+        for Item in item["new_list"]:
+            id_new = {"_id": ObjectId(Item)}
+            async for new in client2.find(id_new, projection):
+                gg = json(new)
+                ll.append(gg)
+        for Item2 in item["list_report"]:
+            id_report = {"_id": ObjectId(Item2)}
+            async for rp in report_client.find(id_report, projection_rp):
+                reports = json(rp)
+                ls_rp.append(reports)
+        item["new_list"] = ll
+        item["list_report"] = ls_rp
+        item["date_created"] = str(item["date_created"])
+        item["total_new"] = len(item["new_list"])
+        item = json(item)
+        list_ev.append(item)
+    return list_ev
+
+
 async def search_event(
     event_name: str,
     data: ObjectId,
