@@ -1,4 +1,5 @@
 import asyncio
+import random
 from datetime import datetime
 from typing import List
 
@@ -142,38 +143,46 @@ async def search_id(user_id: str):
     return list_event
 
 
-async def get_chu_khach(user_id: str):
-    query = {"user_id": {"$eq": user_id}}
+async def get_chu_khach(user_id: str, text, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
     list_ck = []
-    async for item in client.find(query).sort("_id"):
+    query = {}
+    unique = set()
+
+    if user_id:
+        query["user_id"] = user_id
+    
+    if text:
+        query["$or"] = [
+            {"chu_the": {"$regex": text, "$options": "i"}},
+            {"khach_the": {"$regex": text, "$options": "i"}},
+        ]
+        
+    async for item in client.find(query).sort("_id").skip(offset).limit(limit):
         item["date_created"] = str(item["date_created"])
-        item.pop("event_name")
-        item.pop("event_content")
-        item.pop("date_created")
-        item.pop("new_list")
-        item.pop("user_id")
-        item.pop("list_linh_vuc")
-        item.pop("news_added_by_user")
-        item.pop("list_report")
-        if "system_created" in item:
-            item.pop("system_created")
-        if "total_new" in item:
-            item.pop("total_new")
-        if "list_user_clone" in item:
-            item.pop("list_user_clone")
-        if "location" in item:
-            item.pop("location")
-        if "created_at" in item:
-            item.pop("created_at")
-        if "modified_at" in item:
-            item.pop("modified_at")
-        items = json(item)
-        list_ck.append(items)
+        obj = {
+            "_id": str(item["_id"])+"0",
+            "name": item["khach_the"]
+        }
+        obj1 = {
+            "_id": str(item["_id"])+ "1",
+            "name": item["chu_the"]
+        }
+        name = obj["name"]
+        if name not in unique:
+            unique.add(name)
+            list_ck.append(obj)
+            
+        name = obj1["name"]
+        if name not in unique:
+            unique.add(name)
+            list_ck.append(obj1)
         
     return list_ck
 
 
-async def search_chu_khach(user_id: str, chu_the, khach_the):
+async def search_chu_khach(user_id: str, chu_the, khach_the, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
     list_ev = []
     query = {}
     if chu_the and khach_the:
@@ -189,7 +198,7 @@ async def search_chu_khach(user_id: str, chu_the, khach_the):
     if user_id:
         query["user_id"] = user_id
 
-    async for item in client.find(query).sort("date_created", -1):
+    async for item in client.find(query).sort("date_created", -1).skip(offset).limit(limit):
         ll = []
         ls_rp = []
         for Item in item["new_list"]:
@@ -210,6 +219,28 @@ async def search_chu_khach(user_id: str, chu_the, khach_the):
         list_ev.append(item)
     return list_ev
 
+async def count_chu_khach(chu_the, khach_the, user_id):
+    query = {}
+    conditions = []
+    if chu_the and khach_the:
+        conditions.append(
+            {
+                "$and": [
+                    {"chu_the": {"$regex": chu_the, "$options": "i"}},
+                    {"khach_the": {"$regex": khach_the, "$options": "i"}},
+                ]
+            }
+        )
+    else:
+        if chu_the:
+            conditions.append({"chu_the": {"$regex": chu_the, "$options": "i"}})
+        if khach_the:
+            conditions.append({" khach_the": {"$regex": khach_the, "$options": "i"}})
+    if user_id:
+        conditions.append({"user_id": user_id})
+    if conditions:
+        query["$and"] = conditions
+    return await client.count_documents(query)
 
 async def search_event(
     event_name: str,

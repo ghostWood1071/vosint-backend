@@ -12,6 +12,7 @@ from app.event.service import (
     add_list_event_id,
     add_list_new,
     add_list_new_id,
+    count_chu_khach,
     count_event,
     count_event_system,
     delete_event,
@@ -226,18 +227,32 @@ async def search_based_id_system(authorize: AuthJWT = Depends()):
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list})
 
 @router.get("/get-chu-the-khach-the/")
-async def get_chu_khach_the(authorize: AuthJWT = Depends()):
+async def get_chu_khach_the(
+    text_search: Optional[str] = None,
+    skip = 1,
+    limit = 10,
+    authorize: AuthJWT = Depends()
+):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    list_c_k = await get_chu_khach(user_id)
+    list_c_k = await get_chu_khach(user_id, text_search, int(skip), int(limit))
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": list_c_k})
 
 @router.get("/search-based-chu-the-khach-the/")
-async def search_base_chu_khach(chu_the: Optional[str] = None, khach_the: Optional[str] = None, authorize: AuthJWT = Depends()):
+async def search_base_chu_khach(
+    chu_the: Optional[str] = None, 
+    khach_the: Optional[str] = None,
+    skip = 1,
+    limit = 10,
+    authorize: AuthJWT = Depends()
+):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    list_ev = await search_chu_khach(user_id, chu_the, khach_the)
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": list_ev})
+    list_ev = await search_chu_khach(user_id, chu_the, khach_the, int(skip), int(limit))
+    count = await count_chu_khach(
+       chu_the, khach_the, user_id
+    )
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": list_ev, "total": count})
 
 @router.put("/clone-event/{id_event}")
 async def clone_event(id_event: str, authorize: AuthJWT = Depends()):
