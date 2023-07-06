@@ -242,15 +242,17 @@ async def get_chu_khach_the(
 async def search_base_chu_khach(
     chu_the: Optional[str] = None, 
     khach_the: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     skip = 1,
     limit = 10,
     authorize: AuthJWT = Depends()
 ):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    list_ev = await search_chu_khach(user_id, chu_the, khach_the, int(skip), int(limit))
+    list_ev = await search_chu_khach(user_id, chu_the, khach_the, start_date, end_date, int(skip), int(limit))
     count = await count_chu_khach(
-       chu_the, khach_the, user_id
+       chu_the, khach_the, start_date, end_date, user_id
     )
     return JSONResponse(status_code=status.HTTP_200_OK, content={"result": list_ev, "total": count})
 
