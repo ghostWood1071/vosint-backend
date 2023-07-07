@@ -174,3 +174,4 @@ poetry.toml
 secrets/
 static/
 vosint_ingestion/nlp/
+.env

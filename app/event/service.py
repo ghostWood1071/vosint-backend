@@ -149,8 +149,8 @@ async def get_chu_khach(user_id: str, text, skip: int, limit: int):
     query = {}
     unique = set()
 
-    if user_id:
-        query["user_id"] = user_id
+    # if user_id:
+    #     query["user_id"] = user_id
     
     if text:
         query["$or"] = [
@@ -158,7 +158,7 @@ async def get_chu_khach(user_id: str, text, skip: int, limit: int):
             {"khach_the": {"$regex": text, "$options": "i"}},
         ]
         
-    async for item in client.find(query).sort("_id").skip(offset).limit(limit):
+    async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
         item["date_created"] = str(item["date_created"])
         obj = {
             "_id": str(item["_id"])+"0",
@@ -193,6 +193,7 @@ async def search_chu_khach(user_id: str, chu_the, khach_the, start_date: str, en
     offset = (skip - 1) * limit if skip > 0 else 0
     list_ev = []
     query = {}
+    query2 = {}
     if start_date and end_date:
         _start_date = datetime.strptime(start_date, "%d/%m/%Y")
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
@@ -202,6 +203,10 @@ async def search_chu_khach(user_id: str, chu_the, khach_the, start_date: str, en
         query["$and"] = [
             {"chu_the": {"$regex": chu_the, "$options": "i"}},
             {"khach_the": {"$regex": khach_the, "$options": "i"}},
+        ]
+        query2["$and"] = [
+            {"chu_the": {"$regex": khach_the, "$options": "i"}},
+            {"khach_the": {"$regex": chu_the, "$options": "i"}},
         ]
     else:
         if chu_the:
@@ -230,6 +235,11 @@ async def search_chu_khach(user_id: str, chu_the, khach_the, start_date: str, en
         # item["total_new"] = len(item["new_list"])
         item = json(item)
         list_ev.append(item)
+    
+    async for item in client3.find(query2, projection_event_system).sort("date_created", -1).skip(offset).limit(limit):
+        item["date_created"] = str(item["date_created"])
+        item = json(item)
+        list_ev.append(item)
     return list_ev
 
 async def count_chu_khach(chu_the, khach_the, start_date, end_date, user_id):
@@ -242,14 +252,18 @@ async def count_chu_khach(chu_the, khach_the, start_date, end_date, user_id):
             {"date_created": {"$gte": _start_date, "$lte": _end_date}}
         )
     if chu_the and khach_the:
-        conditions.append(
-            {
-                "$and": [
+        conditions.append({
+            "$or": [
+                {"$and": [
                     {"chu_the": {"$regex": chu_the, "$options": "i"}},
                     {"khach_the": {"$regex": khach_the, "$options": "i"}},
-                ]
-            }
-        )
+                ]},
+                {"$and": [
+                    {"chu_the": {"$regex": khach_the, "$options": "i"}},
+                    {"khach_the": {"$regex": chu_the, "$options": "i"}},
+                ]}
+            ]
+        })
     else:
         if chu_the:
             conditions.append({"chu_the": {"$regex": chu_the, "$options": "i"}})
