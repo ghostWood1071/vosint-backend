@@ -1,4 +1,5 @@
 import asyncio
+import random
 from datetime import datetime
 from typing import List
 
@@ -141,6 +142,124 @@ async def search_id(user_id: str):
         list_event.append(item)
     return list_event
 
+
+async def get_chu_khach(user_id: str, text, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
+    list_ck = []
+    query = {}
+    unique = set()
+
+    if user_id:
+        query["user_id"] = user_id
+    
+    if text:
+        query["$or"] = [
+            {"chu_the": {"$regex": text, "$options": "i"}},
+            {"khach_the": {"$regex": text, "$options": "i"}},
+        ]
+        
+    async for item in client.find(query).sort("_id").skip(offset).limit(limit):
+        item["date_created"] = str(item["date_created"])
+        obj = {
+            "_id": str(item["_id"])+"0",
+            "name": item["khach_the"]
+        }
+        obj1 = {
+            "_id": str(item["_id"])+ "1",
+            "name": item["chu_the"]
+        }
+        name = obj["name"]
+        if name not in unique:
+            unique.add(name)
+            list_ck.append(obj)
+            
+        name = obj1["name"]
+        if name not in unique:
+            unique.add(name)
+            list_ck.append(obj1)
+        
+    return list_ck
+
+projection_event_system = {
+    "_id": True,
+    "event_name": True,
+    "event_content": True,
+    "date_created": True,
+    "chu_the": True,
+    "khach_the": True
+}
+
+async def search_chu_khach(user_id: str, chu_the, khach_the, start_date: str, end_date: str, skip: int, limit: int):
+    offset = (skip - 1) * limit if skip > 0 else 0
+    list_ev = []
+    query = {}
+    if start_date and end_date:
+        _start_date = datetime.strptime(start_date, "%d/%m/%Y")
+        _end_date = datetime.strptime(end_date, "%d/%m/%Y")
+        query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
+        
+    if chu_the and khach_the:
+        query["$and"] = [
+            {"chu_the": {"$regex": chu_the, "$options": "i"}},
+            {"khach_the": {"$regex": khach_the, "$options": "i"}},
+        ]
+    else:
+        if chu_the:
+            query = {"chu_the": {"$regex": chu_the, "$options": "i"}}
+        if khach_the:
+            query = {"khach_the": {"$regex": khach_the, "$options": "i"}}
+    # if user_id:
+    #     query["user_id"] = user_id
+
+    async for item in client3.find(query, projection_event_system).sort("date_created", -1).skip(offset).limit(limit):
+        # ll = []
+        # ls_rp = []
+        # for Item in item["new_list"]:
+        #     id_new = {"_id": ObjectId(Item)}
+        #     async for new in client2.find(id_new, projection):
+        #         gg = json(new)
+        #         ll.append(gg)
+        # for Item2 in item["list_report"]:
+        #     id_report = {"_id": ObjectId(Item2)}
+        #     async for rp in report_client.find(id_report, projection_rp):
+        #         reports = json(rp)
+        #         ls_rp.append(reports)
+        # item["new_list"] = ll
+        # item["list_report"] = ls_rp
+        item["date_created"] = str(item["date_created"])
+        # item["total_new"] = len(item["new_list"])
+        item = json(item)
+        list_ev.append(item)
+    return list_ev
+
+async def count_chu_khach(chu_the, khach_the, start_date, end_date, user_id):
+    query = {}
+    conditions = []
+    if start_date and end_date:
+        _start_date = datetime.strptime(start_date, "%d/%m/%Y")
+        _end_date = datetime.strptime(end_date, "%d/%m/%Y")
+        conditions.append(
+            {"date_created": {"$gte": _start_date, "$lte": _end_date}}
+        )
+    if chu_the and khach_the:
+        conditions.append(
+            {
+                "$and": [
+                    {"chu_the": {"$regex": chu_the, "$options": "i"}},
+                    {"khach_the": {"$regex": khach_the, "$options": "i"}},
+                ]
+            }
+        )
+    else:
+        if chu_the:
+            conditions.append({"chu_the": {"$regex": chu_the, "$options": "i"}})
+        if khach_the:
+            conditions.append({" khach_the": {"$regex": khach_the, "$options": "i"}})
+    # if user_id:
+    #     conditions.append({"user_id": user_id})
+    if conditions:
+        query["$and"] = conditions
+    return await client3.count_documents(query)
 
 async def search_event(
     event_name: str,
