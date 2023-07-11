@@ -201,32 +201,32 @@ async def search_chu_khach(
     offset = (skip - 1) * limit if skip > 0 else 0
     list_ev = []
     query = {}
-    query2 = {}
     if start_date and end_date:
         _start_date = datetime.strptime(start_date, "%d/%m/%Y")
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
         query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
         
     if chu_the and khach_the:
-        query["$and"] = [
-            {"chu_the": chu_the},
-            {"khach_the": khach_the},
+        query["$or"] = [
+            {
+                "$and": [
+                    {"chu_the": chu_the},
+                    {"khach_the": khach_the},
+                ]
+            },
+            {
+                "$and": [
+                    {"chu_the": khach_the},
+                    {"khach_the": chu_the},
+                ]
+            }
         ]
-        query2["$and"] = [
-            {"chu_the": khach_the},
-            {"khach_the": chu_the},
-        ]
-        query2["$and"] = [
-            {"chu_the": {"$regex": khach_the, "$options": "i"}},
-            {"khach_the": {"$regex": chu_the, "$options": "i"}},
-        ]
+        
     else:
         if chu_the:
-            query = {"chu_the": chu_the}
-            query2 = {"chu_the": khach_the}
+            query["$or"] = [{"chu_the": chu_the}, {"khach_the": chu_the}]
         if khach_the:
-            query = {"khach_the": khach_the}
-            query2 = {"chu_the": chu_the}
+            query["$or"] = [{"chu_the": khach_the}, {"khach_the": khach_the}]
     # if user_id:
     #     query["user_id"] = user_id
 
@@ -247,11 +247,6 @@ async def search_chu_khach(
         # item["list_report"] = ls_rp
         item["date_created"] = str(item["date_created"])
         # item["total_new"] = len(item["new_list"])
-        item = json(item)
-        list_ev.append(item)
-    
-    async for item in client3.find(query2, projection_event_system).sort("date_created", -1).skip(offset).limit(limit):
-        item["date_created"] = str(item["date_created"])
         item = json(item)
         list_ev.append(item)
     return list_ev
