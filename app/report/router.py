@@ -8,7 +8,7 @@ from fastapi.params import Depends
 
 from db.init_db import get_collection_client
 
-from .model import CreateEvents, CreateReport, GetEvents, UpdateEvents, UpdateReport
+from .model import CreateEvents, CreateQuickReport, CreateReport, GetEvents, UpdateEvents, UpdateReport
 from .service import (
     add_heading_of_report,
     count,
@@ -80,11 +80,12 @@ async def read_report(id: str):
 
 @router.post("/quick-report")
 async def post_quick_report(
-    report: CreateReport = Body(...), auth: AuthJWT = Depends()
+    report: CreateQuickReport = Body(...), auth: AuthJWT = Depends()
 ):
     auth.jwt_required()
 
     report_dict = report.dict()
+    print(report_dict)
     report_created = await create_report(report_dict)
     return report_created.inserted_id
 
