@@ -154,18 +154,18 @@ async def get_chu_khach(user_id: str, text, skip: int, limit: int):
     
     if text:
         query["$or"] = [
-            {"chu_the":  text},
-            {"khach_the": text},
+            {"chu_the":  {"$regex": text, "$options": "i"}},
+            {"khach_the": {"$regex": text, "$options": "i"}},
         ]
         
     async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
         item["date_created"] = str(item["date_created"])
         obj = {
-            "_id": str(item["_id"])+"0",
+            "_id": str(item["_id"]),
             "name": item["khach_the"]
         }
         obj1 = {
-            "_id": str(item["_id"])+ "1",
+            "_id": str(item["_id"]),
             "name": item["chu_the"]
         }
         name = obj["name"]
@@ -442,7 +442,7 @@ async def event_detail(id) -> dict:
 async def get_by_new_id(new_id) -> dict:
     list_event = []
 
-    async for item in client.find({"new_list": new_id}).sort("_id"):
+    async def process_item(item):
         ll = []
         ls_rp = []
         for Item in item["new_list"]:
@@ -461,6 +461,13 @@ async def get_by_new_id(new_id) -> dict:
         item["total_new"] = len(item["new_list"])
         item = json(item)
         list_event.append(item)
+
+    async for item in client.find({"new_list": new_id}).sort("_id"):
+        await process_item(item)
+
+    async for item in client3.find({"new_list": new_id}).sort("_id"):
+        await process_item(item)
+
     return list_event
 
 
