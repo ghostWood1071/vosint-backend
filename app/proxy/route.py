@@ -43,7 +43,7 @@ async def get_paginate(skip: Optional[int] = None, limit: Optional[int] = None):
         status_code=status.HTTP_200_OK,
         content={"data": list_proxy, "total_record": count},
     )
-    
+
 
 @router.get("/pipeline-options")
 async def get_pipeline_options():

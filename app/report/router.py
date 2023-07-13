@@ -2,13 +2,19 @@ from typing import Annotated, List, Optional
 
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, status
+from fastapi.params import Depends
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
-from fastapi.params import Depends
 
 from db.init_db import get_collection_client
 
-from .model import CreateEvents, CreateReport, GetEvents, UpdateEvents, UpdateReport
+from .model import (
+    CreateQuickReport,
+    CreateReport,
+    GetEvents,
+    UpdateEvents,
+    UpdateReport,
+)
 from .service import (
     add_heading_of_report,
     count,
@@ -80,7 +86,7 @@ async def read_report(id: str):
 
 @router.post("/quick-report")
 async def post_quick_report(
-    report: CreateReport = Body(...), auth: AuthJWT = Depends()
+    report: CreateQuickReport = Body(...), auth: AuthJWT = Depends()
 ):
     auth.jwt_required()
 
