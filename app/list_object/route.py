@@ -4,6 +4,9 @@ from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
+from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
+my_es = My_ElasticSearch()
+from vosint_ingestion.models import MongoRepository
 
 from app.list_object.model import CreateObject, UpdateObject
 from app.list_object.service import (
@@ -85,34 +88,174 @@ async def get_type_and_name(
 async def get_news_by_object_id(
     id: str, skip=1, limit=20, authorize: AuthJWT = Depends()
 ):
-    authorize.jwt_required()
-    # pipeline = [
-    #     {"$match": {"_id": ObjectId(id)}},
-    #     {
-    #         "$addFields": {
-    #             "news_id": {
-    #                 "$map": {
-    #                     "input": "$news_id",
-    #                     "as": "id",
-    #                     "in": {"$toString": "$$id"},
-    #                 }
-    #             }
-    #         }
-    #     },
-    #     {"$project": {"news_id": 1}},
-    # ]
-    # object = await aggregate_object(pipeline)
-    one_object = await find_by_id(ObjectId(id), {"news_id": 1})
-    if "news_id" not in one_object:
-        return JSONResponse(
-            status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
-        )
+    # authorize.jwt_required()
+    # # pipeline = [
+    # #     {"$match": {"_id": ObjectId(id)}},
+    # #     {
+    # #         "$addFields": {
+    # #             "news_id": {
+    # #                 "$map": {
+    # #                     "input": "$news_id",
+    # #                     "as": "id",
+    # #                     "in": {"$toString": "$$id"},
+    # #                 }
+    # #             }
+    # #         }
+    # #     },
+    # #     {"$project": {"news_id": 1}},
+    # # ]
+    # # object = await aggregate_object(pipeline)
+    # one_object = await find_by_id(ObjectId(id), {"news_id": 1})
+    # if "news_id" not in one_object:
+    #     return JSONResponse(
+    #         status_code=status.HTTP_200_OK, content={"result": [], "total_record": 0}
+    #     )
 
-    news = await find_news_by_filter_and_paginate(
-        {"_id": {"$in": one_object["news_id"]}}, projection, int(skip), int(limit)
-    )
-    count = await count_news({"_id": {"$in": one_object["news_id"]}})
+    # news = await find_news_by_filter_and_paginate(
+    #     {"_id": {"$in": one_object["news_id"]}}, projection, int(skip), int(limit)
+    # )
+    # count = await count_news({"_id": {"$in": one_object["news_id"]}})
+    list_id = None
+    query = None
+    a = MongoRepository().get_one(collection_name='object',filter_spec={"_id":id})
+    first_lang = 1
+    query = ''
+    ### vi
+    query_vi = ''
+    first_flat = 1
+    try:
+        for i in a['keyword_vi']['required_keyword']:
+            if first_flat == 1:
+                first_flat = 0 
+                query_vi += '('
+            else:
+                query_vi += '| ('
+            j = i.split(',')
+            
+            for k in j:
+                query_vi += '+'+'\"' + k + '\"'
+            query_vi += ')'
+    except:
+        pass
+    try:
+        j = a['keyword_vi']['exclusion_keyword'].split(',')
+        for k in j:
+            query_vi += '-'+'\"' + k + '\"'
+    except:
+        pass
 
+    ### cn
+    query_cn = ''
+    first_flat = 1
+    try:
+        for i in a['keyword_vn']['required_keyword']:
+            if first_flat == 1:
+                first_flat = 0 
+                query_cn += '('
+            else:
+                query_cn += '| ('
+            j = i.split(',')
+            
+            for k in j:
+                query_cn += '+'+'\"' + k + '\"'
+            query_cn += ')'
+    except:
+        pass
+    try:
+        j = a['keyword_cn']['exclusion_keyword'].split(',')
+        for k in j:
+            query_cn += '-'+'\"' + k + '\"'
+    except:
+        pass
+
+    ### cn
+    query_ru = ''
+    first_flat = 1
+    try:
+        for i in a['keyword_ru']['required_keyword']:
+            if first_flat == 1:
+                first_flat = 0 
+                query_ru += '('
+            else:
+                query_ru += '| ('
+            j = i.split(',')
+            
+            for k in j:
+                query_ru += '+'+'\"' + k + '\"'
+            query_ru += ')'
+    except:
+        pass
+    try:
+        j = a['keyword_ru']['exclusion_keyword'].split(',')
+        for k in j:
+            query_ru += '-'+'\"' + k + '\"'
+    except:
+        pass
+
+    ### cn
+    query_en = ''
+    first_flat = 1
+    try:
+        for i in a['keyword_en']['required_keyword']:
+            if first_flat == 1:
+                first_flat = 0 
+                query_en += '('
+            else:
+                query_en += '| ('
+            j = i.split(',')
+            
+            for k in j:
+                query_en += '+'+'\"' + k + '\"'
+            query_en += ')'
+    except:
+        pass
+    try:
+        j = a['keyword_en']['exclusion_keyword'].split(',')
+        for k in j:
+            query_en += '-'+'\"' + k + '\"'
+    except:
+        pass
+    
+    if query_vi != '':
+        if first_lang == 1:
+            first_lang = 0
+            query += '('+query_vi+')'
+    if query_en != '':
+        if first_lang == 1:
+            first_lang = 0
+            query += '('+query_en+')'
+        else:
+            query += '| ('+query_en+')'
+    if query_ru != '':
+        if first_lang == 1:
+            first_lang = 0
+            query += '('+query_ru+')'
+        else:
+            query += '| ('+query_ru+')'
+    if query_cn != '':
+        if first_lang == 1:
+            first_lang = 0
+            query += '('+query_cn+')'
+        else:
+            query += '| ('+query_cn+')'
+            
+    # if text_search != None and news_letter_id != None:
+    #     query += '+(' + text_search + ')'
+    # elif text_search != None:
+    #     query = ''
+    #     query += '+(' + text_search + ')'
+    query = query
+
+    pipeline_dtos = my_es.search_main(index_name='vosint',query=query)
+
+    for i in range(len(pipeline_dtos)):
+        try:
+            pipeline_dtos[i]['_source']['_id'] = pipeline_dtos[i]['_source']['id']
+        except:
+            pass
+        pipeline_dtos[i] = pipeline_dtos[i]['_source'].copy()
+    news =pipeline_dtos
+    count = len(pipeline_dtos)
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"result": news, "total_record": count}
     )
