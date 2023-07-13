@@ -29,19 +29,19 @@ async def find_news_by_filter_and_paginate(
     ).limit(limit):
         new = news_to_json(new)
         if "is_read" not in new:
-            await client.aggregate([
-                {"$addFields": {"is_read": False}}
-            ]).to_list(length=None)
-            
+            await client.aggregate([{"$addFields": {"is_read": False}}]).to_list(
+                length=None
+            )
+
         if "list_user_read" not in new:
-            await client.aggregate([
-                {"$addFields": {"list_user_read": []}}
-            ]).to_list(length=None)
-            
+            await client.aggregate([{"$addFields": {"list_user_read": []}}]).to_list(
+                length=None
+            )
+
         if "event_list" not in new:
-            await client.aggregate([
-                {"$addFields": {"event_list": []}}
-            ]).to_list(length=None)
+            await client.aggregate([{"$addFields": {"event_list": []}}]).to_list(
+                length=None
+            )
         news.append(new)
     return news
 
@@ -54,11 +54,13 @@ async def find_news_by_id(news_id: ObjectId, projection):
     projection["pub_date"] = str(projection["pub_date"])
     return await client.find_one({"_id": news_id}, projection)
 
+
 async def read_by_id(new_id: str, user_id: str):
     return await client.update_many(
-        {"_id": ObjectId(new_id)}, 
-        {"$set": {"is_read": True}, "$addToSet": {"list_user_read": user_id}}
+        {"_id": ObjectId(new_id)},
+        {"$set": {"is_read": True}, "$addToSet": {"list_user_read": user_id}},
     )
+
 
 async def unread_by_id(new_id: str, user_id: str):
     news = await client.find().to_list(length=None)
@@ -66,11 +68,13 @@ async def unread_by_id(new_id: str, user_id: str):
         if "list_user_read" in item:
             return await client.update_many(
                 {"_id": ObjectId(new_id)},
-                {"$set": {"is_read": True}, "$pull": {"list_user_read": {"$in": [user_id]}}}
+                {
+                    "$set": {"is_read": True},
+                    "$pull": {"list_user_read": {"$in": [user_id]}},
+                },
             )
-            
+
         if item["list_user_read"] == [] or item["list_user_read"] not in news:
             await client.update_many(
-                {"_id": ObjectId(new_id)}, 
-                {"$set": {"is_read": False}}
+                {"_id": ObjectId(new_id)}, {"$set": {"is_read": False}}
             )

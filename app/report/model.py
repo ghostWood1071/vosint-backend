@@ -1,7 +1,12 @@
 from typing import Any, List, Optional
-from bson.objectid import ObjectId
 
+from bson.objectid import ObjectId
 from pydantic import BaseModel, Field
+
+
+class CreateQuickReport(BaseModel):
+    title: str = Field()
+    headings: Optional[Any]
 
 
 class CreateReport(BaseModel):
