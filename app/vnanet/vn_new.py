@@ -53,6 +53,9 @@ def fetch_new_in_country():
             visited_data_ids.add(data_id)
                 
             title = link.inner_text().strip()
+            
+            if not title:
+                continue
 
             # Retrieve data-service
             data_service = link.get_attribute("data-service")
@@ -88,7 +91,6 @@ def fetch_new_in_world():
         page.goto("https://news.vnanet.vn/?created=7%20day&servicecateid=3&scode=1&qcode=17")
         page.wait_for_load_state("networkidle")
 
-
         links = page.query_selector_all("a.spATitle")
 
         for link in links:
@@ -102,6 +104,9 @@ def fetch_new_in_world():
             visited_data_ids.add(data_id)
             
             title = link.inner_text().strip()
+            
+            if not title:
+                continue
             
             # Retrieve data-service
             data_service = link.get_attribute("data-service")
@@ -136,7 +141,6 @@ def fetch_new_economics_news_in_country():
         page.goto("https://news.vnanet.vn/?created=7%20day&servicecateid=10&scode=1&qcode=17")
         page.wait_for_load_state("networkidle")
 
-
         links = page.query_selector_all("a.spATitle")
 
         for link in links:
@@ -150,6 +154,9 @@ def fetch_new_economics_news_in_country():
             visited_data_ids.add(data_id)
             
             title = link.inner_text().strip()
+            
+            if not title:
+                continue
 
             # Retrieve data-service
             data_service = link.get_attribute("data-service")
@@ -184,7 +191,6 @@ def fetch_newe_conomics_news_in_world():
         page.goto("https://news.vnanet.vn/?created=7%20day&servicecateid=1000&scode=1&qcode=17")
         page.wait_for_load_state("networkidle")
 
-
         links = page.query_selector_all("a.spATitle")
 
         for link in links:
@@ -198,6 +204,9 @@ def fetch_newe_conomics_news_in_world():
             visited_data_ids.add(data_id)
             
             title = link.inner_text().strip()
+            
+            if not title:
+                continue
 
             # Retrieve data-service
             data_service = link.get_attribute("data-service")
@@ -232,7 +241,6 @@ def fetch_fast_new():
         page.goto("https://news.vnanet.vn/?created=7%20day&servicecateid=1097&scode=1&qcode=17")
         page.wait_for_load_state("networkidle")
 
-
         links = page.query_selector_all("a.spATitle")
 
         for link in links:
@@ -246,6 +254,9 @@ def fetch_fast_new():
             visited_data_ids.add(data_id)
             
             title = link.inner_text().strip()
+            
+            if not title:
+                continue
 
             # Retrieve data-service
             data_service = link.get_attribute("data-service")
