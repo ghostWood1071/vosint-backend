@@ -421,7 +421,9 @@ async def event_detail(id) -> dict:
     ev_detail = await client.find_one({"_id": ObjectId(id)})
     new_list = []
     if ev_detail is None:
-        return None
+        ev_detail = await client3.find_one({"_id", ObjectId(id)})
+        if ev_detail is None:
+            return None
 
     if "new_list" in ev_detail:
         new_list = await find_news_by_filter(
