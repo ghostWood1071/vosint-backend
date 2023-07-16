@@ -10,11 +10,40 @@ from models import MongoRepository
 from fastapi_jwt_auth import AuthJWT
 from fastapi.params import Body, Depends
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
-my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
+my_es = My_ElasticSearch()
+from pydantic import BaseModel
+from vosint_ingestion.features.job.services.get_news_from_elastic import get_news_from_newsletter_id__
+class elt(BaseModel):
+    page_number : int = 1
+    page_size : int = 30
+    newsletter_id : str = '' # sử dụng trong bảo newletter ko cần tự làm newList
+    newList: List[str] = [] # Trong trường hợp phát sinh, tìm kiếm trong 1 newslist nào đó
+    groupType: str = None # vital or bookmarks or ko truyền
+    search_Query: str = None #"abc" người dùng nhập
+    startDate: str = None # 17/08/2023
+    endDate: str = None # 17/08/2023
+    langs: str = None #'vi','en', 'ru' ví dụ vi,en hoặc en,ru hoặc vi
+    sentiment: str = None #'0' trung tinh, '1' tích cực, '2' tiêu cực, all ko truyền
+    id_nguon_nhom_nguon: str = None #'id source' or 'id source_group'
+    type: str = None #'source' or 'source_group'
+
 
 job_controller = JobController()
 router = APIRouter()
 
+@router.post("/api/get_news_from_elt")
+def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    print('aa',elt.search_Query)
+    vital = ''
+    bookmarks = ''
+    if elt.groupType == 'vital':
+        vital = '1'
+    elif elt.groupType == 'bookmarks':
+        bookmarks = '1'
+    result_elt = get_news_from_newsletter_id__(user_id=user_id,list_id = elt.newList,type=elt.type,id_nguon_nhom_nguon=elt.id_nguon_nhom_nguon,page_number=elt.page_number,page_size=elt.page_size,start_date=elt.startDate,end_date=elt.endDate,sac_thai=elt.sentiment,language_source=elt.langs,news_letter_id=elt.newsletter_id,text_search=elt.search_Query,vital=vital,bookmarks=bookmarks)
+    return result_elt
 
 @router.post("/api/start_job/{pipeline_id}")
 def start_job(pipeline_id: str):
@@ -219,7 +248,7 @@ def get_event_from_newsletter_list_id(page_number = 1, page_size = 30, start_dat
 
 
 @router.get("/api/get_news_from_newsletter_id")
-def get_event_from_newsletter_id(page_number = 1, page_size = 30, start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,news_letter_id: str = '', authorize: AuthJWT = Depends(),text_search = None,vital:str='',bookmarks:str=''): 
+def get_news_from_newsletter_id(page_number = 1, page_size = 30, start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,news_letter_id: str = '', authorize: AuthJWT = Depends(),text_search = None,vital:str='',bookmarks:str=''): 
     list_id = None
     query = None
     try:
@@ -450,12 +479,19 @@ def get_event_from_newsletter_id(page_number = 1, page_size = 30, start_date : s
 
 
 
-    if text_search != None and news_letter_id != None:
-        query += '+(' + text_search + ')'
-    elif text_search != None:
-        query = ''
-        query += '+(' + text_search + ')'
-    pipeline_dtos = my_es.search_main(index_name='vosint',query=query,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai,list_id=list_id)
+    # if text_search != None and news_letter_id != None:
+    #     query += '+(' + text_search + ')'
+    # elif text_search != None:
+    #     query = ''
+    #     query += ' AND (' + text_search + ')'
+    if text_search == None:
+        pipeline_dtos = my_es.search_main(index_name='vosint',query=query,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai,list_id=list_id)
+    else:
+        pipeline_dtos = my_es.search_main(index_name='vosint',query=query,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai,list_id=list_id)
+        list_id = []
+        for i in range(len(pipeline_dtos)):
+            list_id.append(pipeline_dtos[i]['_source']['id'])
+        pipeline_dtos = my_es.search_main(index_name='vosint',query=text_search,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai,list_id=list_id)
     # list_link = []
     # for i in pipeline_dtos:
     #     list_link.append({"data:url":i['_source']['url']})

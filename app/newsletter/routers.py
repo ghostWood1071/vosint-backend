@@ -65,8 +65,8 @@ async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
     
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
-@router.get('/v2')
-async def readV2(title: str = "", authorize: AuthJWT = Depends()):
+@router.get("/v2")
+async def readv2(title: str = "", authorize: AuthJWT = Depends()):
     print('here?')
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -112,8 +112,6 @@ async def readV2(title: str = "", authorize: AuthJWT = Depends()):
     newsletters = await find_newsletters_and_filter(query, projection)
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=newsletters)
-
-
 
 @router.get("/")
 async def read(title: str = "", authorize: AuthJWT = Depends()):

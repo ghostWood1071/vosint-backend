@@ -161,11 +161,11 @@ async def get_chu_khach(user_id: str, text, skip: int, limit: int):
     async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
         item["date_created"] = str(item["date_created"])
         obj = {
-            "_id": str(item["_id"]),
+            "_id": str(item["_id"]) + "0",
             "name": item["khach_the"]
         }
         obj1 = {
-            "_id": str(item["_id"]),
+            "_id": str(item["_id"]) + "1",
             "name": item["chu_the"]
         }
         name = obj["name"]
@@ -416,7 +416,9 @@ async def event_detail(id) -> dict:
     ev_detail = await client.find_one({"_id": ObjectId(id)})
     new_list = []
     if ev_detail is None:
-        return None
+        ev_detail = await client3.find_one({"_id": ObjectId(id)})
+        if ev_detail is None:
+            return None
 
     if "new_list" in ev_detail:
         new_list = await find_news_by_filter(

@@ -408,7 +408,7 @@ class My_ElasticSearch:
     
     
     
-    def search_main(self,index_name, query='*',k=None ,sentiment=None,lang=None, gte=None, lte=None, list_source_name = None,size = 100, list_id = None):
+    def search_main(self,index_name, query='*',k=None ,sentiment=None,lang=None, gte=None, lte=None, list_source_name = None,size = 100, list_id = None,text_search =None):
         """ Tìm kiếm document theo query
         Args:
             index_name (str): Tên index
@@ -419,7 +419,7 @@ class My_ElasticSearch:
         Returns:
             Log : list[doc] | None
         """
-        if query is None:
+        if query is None or query == '':
             query="*"
         _query_string = self.query_process(query)
         #print(_query_string)
@@ -498,7 +498,7 @@ class My_ElasticSearch:
             }
             simple_filter["query"]["bool"]["must"].append(a)
 
-        if list_id != None:
+        if list_id != None and list_id != []:
             _id_query_list_id = " OR ".join(list_id)
             a = {
                 "query_string":{
@@ -507,6 +507,17 @@ class My_ElasticSearch:
                 }
             }
             simple_filter["query"]["bool"]["must"].append(a)
+
+        # if text_search != None:
+        #     # text_search = self.query_process(text_search)
+        #     # _id_query_list_id = " OR ".join(list_id)
+        #     a = {
+        #         "query_string":{
+        #             "query": text_search,
+        #             "default_field": ["data:title", "data:content"]
+        #         }
+        #     }
+        #     simple_filter["query"]["bool"]["must"].append(a)
 
         print(simple_filter)
         
