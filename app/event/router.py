@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-
+import json
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -268,20 +268,43 @@ async def clone_event(id_event: str, authorize: AuthJWT = Depends()):
         existing_cloned = await client.find_one({"_id": ObjectId(id_event)})
         if existing_cloned:
             raise HTTPException(status_code=400, detail="Event already cloned")
-
-        cursor["event_content"].replace("", "\\")
-        cursor["event_content"] = (
-            '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"'
-            + cursor["event_content"]
-            + '","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}'
+        cursor["event_content"] = json.dumps(
+            {
+                "root": {
+                    "children": [
+                        {
+                            "children": [
+                                {
+                                    "detail": 0,
+                                    "format": 0,
+                                    "mode": "normal",
+                                    "style": "",
+                                    "text": cursor["event_content"],
+                                    "type": "text",
+                                    "version": 1,
+                                }
+                            ],
+                            "direction": "ltr",
+                            "format": "",
+                            "indent": 0,
+                            "type": "paragraph",
+                            "version": 1,
+                        }
+                    ],
+                    "direction": "ltr",
+                    "format": "",
+                    "indent": 0,
+                    "type": "root",
+                    "version": 1,
+                }
+            }
         )
         cursor["user_id"] = user_id
-
         for item in cursor["new_list"]:
             if item == "":
                 cursor["new_list"] = []
                 break
-
+        
         await client.insert_one(cursor)
         await client3.update_one(
             {"_id": ObjectId(id_event)},

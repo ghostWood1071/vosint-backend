@@ -8,13 +8,7 @@ from fastapi_jwt_auth import AuthJWT
 
 from db.init_db import get_collection_client
 
-from .model import (
-    CreateQuickReport,
-    CreateReport,
-    GetEvents,
-    UpdateEvents,
-    UpdateReport,
-)
+from .model import CreateEvents, CreateQuickReport, CreateReport, GetEvents, UpdateEvents, UpdateReport
 from .service import (
     add_heading_of_report,
     count,
@@ -91,6 +85,7 @@ async def post_quick_report(
     auth.jwt_required()
 
     report_dict = report.dict()
+    print(report_dict)
     report_created = await create_report(report_dict)
     return report_created.inserted_id
 

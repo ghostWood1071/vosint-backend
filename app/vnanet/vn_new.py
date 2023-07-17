@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Path
 from playwright.sync_api import sync_playwright
 from pymongo import MongoClient
+from core.config import settings
 
 from app.vnanet.service import count, get_all
 from db.init_db import get_collection_client
@@ -300,35 +301,35 @@ def fetch_fast_new():
 
 
 def insert_into_mongodb(data):
-    client = MongoClient()
+    client = MongoClient(settings.MONGO_DETAILS)
     database = client.vosint_db
     collection = database.News_vnanet
     collection.insert_many(data)
 
 
 def insert_into_mongodb_2(data):
-    client = MongoClient()
+    client = MongoClient(settings.MONGO_DETAILS)
     database = client.vosint_db
     collection = database.News_vnanet
     collection.insert_many(data)
 
 
 def insert_into_mongodb_3(data):
-    client = MongoClient()
+    client = MongoClient(settings.MONGO_DETAILS)
     database = client.vosint_db
     collection = database.News_vnanet
     collection.insert_many(data)
 
 
 def insert_into_mongodb_4(data):
-    client = MongoClient()
+    client = MongoClient(settings.MONGO_DETAILS)
     database = client.vosint_db
     collection = database.News_vnanet
     collection.insert_many(data)
 
 
 def insert_into_mongodb_5(data):
-    client = MongoClient()
+    client = MongoClient(settings.MONGO_DETAILS)
     database = client.vosint_db
     collection = database.News_vnanet
     collection.insert_many(data)
