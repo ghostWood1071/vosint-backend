@@ -316,7 +316,7 @@ async def search_event(
     if system_created == False:
         if user_id:
             query["user_id"] = user_id
-        async for item in client.find(query).sort("_id").skip(offset).limit(limit):
+        async for item in client.find(query).sort("date_created", -1).skip(offset).limit(limit):
             ll = []
             ls_rp = []
             for Item in item["new_list"]:
@@ -338,7 +338,7 @@ async def search_event(
             list_event.append(items)
 
     if system_created == True:
-        async for item3 in client3.find(query).sort("_id").skip(offset).limit(limit):
+        async for item3 in client3.find(query).sort("date_created", -1).skip(offset).limit(limit):
             item3["_id"] = str(item3["_id"])
             item3["date_created"] = str(item3["date_created"])
             if "list_user_clone" not in item3:

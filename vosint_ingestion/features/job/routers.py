@@ -31,6 +31,26 @@ class elt(BaseModel):
 job_controller = JobController()
 router = APIRouter()
 
+@router.get("/api/get_news_from_ttxvn")
+def get_news_from_ttxvn(page_number = 1,page_size = 20,start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,text_search = None):
+    try:
+        start_date = start_date.split('/')[2] +'-'+ start_date.split('/')[1] +'-'+ start_date.split('/')[0]+'T00:00:00Z'
+    except:
+        pass
+    try:
+        end_date = end_date.split('/')[2] +'-'+ end_date.split('/')[1] +'-'+ end_date.split('/')[0]+'T00:00:00Z'
+    except:
+        pass
+    pipeline_dtos = my_es.search_main_ttxvn(index_name='vosint_ttxvn',query=text_search,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai)
+    for i in range(len(pipeline_dtos)):
+        try:
+            pipeline_dtos[i]['_source']['_id'] = pipeline_dtos[i]['_source']['id']
+        except:
+            pass
+        pipeline_dtos[i] = pipeline_dtos[i]['_source'].copy()
+
+    return JSONResponse({"success": True,"total_record":len(pipeline_dtos), "result": pipeline_dtos[(int(page_number)-1)*int(page_size):(int(page_number))*int(page_size)]})
+
 @router.post("/api/get_news_from_elt")
 def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
