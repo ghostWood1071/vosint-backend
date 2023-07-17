@@ -53,7 +53,9 @@ async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depen
 
 
 @router.get("/")
-async def search(text_search: Optional[str] = "", skip=1, limit=10, authorize: AuthJWT = Depends()):
+async def search(
+    text_search: Optional[str] = "", skip=1, limit=10, authorize: AuthJWT = Depends()
+):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     search_source_group = await search_by_filter_and_paginate(
@@ -64,7 +66,8 @@ async def search(text_search: Optional[str] = "", skip=1, limit=10, authorize: A
         status_code=status.HTTP_200_OK,
         content={"data": search_source_group, "total_record": count_source},
     )
-    
+
+
 @router.get("/get_by_user/")
 async def get_by_user(authorize: AuthJWT = Depends()):
     authorize.jwt_required()
@@ -74,6 +77,7 @@ async def get_by_user(authorize: AuthJWT = Depends()):
         status_code=status.HTTP_200_OK,
         content={"data": search_source_group},
     )
+
 
 @router.put("/{id}")
 async def update_all(

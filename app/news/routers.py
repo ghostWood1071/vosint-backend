@@ -33,7 +33,7 @@ projection = {
     "pub_date": True,
     "event_list": True,
     "is_read": True,
-    "list_user_read": True
+    "list_user_read": True,
 }
 
 
@@ -50,7 +50,7 @@ async def get_news(title: str = "", skip=1, limit=20, authorize: AuthJWT = Depen
     )
     count = await count_news(query)
     for item in news:
-         if "is_read" not in item:
+        if "is_read" not in item:
             item["is_read"] = False
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"result": news, "total_record": count}
@@ -75,7 +75,8 @@ async def get_news_detail(id: str, authorize: AuthJWT = Depends()):
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=news_to_json(news))
 
-@router.post('/read/{id}')
+
+@router.post("/read/{id}")
 async def read_id(id: str, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -83,7 +84,7 @@ async def read_id(id: str, authorize: AuthJWT = Depends()):
     return id
 
 
-@router.post('/unread/{id}')
+@router.post("/unread/{id}")
 async def read_id(id: str, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()

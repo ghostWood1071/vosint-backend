@@ -2,9 +2,9 @@ from typing import Annotated, List, Optional
 
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, status
+from fastapi.params import Depends
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
-from fastapi.params import Depends
 
 from db.init_db import get_collection_client
 

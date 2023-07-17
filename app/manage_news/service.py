@@ -42,18 +42,17 @@ async def search_by_filter_and_paginate(name, user_id, skip: int, limit: int):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_source_group = []
     async for item in db.find(
-        {"$and": [
-            {
-                "source_name": {"$regex": name, "$options": "i"}
-            },
-            {
-                "user_id": user_id
-            }
-        ]}
+        {
+            "$and": [
+                {"source_name": {"$regex": name, "$options": "i"}},
+                {"user_id": user_id},
+            ]
+        }
     ).sort("_id").skip(offset).limit(limit):
         item = source_group_to_json(item)
         list_source_group.append(item)
     return list_source_group
+
 
 async def get_by_user_id(user_id):
     list_sg = []
@@ -62,9 +61,11 @@ async def get_by_user_id(user_id):
         list_sg.append(item)
     return list_sg
 
+
 async def count_source_group(user_id):
     filter = {"user_id": user_id}
     return await db.count_documents(filter)
+
 
 def source_group_to_json(source_group) -> dict:
     source_group["_id"] = str(source_group["_id"])
@@ -74,12 +75,8 @@ def source_group_to_json(source_group) -> dict:
 async def count_search_source_group(name, user_id):
     filter = {
         "$and": [
-            {
-                "source_name": {"$regex": name, "$options": "i"}
-            },
-            {
-                "user_id": user_id
-            }
+            {"source_name": {"$regex": name, "$options": "i"}},
+            {"user_id": user_id},
         ]
     }
     return await db.count_documents(filter)
@@ -126,19 +123,27 @@ async def update_source_group(id: str, data: dict, list_source):
     #         raise HTTPException(
     #             status_code=status.HTTP_404_NOT_FOUND, detail="source group not found"
     #         )
-    
+
     source_group = await db.find_one({"_id": ObjectId(id)})
-    
+
     list_source_group = await db.find().to_list(length=None)
-    
+
     for item in list_source_group:
-        if item["_id"] != source_group["_id"] and item["source_name"] == data["source_name"]: 
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Source group is duplicated")
-        
+        if (
+            item["_id"] != source_group["_id"]
+            and item["source_name"] == data["source_name"]
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Source group is duplicated",
+            )
+
     # if infor["name"] == data["name"]:
     #     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Object already exist")
-    
-    updated_source_group = await db.find_one_and_update({"_id": ObjectId(id)}, {"$set": data})
+
+    updated_source_group = await db.find_one_and_update(
+        {"_id": ObjectId(id)}, {"$set": data}
+    )
     if updated_source_group:
         return status.HTTP_200_OK
     else:

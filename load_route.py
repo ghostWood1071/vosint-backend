@@ -34,5 +34,5 @@ ROUTE_LIST = [
     {"route": SocialRouter, "tags": ["Social"], "prefix": "/account-monitor"},
     {"route": EventRouter, "tags": ["Event"], "prefix": "/event"},
     {"route": ReportRouter, "tags": ["Report"], "prefix": "/report"},
-    {"route": VNNewRouter, "tags": ["VNNew"], "prefix": "/vnnew"}
+    {"route": VNNewRouter, "tags": ["VNNew"], "prefix": "/vnnew"},
 ]

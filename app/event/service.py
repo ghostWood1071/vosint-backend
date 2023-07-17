@@ -151,13 +151,13 @@ async def get_chu_khach(user_id: str, text, skip: int, limit: int):
 
     # if user_id:
     #     query["user_id"] = user_id
-    
+
     if text:
         query["$or"] = [
-            {"chu_the":  {"$regex": text, "$options": "i"}},
+            {"chu_the": {"$regex": text, "$options": "i"}},
             {"khach_the": {"$regex": text, "$options": "i"}},
         ]
-        
+
     async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
         item["date_created"] = str(item["date_created"])
         obj = {
@@ -172,13 +172,14 @@ async def get_chu_khach(user_id: str, text, skip: int, limit: int):
         if name not in unique and name != "":
             unique.add(name)
             list_ck.append(obj)
-            
+
         name = obj1["name"]
         if name not in unique and name != "":
             unique.add(name)
             list_ck.append(obj1)
-        
+
     return list_ck
+
 
 projection_event_system = {
     "_id": True,
@@ -186,17 +187,18 @@ projection_event_system = {
     "event_content": True,
     "date_created": True,
     "chu_the": True,
-    "khach_the": True
+    "khach_the": True,
 }
 
+
 async def search_chu_khach(
-    user_id: str, 
-    chu_the, 
-    khach_the, 
-    start_date: str, 
-    end_date: str, 
-    skip: int, 
-    limit: int
+    user_id: str,
+    chu_the,
+    khach_the,
+    start_date: str,
+    end_date: str,
+    skip: int,
+    limit: int,
 ):
     offset = (skip - 1) * limit if skip > 0 else 0
     list_ev = []
@@ -205,7 +207,7 @@ async def search_chu_khach(
         _start_date = datetime.strptime(start_date, "%d/%m/%Y")
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
         query = {"date_created": {"$gte": _start_date, "$lte": _end_date}}
-        
+
     if chu_the and khach_the:
         query["$or"] = [
             {
@@ -219,9 +221,9 @@ async def search_chu_khach(
                     {"chu_the": khach_the},
                     {"khach_the": chu_the},
                 ]
-            }
+            },
         ]
-        
+
     else:
         if chu_the:
             query["$or"] = [{"chu_the": chu_the}, {"khach_the": chu_the}]
@@ -230,7 +232,9 @@ async def search_chu_khach(
     # if user_id:
     #     query["user_id"] = user_id
 
-    async for item in client3.find(query, projection_event_system).sort("date_created", -1).skip(offset).limit(limit):
+    async for item in client3.find(query, projection_event_system).sort(
+        "date_created", -1
+    ).skip(offset).limit(limit):
         # ll = []
         # ls_rp = []
         # for Item in item["new_list"]:
@@ -251,39 +255,45 @@ async def search_chu_khach(
         list_ev.append(item)
     return list_ev
 
+
 async def count_chu_khach(chu_the, khach_the, start_date, end_date, user_id):
     query = {}
     conditions = []
     if start_date and end_date:
         _start_date = datetime.strptime(start_date, "%d/%m/%Y")
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
-        conditions.append(
-            {"date_created": {"$gte": _start_date, "$lte": _end_date}}
-        )
+        conditions.append({"date_created": {"$gte": _start_date, "$lte": _end_date}})
     if chu_the and khach_the:
-        conditions.append({
-            "$or": [
-                {"$and": [
-                    {"chu_the": chu_the},
-                    {"khach_the": khach_the},
-                ]},
-                {"$and": [
-                    {"chu_the": khach_the},
-                    {"khach_the": chu_the},
-                ]}
-            ]
-        })
+        conditions.append(
+            {
+                "$or": [
+                    {
+                        "$and": [
+                            {"chu_the": chu_the},
+                            {"khach_the": khach_the},
+                        ]
+                    },
+                    {
+                        "$and": [
+                            {"chu_the": khach_the},
+                            {"khach_the": chu_the},
+                        ]
+                    },
+                ]
+            }
+        )
     else:
         if chu_the:
             query["$or"] = [{"chu_the": chu_the}, {"khach_the": chu_the}]
         if khach_the:
             query["$or"] = [{"chu_the": khach_the}, {"khach_the": khach_the}]
-        
+
     # if user_id:
     #     conditions.append({"user_id": user_id})
     if conditions:
         query["$and"] = conditions
     return await client3.count_documents(query)
+
 
 async def search_event(
     event_name: str,
@@ -342,9 +352,9 @@ async def search_event(
             item3["_id"] = str(item3["_id"])
             item3["date_created"] = str(item3["date_created"])
             if "list_user_clone" not in item3:
-                await client.aggregate([
-                    {"$addFields": {"list_user_clone": []}}
-                ]).to_list(length=None)
+                await client.aggregate(
+                    [{"$addFields": {"list_user_clone": []}}]
+                ).to_list(length=None)
             list_event.append(item3)
 
     return list_event
@@ -951,7 +961,7 @@ async def delete_event(id, user_id):
             {"_id": ObjectId(id_event)},
             {
                 "$pull": {"list_user_clone": {"$in": [user_id]}},
-            }
+            },
         )
         return 200
     if event_2:

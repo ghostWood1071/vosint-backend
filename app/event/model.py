@@ -9,15 +9,18 @@ class AddNewEvent(BaseModel):
     data_title: str
     data_url: str
 
+
 class NewsUser(BaseModel):
     id: str
     title: str
     link: str
-    
+
+
 class Report(BaseModel):
     id: str
     title: str
     public: bool = False
+
 
 class CreateEvent(BaseModel):
     event_name: str = Field(...)
@@ -32,6 +35,7 @@ class CreateEvent(BaseModel):
     list_linh_vuc: Optional[List] = []
     news_added_by_user: Optional[List[NewsUser]]
     list_report: Optional[List] = []
+
     class config:
         orm_mode = True
 
@@ -49,4 +53,3 @@ class UpdateEvent(BaseModel):
     list_linh_vuc: Optional[List] = []
     news_added_by_user: Optional[List[NewsUser]]
     list_report: Optional[List] = []
-    

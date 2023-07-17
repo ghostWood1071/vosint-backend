@@ -43,6 +43,7 @@ client3 = get_collection_client("events")
 projection = {"_id": True, "data:title": True, "data:url": True}
 projection_rp = {"_id": True, "title": True}
 
+
 @router.get("/all-system-created/")
 async def get_all(skip=1, limit=10):
     list_event = await get_all_by_system({}, int(skip), int(limit))
@@ -197,7 +198,7 @@ async def search_by_name(
     system_created: Optional[bool] = False,
     skip=1,
     limit=10,
-    authorize: AuthJWT = Depends()
+    authorize: AuthJWT = Depends(),
 ):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -226,76 +227,78 @@ async def search_based_id_system(authorize: AuthJWT = Depends()):
     search_list = await search_id(user_id)
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list})
 
+
 @router.get("/get-chu-the-khach-the/")
 async def get_chu_khach_the(
-    text_search: Optional[str] = None,
-    skip = 1,
-    limit = 10,
-    authorize: AuthJWT = Depends()
+    text_search: Optional[str] = None, skip=1, limit=10, authorize: AuthJWT = Depends()
 ):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     list_c_k = await get_chu_khach(user_id, text_search, int(skip), int(limit))
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": list_c_k})
 
+
 @router.get("/search-based-chu-the-khach-the/")
 async def search_base_chu_khach(
-    chu_the: Optional[str] = None, 
+    chu_the: Optional[str] = None,
     khach_the: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    skip = 1,
-    limit = 10,
-    authorize: AuthJWT = Depends()
+    skip=1,
+    limit=10,
+    authorize: AuthJWT = Depends(),
 ):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    list_ev = await search_chu_khach(user_id, chu_the, khach_the, start_date, end_date, int(skip), int(limit))
-    count = await count_chu_khach(
-       chu_the, khach_the, start_date, end_date, user_id
+    list_ev = await search_chu_khach(
+        user_id, chu_the, khach_the, start_date, end_date, int(skip), int(limit)
     )
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": list_ev, "total": count})
+    count = await count_chu_khach(chu_the, khach_the, start_date, end_date, user_id)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={"result": list_ev, "total": count}
+    )
+
 
 @router.put("/clone-event/{id_event}")
 async def clone_event(id_event: str, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     cursor = await client3.find_one({"_id": ObjectId(id_event)})
-    if cursor: 
+    if cursor:
         existing_cloned = await client.find_one({"_id": ObjectId(id_event)})
         if existing_cloned:
             raise HTTPException(status_code=400, detail="Event already cloned")
-        # cursor["event_content"] = json.dumps(
-        #     {
-        #         "root": {
-        #             "children": [
-        #                 {
-        #                     "children": [
-        #                         {
-        #                             "detail": 0,
-        #                             "format": 0,
-        #                             "mode": "normal",
-        #                             "style": "",
-        #                             "text": cursor["event_content"],
-        #                             "type": "text",
-        #                             "version": 1,
-        #                         }
-        #                     ],
-        #                     "direction": "ltr",
-        #                     "format": "",
-        #                     "indent": 0,
-        #                     "type": "paragraph",
-        #                     "version": 1,
-        #                 }
-        #             ],
-        #             "direction": "ltr",
-        #             "format": "",
-        #             "indent": 0,
-        #             "type": "root",
-        #             "version": 1,
-        #         }
-        #     }
-        # )
+        cursor["event_content"] = json.dumps(
+            {
+                "root": {
+                    "children": [
+                        {
+                            "children": [
+                                {
+                                    "detail": 0,
+                                    "format": 0,
+                                    "mode": "normal",
+                                    "style": "",
+                                    "text": cursor["event_content"],
+                                    "type": "text",
+                                    "version": 1,
+                                }
+                            ],
+                            "direction": "ltr",
+                            "format": "",
+                            "indent": 0,
+                            "type": "paragraph",
+                            "version": 1,
+                        }
+                    ],
+                    "direction": "ltr",
+                    "format": "",
+                    "indent": 0,
+                    "type": "root",
+                    "version": 1,
+                }
+            }
+        )
         cursor["user_id"] = user_id
         for item in cursor["new_list"]:
             if item == "":
@@ -305,16 +308,13 @@ async def clone_event(id_event: str, authorize: AuthJWT = Depends()):
         await client.insert_one(cursor)
         await client3.update_one(
             {"_id": ObjectId(id_event)},
-            {
-                "$addToSet": {
-                    "list_user_clone": user_id
-                }
-            },
+            {"$addToSet": {"list_user_clone": user_id}},
         )
         return {"message: Event cloned successfully"}
     else:
         return {"message": "Event not found"}
-    
+
+
 @router.put("/delete-cloned-event/{id_event}")
 async def delete_clone(id_event: str, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
@@ -324,9 +324,10 @@ async def delete_clone(id_event: str, authorize: AuthJWT = Depends()):
         {"_id": ObjectId(id_event)},
         {
             "$pull": {"list_user_clone": {"$in": [user_id]}},
-        }
+        },
     )
     return {"message": "Remove event cloned successfully"}
+
 
 @router.put("/update-to-add/{id}")
 async def update_to_add(
@@ -340,6 +341,7 @@ async def update_to_add(
     await update_add(id, created)
     return 200
 
+
 @router.put("/update-to-add-event-system/{id}")
 async def update_to_add_system(
     id: str, data: UpdateEvent = Body(...), authorize: AuthJWT = Depends()
@@ -351,6 +353,7 @@ async def update_to_add_system(
     created["user_id"] = user_id
     await update_add_system(id, created)
     return 200
+
 
 @router.put("/{id}")
 async def update(

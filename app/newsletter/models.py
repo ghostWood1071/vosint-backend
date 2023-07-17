@@ -21,17 +21,20 @@ class NewsLetterModel(BaseModel):
     required_keyword: List[str]
     exclusion_keyword: str
 
-class NewsSampleModel(BaseModel):
-    id: str
-    title: str
-    content: str
-    link: Optional[str]
 
 class NewsSampleModel(BaseModel):
     id: str
     title: str
     content: str
     link: Optional[str]
+
+
+class NewsSampleModel(BaseModel):
+    id: str
+    title: str
+    content: str
+    link: Optional[str]
+
 
 class NewsLetterCreateModel(BaseModel):
     parent_id: str | None
@@ -59,7 +62,6 @@ class NewsLetterUpdateModel(BaseModel):
     keyword_ru: Optional[object]
     is_sample: Optional[bool]
     news_samples: Optional[list[NewsSampleModel]]
-
 
 
 class NewsletterDeleteMany(BaseModel):

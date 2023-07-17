@@ -19,7 +19,9 @@ async def create_proxy(proxy):
 async def find_by_filter_and_paginate(skip: int, limit: int):
     list_proxy = []
     if limit is not None:
-        async for item in proxy_collect.find().sort("_id").skip((skip - 1) * limit if skip > 0 else 0).limit(limit):
+        async for item in proxy_collect.find().sort("_id").skip(
+            (skip - 1) * limit if skip > 0 else 0
+        ).limit(limit):
             item = proxy_to_json(item)
             list_proxy.append(item)
     elif skip is None and limit is None:
@@ -79,19 +81,24 @@ async def update_proxy(id: str, data: dict):
     list_proxy = await proxy_collect.find().to_list(length=None)
 
     for item in list_proxy:
+        if item["_id"] != proxy["_id"] and item["ip_address"] == data["ip_address"]:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="proxy ip is duplicated"
+            )
 
-        if item["_id"] != proxy["_id"] and item["ip_address"] == data["ip_address"]: 
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="proxy ip is duplicated")
-
-    # if proxy["ip_address"] == data["ip_address"]: 
+    # if proxy["ip_address"] == data["ip_address"]:
     #     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="proxy ip already exist")
 
-    updated_proxy = await proxy_collect.find_one_and_update({"_id": ObjectId(id)}, {"$set": data})
+    updated_proxy = await proxy_collect.find_one_and_update(
+        {"_id": ObjectId(id)}, {"$set": data}
+    )
 
     if updated_proxy:
         return status.HTTP_200_OK
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proxy not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Proxy not found."
+        )
 
 
 async def get_proxy_by_id(id) -> dict:

@@ -471,7 +471,7 @@ class My_ElasticSearch:
                         ],
                         "filter": {
                             "range": {
-                                "created_at": {
+                                "pub_date": {
                                     "gte": _gte,
                                     "lte": _lte
                                 }

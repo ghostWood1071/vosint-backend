@@ -22,5 +22,6 @@ class UpdateProxy(BaseModel):
     note: Optional[str]
     username: Optional[str]
     password: Optional[str]
+
     class config:
         orm_mode = True
