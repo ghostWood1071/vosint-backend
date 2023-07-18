@@ -24,7 +24,7 @@ client = get_collection_client("socials")
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("")
 async def Get_all_user(skip: Optional[int] = None, limit: Optional[int] = None):
     users = await get_all_user(skip, limit)
     if users:
@@ -67,7 +67,7 @@ async def get_account_monitor_by_medias(
     )
 
 
-@router.post("/")
+@router.post("")
 async def add_user(body: UserCreateModel):
     user_dict = body.dict()
     existing_user = await client.find_one({"username": user_dict["username"]})

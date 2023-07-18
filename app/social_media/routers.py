@@ -27,7 +27,7 @@ client2 = get_collection_client("users")
 router = APIRouter()
 
 
-@router.post("/")
+@router.post("")
 async def add_social(
     body: CreateSocialModel,
 ):

@@ -49,7 +49,7 @@ projection = {
 db = get_collection_client("object")
 
 
-@router.post("/")
+@router.post("")
 async def add_object(
     payload: CreateObject,
     type: Optional[str] = Query("Type", enum=["Đối tượng", "Tổ chức", "Quốc gia"]),

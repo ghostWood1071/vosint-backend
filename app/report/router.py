@@ -54,7 +54,7 @@ async def read_reports_quick(
     }
 
 
-@router.get("/")
+@router.get("")
 async def read_reports(
     title: str = "", skip: int = 0, limit: int = 10, auth: AuthJWT = Depends()
 ):
@@ -95,7 +95,7 @@ async def post_quick_report(
     return report_created.inserted_id
 
 
-@router.post("/")
+@router.post("")
 async def post_report(report: CreateReport = Body(...), auth: AuthJWT = Depends()):
     auth.jwt_required()
     user_id = auth.get_jwt_subject()

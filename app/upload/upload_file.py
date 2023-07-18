@@ -3,7 +3,7 @@ from fastapi import APIRouter, File, UploadFile
 router = APIRouter()
 
 
-@router.post("/")
+@router.post("")
 async def upload(file: UploadFile = File(...)):
     try:
         content = await file.read()

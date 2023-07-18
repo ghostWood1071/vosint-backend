@@ -54,7 +54,7 @@ async def get_all(skip=1, limit=10):
     )
 
 
-@router.post("/")
+@router.post("")
 async def create_event(data: CreateEvent = Body(...), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -140,7 +140,7 @@ async def remove_event_list(id_new: str, list_id_event: List[str] = Body(...)):
     return JSONResponse(status_code=status.HTTP_200_OK, content="Successful remove")
 
 
-@router.get("/")
+@router.get("")
 async def get_all(skip=1, limit=10):
     list_event = await get_all_by_paginate({}, int(skip), int(limit))
     count = await count_event({})

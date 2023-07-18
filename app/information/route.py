@@ -18,7 +18,7 @@ router = APIRouter()
 infor_collect = get_collection_client("infor")
 
 
-@router.post("/")
+@router.post("")
 async def add_infor(payload: CreateInfor):
     infor = payload.dict()
     exist_infor = await infor_collect.find_one({"name": infor["name"]})
@@ -32,7 +32,7 @@ async def add_infor(payload: CreateInfor):
     return status.HTTP_403_FORBIDDEN
 
 
-@router.get("/")
+@router.get("")
 async def get_all(skip=1, limit=10):
     list_infor = await find_by_filter_and_paginate({}, int(skip), int(limit))
     count = await count_infor({})

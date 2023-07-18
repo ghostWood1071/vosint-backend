@@ -49,7 +49,7 @@ projection = {
 }
 
 
-@router.post("/")
+@router.post("")
 async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -67,7 +67,7 @@ async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
 
-@router.get("/")
+@router.get("")
 async def read(title: str = "", authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
