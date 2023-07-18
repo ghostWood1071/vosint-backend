@@ -1,6 +1,7 @@
+import json
 from datetime import datetime
 from typing import List, Optional
-import json
+
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -304,7 +305,7 @@ async def clone_event(id_event: str, authorize: AuthJWT = Depends()):
             if item == "":
                 cursor["new_list"] = []
                 break
-        
+
         await client.insert_one(cursor)
         await client3.update_one(
             {"_id": ObjectId(id_event)},

@@ -160,14 +160,8 @@ async def get_chu_khach(user_id: str, text, skip: int, limit: int):
 
     async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
         item["date_created"] = str(item["date_created"])
-        obj = {
-            "_id": str(item["_id"]) + "0",
-            "name": item["khach_the"]
-        }
-        obj1 = {
-            "_id": str(item["_id"]) + "1",
-            "name": item["chu_the"]
-        }
+        obj = {"_id": str(item["_id"]) + "0", "name": item["khach_the"]}
+        obj1 = {"_id": str(item["_id"]) + "1", "name": item["chu_the"]}
         name = obj["name"]
         if name not in unique and name != "":
             unique.add(name)
@@ -317,7 +311,7 @@ async def search_event(
         query["$or"] = [
             {"event_name": {"$regex": event_name, "$options": "i"}},
             {"chu_the": {"$regex": event_name, "$options": "i"}},
-            {"khach_the": {"$regex": event_name, "$options": "i"}}
+            {"khach_the": {"$regex": event_name, "$options": "i"}},
         ]
     if data:
         query["new_list"] = {"$nin": [data]}
@@ -326,7 +320,9 @@ async def search_event(
     if system_created == False:
         if user_id:
             query["user_id"] = user_id
-        async for item in client.find(query).sort("date_created", -1).skip(offset).limit(limit):
+        async for item in client.find(query).sort("date_created", -1).skip(
+            offset
+        ).limit(limit):
             ll = []
             ls_rp = []
             for Item in item["new_list"]:
@@ -348,7 +344,9 @@ async def search_event(
             list_event.append(items)
 
     if system_created == True:
-        async for item3 in client3.find(query).sort("date_created", -1).skip(offset).limit(limit):
+        async for item3 in client3.find(query).sort("date_created", -1).skip(
+            offset
+        ).limit(limit):
             item3["_id"] = str(item3["_id"])
             item3["date_created"] = str(item3["date_created"])
             if "list_user_clone" not in item3:

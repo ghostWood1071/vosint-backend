@@ -66,57 +66,9 @@ async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
 
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
-@router.get("/v2")
-async def readv2(title: str = "", authorize: AuthJWT = Depends()):
-    print('here?')
-    authorize.jwt_required()
-    user_id = authorize.get_jwt_subject()
-
-    if user_id is None:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Bad jwt")
-
-    query = {
-        "$and": [
-            {
-                "$or": [
-                    {"title": {"$regex": title, "$options": "i"}},
-                ]
-            },
-            {
-                "$or": [
-                    {
-                        "$and": [
-                            {"tag": {"$in": [Tag.gio_tin, Tag.chu_de]}},
-                            {"user_id": ObjectId(user_id)},
-                        ]
-                    },
-                    {"tag": Tag.linh_vuc},
-                ],
-            },
-        ],
-    }
-
-    projection = {
-        "exclusion_keyword": True,
-        "required_keyword": True,
-        "tag": True,
-        "title": True,
-        "user_id": True,
-        "keyword_vi": True,
-        "keyword_en": True,
-        "keyword_cn": True,
-        "keyword_ru": True,
-        "_id": True,
-        "parent_id": True,
-    }
-
-    newsletters = await find_newsletters_and_filter(query, projection)
-
-    return JSONResponse(status_code=status.HTTP_200_OK, content=newsletters)
 
 @router.get("/")
 async def read(title: str = "", authorize: AuthJWT = Depends()):
-    print('here?')
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
 
