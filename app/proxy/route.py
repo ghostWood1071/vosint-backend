@@ -21,7 +21,7 @@ router = APIRouter()
 proxy_collect = get_collection_client("proxy")
 
 
-@router.post("/")
+@router.post("")
 async def add_proxy(payload: CreateProxy):
     proxy = payload.dict()
     exist_proxy = await proxy_collect.find_one({"ip_address": proxy["ip_address"]})
@@ -35,7 +35,7 @@ async def add_proxy(payload: CreateProxy):
     return status.HTTP_403_FORBIDDEN
 
 
-@router.get("/")
+@router.get("")
 async def get_paginate(skip: Optional[int] = None, limit: Optional[int] = None):
     list_proxy = await find_by_filter_and_paginate(skip, limit)
     count = await count_proxy({})

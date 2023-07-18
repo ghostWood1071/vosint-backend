@@ -25,7 +25,7 @@ router = APIRouter()
 db = get_collection_client("Source")
 
 
-@router.post("/")
+@router.post("")
 async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -42,7 +42,7 @@ async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depen
     return status.HTTP_403_FORBIDDEN
 
 
-# @router.get("/")
+# @router.get("")
 # async def get_all(skip=1, limit=10):
 #     list_source_group = await find_by_filter_and_paginate({}, int(skip), int(limit))
 #     count = await count_source({})
@@ -52,7 +52,7 @@ async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depen
 #     )
 
 
-@router.get("/")
+@router.get("")
 async def search(
     text_search: Optional[str] = "", skip=1, limit=10, authorize: AuthJWT = Depends()
 ):

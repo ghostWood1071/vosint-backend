@@ -50,7 +50,7 @@ projection = {
 client = get_collection_client("users")
 
 
-@router.post("/")
+@router.post("")
 async def add(body: UserCreateModel):
     user_dict = body.dict()
 
@@ -256,7 +256,7 @@ async def delete_interested_item(
     )
 
 
-@router.get("/")
+@router.get("")
 async def get_all(
     skip=1,
     limit=20,
