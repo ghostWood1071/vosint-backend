@@ -31,7 +31,7 @@ class elt(BaseModel):
 job_controller = JobController()
 router = APIRouter()
 
-@router.get("/api/get_news_from_ttxvn")
+@router.post("/api/get_news_from_ttxvn")
 def get_news_from_ttxvn(page_number = 1,page_size = 20,start_date : str = None, end_date : str = None, sac_thai : str = None, language_source : str =None,text_search = None):
     try:
         start_date = start_date.split('/')[2] +'-'+ start_date.split('/')[1] +'-'+ start_date.split('/')[0]+'T00:00:00Z'
@@ -697,6 +697,7 @@ def get_result_job(order = None,text_search = '', page_number = None, page_size 
         query = {}
         
     print(query)
+    # order="data: gtitle"
     return JSONResponse(
         job_controller.get_result_job('News', order, page_number, page_size,filter=query)
     )

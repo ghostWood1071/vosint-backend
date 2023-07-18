@@ -45,7 +45,7 @@ projection = {"_id": True, "data:title": True, "data:url": True}
 projection_rp = {"_id": True, "title": True}
 
 
-@router.get("/all-system-created/")
+@router.get("/all-system-created")
 async def get_all(skip=1, limit=10):
     list_event = await get_all_by_system({}, int(skip), int(limit))
     count = await count_event_system({})
@@ -190,7 +190,7 @@ async def show_event_by_news_and_system(news_id: str):
     return detail
 
 
-@router.get("/search/")
+@router.get("/search")
 async def search_by_name(
     event_name: Optional[str] = "",
     id_new: Optional[str] = "",
@@ -221,7 +221,7 @@ async def search_by_name(
     )
 
 
-@router.get("/search-based-user-id/")
+@router.get("/search-based-user-id")
 async def search_based_id_system(authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -229,7 +229,7 @@ async def search_based_id_system(authorize: AuthJWT = Depends()):
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": search_list})
 
 
-@router.get("/get-chu-the-khach-the/")
+@router.get("/get-chu-the-khach-the")
 async def get_chu_khach_the(
     text_search: Optional[str] = None, skip=1, limit=10, authorize: AuthJWT = Depends()
 ):
@@ -239,7 +239,7 @@ async def get_chu_khach_the(
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": list_c_k})
 
 
-@router.get("/search-based-chu-the-khach-the/")
+@router.get("/search-based-chu-the-khach-the")
 async def search_base_chu_khach(
     chu_the: Optional[str] = None,
     khach_the: Optional[str] = None,

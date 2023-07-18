@@ -31,6 +31,7 @@ class UserCreateModel(BaseModel):
     social: str = Field(...)
     users_follow: List[AddFollow]
     list_proxy: List[AddProxy]
+    cookie_url: str = Field(...)
 
 
 class UpdateAccountMonitor(BaseModel):
@@ -40,3 +41,4 @@ class UpdateAccountMonitor(BaseModel):
     social: str = Field(...)
     users_follow: List[AddFollow]
     list_proxy: List[AddProxy]
+    cookie_url: str = Field(...)
