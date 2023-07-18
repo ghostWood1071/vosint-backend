@@ -68,7 +68,7 @@ async def search(
     )
 
 
-@router.get("/get_by_user/")
+@router.get("/get_by_user")
 async def get_by_user(authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()

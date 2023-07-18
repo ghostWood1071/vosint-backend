@@ -347,6 +347,22 @@ async def search_event(
         async for item3 in client3.find(query).sort("date_created", -1).skip(
             offset
         ).limit(limit):
+            ll = []
+            ls_rp = []
+            for Item in item3["new_list"]:
+                id_new = {"_id": ObjectId(Item)}
+                async for new in client2.find(id_new, projection):
+                    gg = json(new)
+                    ll.append(gg)
+            if "list_report" in item3:
+                for Item2 in item3["list_report"]:
+                    id_report = {"_id": ObjectId(Item2)}
+                    async for rp in report_client.find(id_report, projection_rp):
+                        reports = json(rp)
+                        ls_rp.append(reports)
+            item3["new_list"] = ll
+            item3["list_report"] = ls_rp
+
             item3["_id"] = str(item3["_id"])
             item3["date_created"] = str(item3["date_created"])
             if "list_user_clone" not in item3:

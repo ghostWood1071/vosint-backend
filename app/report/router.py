@@ -126,7 +126,7 @@ async def put_report(id: str, data: UpdateReport = Body(...)):
     return id
 
 
-@router.put("/add-events-to-heading/")
+@router.put("/add-events-to-heading")
 async def add_head(
     id_report: Optional[str] = "",
     id_heading: Optional[str] = "",
