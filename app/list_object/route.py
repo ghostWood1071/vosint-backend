@@ -4,10 +4,12 @@ from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
-my_es = My_ElasticSearch()
-from vosint_ingestion.models import MongoRepository
 
+from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
+    My_ElasticSearch,
+)
+
+my_es = My_ElasticSearch()
 from app.list_object.model import CreateObject, UpdateObject
 from app.list_object.service import (
     count_all_object,
@@ -27,6 +29,7 @@ from app.news.services import (
     find_news_by_filter_and_paginate,
 )
 from db.init_db import get_collection_client
+from vosint_ingestion.models import MongoRepository
 
 router = APIRouter()
 
@@ -117,128 +120,128 @@ async def get_news_by_object_id(
     # count = await count_news({"_id": {"$in": one_object["news_id"]}})
     list_id = None
     query = None
-    a = MongoRepository().get_one(collection_name='object',filter_spec={"_id":id})
+    a = MongoRepository().get_one(collection_name="object", filter_spec={"_id": id})
     first_lang = 1
-    query = ''
+    query = ""
     ### vi
-    query_vi = ''
+    query_vi = ""
     first_flat = 1
     try:
-        for i in a['keyword_vi']['required_keyword']:
+        for i in a["keyword_vi"]["required_keyword"]:
             if first_flat == 1:
-                first_flat = 0 
-                query_vi += '('
+                first_flat = 0
+                query_vi += "("
             else:
-                query_vi += '| ('
-            j = i.split(',')
-            
+                query_vi += "| ("
+            j = i.split(",")
+
             for k in j:
-                query_vi += '+'+'\"' + k + '\"'
-            query_vi += ')'
+                query_vi += "+" + '"' + k + '"'
+            query_vi += ")"
     except:
         pass
     try:
-        j = a['keyword_vi']['exclusion_keyword'].split(',')
+        j = a["keyword_vi"]["exclusion_keyword"].split(",")
         for k in j:
-            query_vi += '-'+'\"' + k + '\"'
+            query_vi += "-" + '"' + k + '"'
     except:
         pass
 
     ### cn
-    query_cn = ''
+    query_cn = ""
     first_flat = 1
     try:
-        for i in a['keyword_vn']['required_keyword']:
+        for i in a["keyword_vn"]["required_keyword"]:
             if first_flat == 1:
-                first_flat = 0 
-                query_cn += '('
+                first_flat = 0
+                query_cn += "("
             else:
-                query_cn += '| ('
-            j = i.split(',')
-            
+                query_cn += "| ("
+            j = i.split(",")
+
             for k in j:
-                query_cn += '+'+'\"' + k + '\"'
-            query_cn += ')'
+                query_cn += "+" + '"' + k + '"'
+            query_cn += ")"
     except:
         pass
     try:
-        j = a['keyword_cn']['exclusion_keyword'].split(',')
+        j = a["keyword_cn"]["exclusion_keyword"].split(",")
         for k in j:
-            query_cn += '-'+'\"' + k + '\"'
+            query_cn += "-" + '"' + k + '"'
     except:
         pass
 
     ### cn
-    query_ru = ''
+    query_ru = ""
     first_flat = 1
     try:
-        for i in a['keyword_ru']['required_keyword']:
+        for i in a["keyword_ru"]["required_keyword"]:
             if first_flat == 1:
-                first_flat = 0 
-                query_ru += '('
+                first_flat = 0
+                query_ru += "("
             else:
-                query_ru += '| ('
-            j = i.split(',')
-            
+                query_ru += "| ("
+            j = i.split(",")
+
             for k in j:
-                query_ru += '+'+'\"' + k + '\"'
-            query_ru += ')'
+                query_ru += "+" + '"' + k + '"'
+            query_ru += ")"
     except:
         pass
     try:
-        j = a['keyword_ru']['exclusion_keyword'].split(',')
+        j = a["keyword_ru"]["exclusion_keyword"].split(",")
         for k in j:
-            query_ru += '-'+'\"' + k + '\"'
+            query_ru += "-" + '"' + k + '"'
     except:
         pass
 
     ### cn
-    query_en = ''
+    query_en = ""
     first_flat = 1
     try:
-        for i in a['keyword_en']['required_keyword']:
+        for i in a["keyword_en"]["required_keyword"]:
             if first_flat == 1:
-                first_flat = 0 
-                query_en += '('
+                first_flat = 0
+                query_en += "("
             else:
-                query_en += '| ('
-            j = i.split(',')
-            
+                query_en += "| ("
+            j = i.split(",")
+
             for k in j:
-                query_en += '+'+'\"' + k + '\"'
-            query_en += ')'
+                query_en += "+" + '"' + k + '"'
+            query_en += ")"
     except:
         pass
     try:
-        j = a['keyword_en']['exclusion_keyword'].split(',')
+        j = a["keyword_en"]["exclusion_keyword"].split(",")
         for k in j:
-            query_en += '-'+'\"' + k + '\"'
+            query_en += "-" + '"' + k + '"'
     except:
         pass
-    
-    if query_vi != '':
+
+    if query_vi != "":
         if first_lang == 1:
             first_lang = 0
-            query += '('+query_vi+')'
-    if query_en != '':
+            query += "(" + query_vi + ")"
+    if query_en != "":
         if first_lang == 1:
             first_lang = 0
-            query += '('+query_en+')'
+            query += "(" + query_en + ")"
         else:
-            query += '| ('+query_en+')'
-    if query_ru != '':
+            query += "| (" + query_en + ")"
+    if query_ru != "":
         if first_lang == 1:
             first_lang = 0
-            query += '('+query_ru+')'
+            query += "(" + query_ru + ")"
         else:
-            query += '| ('+query_ru+')'
-    if query_cn != '':
+            query += "| (" + query_ru + ")"
+    if query_cn != "":
         if first_lang == 1:
             first_lang = 0
-            query += '('+query_cn+')'
+            query += "(" + query_cn + ")"
         else:
-            query += '| ('+query_cn+')'
-            
+            query += "| (" + query_cn + ")"
+
     # if text_search != None and news_letter_id != None:
     #     query += '+(' + text_search + ')'
     # elif text_search != None:
@@ -246,15 +249,15 @@ async def get_news_by_object_id(
     #     query += '+(' + text_search + ')'
     query = query
 
-    pipeline_dtos = my_es.search_main(index_name='vosint',query=query)
+    pipeline_dtos = my_es.search_main(index_name="vosint", query=query)
 
     for i in range(len(pipeline_dtos)):
         try:
-            pipeline_dtos[i]['_source']['_id'] = pipeline_dtos[i]['_source']['id']
+            pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"]["id"]
         except:
             pass
-        pipeline_dtos[i] = pipeline_dtos[i]['_source'].copy()
-    news =pipeline_dtos
+        pipeline_dtos[i] = pipeline_dtos[i]["_source"].copy()
+    news = pipeline_dtos
     count = len(pipeline_dtos)
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={"result": news, "total_record": count}

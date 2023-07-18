@@ -4,9 +4,9 @@ from typing import Optional
 from fastapi import APIRouter, Path
 from playwright.sync_api import sync_playwright
 from pymongo import MongoClient
-from core.config import settings
 
 from app.vnanet.service import count, get_all
+from core.config import settings
 from db.init_db import get_collection_client
 
 router = APIRouter()

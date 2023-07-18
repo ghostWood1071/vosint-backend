@@ -8,6 +8,7 @@ class CreateQuickReport(BaseModel):
     title: str = Field()
     headings: Optional[Any]
 
+
 class CreateReport(BaseModel):
     title: str = Field()
     headings: Optional[Any]
