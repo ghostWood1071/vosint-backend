@@ -26,19 +26,23 @@ class AddProxy(BaseModel):
 
 
 class UserCreateModel(BaseModel):
-    username: str = Field(...)
-    password: str = Field(...)
+    username: Optional[str]
+    password: Optional[str]
     social: str = Field(...)
     users_follow: List[AddFollow]
     list_proxy: List[AddProxy]
-    cookie_url: str = Field(...)
+    cookie: str = Field(...)
+    cron_expr: str = Field(...)
+    enabled: bool = False
 
 
 class UpdateAccountMonitor(BaseModel):
     id: str
-    username: str = Field(...)
-    password: str = Field(...)
+    username: Optional[str]
+    password: Optional[str]
     social: str = Field(...)
     users_follow: List[AddFollow]
     list_proxy: List[AddProxy]
-    cookie_url: str = Field(...)
+    cookie: str = Field(...)
+    cron_expr: str = Field(...)
+    enabled: bool = False
