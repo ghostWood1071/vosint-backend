@@ -8,12 +8,7 @@ from fastapi_jwt_auth import AuthJWT
 
 from db.init_db import get_collection_client
 
-from .model import (
-    CreateQuickReport,
-    CreateReport,
-    GetEvents,
-    UpdateReport,
-)
+from .model import CreateQuickReport, CreateReport, GetEvents, UpdateReport
 from .service import (
     add_heading_of_report,
     count,
