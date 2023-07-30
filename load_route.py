@@ -13,6 +13,7 @@ from app.upload.upload_file import router as UploadFileRouter
 from app.user.routers import router as UserRouter
 from app.vnanet.vn_new import router as VNNewRouter
 from vosint_ingestion.features.job.routers import router as Job
+from app.dashboard.router import router as DashboardRouter
 
 # from vosint_ingestion.features.nlp.routers import router as Nlp
 from vosint_ingestion.features.pipeline.routers import router as PipeLine
@@ -35,4 +36,5 @@ ROUTE_LIST = [
     {"route": EventRouter, "tags": ["Event"], "prefix": "/event"},
     {"route": ReportRouter, "tags": ["Report"], "prefix": "/report"},
     {"route": VNNewRouter, "tags": ["VNNew"], "prefix": "/vnnew"},
+    {"route": DashboardRouter, "tags": ["Dashboard"], "prefix": "/dashboard"},
 ]
