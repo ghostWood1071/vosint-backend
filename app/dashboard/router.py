@@ -1,6 +1,12 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter
 from db.init_db import get_collection_client
+from .service import (
+    count_news_country_today,
+    count_news_hours,
+    news_country_today,
+    news_hours_today,
+)
 
 router = APIRouter()
 
@@ -37,3 +43,23 @@ async def get_hot_news_today():
     ]
     result = await client_events.aggregate(pipeline).to_list(None)
     return {"result": result}
+
+
+@router.get("/news-country-today")
+async def get_news_country_today(start_day: int):
+    return await news_country_today(start_day)
+
+
+@router.get("/news-hours-today")
+async def get_news_hours_today():
+    return await news_hours_today()
+
+
+@router.post("/count-news-country-today")
+async def get_count_news_country_today():
+    return await count_news_country_today()
+
+
+@router.post("/count-news-hours")
+async def get_count_news_hours():
+    return await count_news_hours()
