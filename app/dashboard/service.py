@@ -50,15 +50,17 @@ async def count_news_country_today():
     queries[-1] = queries[-1].rstrip(" OR")
     new_query = " OR ".join(queries)
 
+    date = datetime.now().strptime("%Y-%m-%d")
+    gte = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
+    lte = datetime.now().strftime("%Y-%m-%dT00:00:00Z")
+
     pipeline_dtos = my_es.search_main(
         index_name="vosint",
         query=new_query,
-        gte="now-1d/d",
-        lte="now/d",
+        gte=gte,
+        lte=lte,
     )
-    print(pipeline_dtos)
 
-    date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     if await dashboard_client.find_one({"date": date, "type": "day"}):
         await dashboard_client.update_one(
             {"date": date}, {"$set": {"value": pipeline_dtos.__len__()}}
@@ -81,7 +83,7 @@ async def count_news_hours():
         {
             "created_at": {
                 "$gte": date_gte.strftime("%Y/%m/%d %H:%M:%S"),
-                "$lt": date_lt.strftime("%Y/%m/%d %H:%M:%S"),
+                "$lte": date_lt.strftime("%Y/%m/%d %H:%M:%S"),
             }
         }
     )
