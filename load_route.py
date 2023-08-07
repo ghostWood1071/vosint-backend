@@ -1,4 +1,5 @@
 from app.auth.routers import router as AuthRouter
+from app.dashboard.router import router as DashboardRouter
 from app.event.router import router as EventRouter
 from app.information.route import router as InformationRouter
 from app.list_object.route import router as ObjectRouter
@@ -13,7 +14,6 @@ from app.upload.upload_file import router as UploadFileRouter
 from app.user.routers import router as UserRouter
 from app.vnanet.vn_new import router as VNNewRouter
 from vosint_ingestion.features.job.routers import router as Job
-from app.dashboard.router import router as DashboardRouter
 
 # from vosint_ingestion.features.nlp.routers import router as Nlp
 from vosint_ingestion.features.pipeline.routers import router as PipeLine

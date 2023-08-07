@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
+
 from fastapi import APIRouter
+
 from db.init_db import get_collection_client
+
 from .service import (
     count_news_country_today,
     count_news_hours,

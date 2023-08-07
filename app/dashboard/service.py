@@ -1,6 +1,6 @@
-from typing import List
 from datetime import datetime, timedelta
-from vosint_ingestion.scheduler import Scheduler
+from typing import List
+
 from db.init_db import get_collection_client
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
