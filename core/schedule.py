@@ -22,3 +22,4 @@ async def stop_all_jobs():
     jobs = AsyncScheduler.instance().get_jobs()
     for job in jobs:
         AsyncScheduler.instance().remove_job(job)
+

@@ -7,9 +7,9 @@ import json
 # import warnings
 # from elasticsearch.exceptions import ElasticsearchWarning
 # warnings.simplefilter('ignore', ElasticsearchWarning)
-
+from core.config import settings
 class My_ElasticSearch:
-    def __init__(self, host = ['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False):
+    def __init__(self, host = [settings.ELASTIC_CONNECT], user='USER', password='PASS', verify_certs=False):
         """Constructor function that initializes the ElasticSearch object with connection parameters."""
         self.host = host
         self.user = user

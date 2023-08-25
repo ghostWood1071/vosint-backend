@@ -2,15 +2,15 @@ import pymongo
 from bson.objectid import ObjectId
 from common.internalerror import *
 from utils import get_time_now_string
-
+from core.config import settings
 
 class MongoRepository:
     def __init__(self):
-        self.__host = 'localhost'#'192.168.1.100'
-        self.__port = 27017
-        self.__username = "vosint"
-        self.__passwd = "vosint_2022"
-        self.__db_name = "vosint_db"
+        self.__host = settings.mong_host
+        self.__port = settings.mongo_port
+        self.__username = settings.mongo_username
+        self.__passwd = settings.mongo_passwd
+        self.__db_name = settings.mongo_db_name
         self.__client = None
         self.__db = None
 
@@ -259,7 +259,7 @@ class MongoRepository:
                     return by, direction
 
                 order_spec = list(map(lambda o: __map_order(o), order_spec))
-            query = query.sort(order_spec)
+            query = query.sort([('pub_date', -1), ('created_at', -1)])#(order_spec)
 
             # Apply pagination
             if pagination_spec:

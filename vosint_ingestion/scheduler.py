@@ -45,3 +45,21 @@ class Scheduler:
     def get_jobs(self) -> list:
         jobs = [job.id for job in self.__bg_scheduler.get_jobs()]
         return jobs
+    
+    def add_job_interval(
+        self,
+        id: str,
+        func: Callable,
+        interval: int,
+        args: list = [],
+        next_run_time=None,
+    ):
+        self.__bg_scheduler.add_job(
+            id=id,
+            func=func,
+            args=args,
+            trigger="interval",
+            seconds=interval,
+            next_run_time=next_run_time,
+        )
+

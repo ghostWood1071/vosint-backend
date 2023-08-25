@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     MONGO_DETAILS: str = "mongodb://127.0.0.1:27017"
     DATABASE_NAME: str = "vosint_db"
 
+    mong_host = 'vosint_mongo'
+    mongo_port = 27017
+    mongo_username = "vosint"
+    mongo_passwd = "vosint_2022"
+    mongo_db_name = "vosint_db"
+
+    ELASTIC_CONNECT: str = "http://elastic1:9200"
+
     ROOT_PATH: str = ""
 
     class Config:
