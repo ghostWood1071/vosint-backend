@@ -536,7 +536,7 @@ async def event_detail_system(id) -> dict:
         return ev
 
 
-def convert_map_str_to_object_id(array: list[str]):
+def convert_map_str_to_object_id(array: List[str]):
     return list(map(ObjectId, array))
 
 

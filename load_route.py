@@ -12,6 +12,7 @@ from app.social.routers import router as SocialRouter
 from app.social_media.routers import router as SocialMediaRouter
 from app.upload.upload_file import router as UploadFileRouter
 from app.user.routers import router as UserRouter
+from app.user_config.router import router as UserConfigRouter
 from app.vnanet.vn_new import router as VNNewRouter
 from vosint_ingestion.features.job.routers import router as Job
 
@@ -36,5 +37,6 @@ ROUTE_LIST = [
     {"route": EventRouter, "tags": ["Event"], "prefix": "/event"},
     {"route": ReportRouter, "tags": ["Report"], "prefix": "/report"},
     {"route": VNNewRouter, "tags": ["VNNew"], "prefix": "/vnnew"},
-    {"route": DashboardRouter, "tags": ["Dashboard"], "prefix": "/dashboard"},
+    {"route": UserConfigRouter, "tags": ["Account ttxvn config"], "prefix": "/account-ttxvn-config"},
+    {"route": DashboardRouter, "tags": ["Dashboard"], "prefix": "/dashboard"}
 ]

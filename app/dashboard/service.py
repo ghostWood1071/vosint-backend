@@ -76,6 +76,7 @@ async def count_news_country_today():
 
 
 async def count_news_hours():
+    print("Here???")
     date_lt = datetime.now().replace(minute=0, second=0, microsecond=0)
     date_gte = date_lt - timedelta(hours=1)
     # convert YYYY-MM-DD HH:mm:ss to YYYY/MM/DD HH:mm:ss
