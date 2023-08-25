@@ -34,8 +34,12 @@ from app.event.service import (
     update_add,
     update_add_system,
     update_event,
+    get_events_by_ids,
+    get_news_by_ids,
 )
 from db.init_db import get_collection_client
+from word_exporter import export_events_to_words
+from fastapi import Response
 
 router = APIRouter()
 client = get_collection_client("event")
@@ -383,3 +387,25 @@ async def remove_event(id, authorize: AuthJWT = Depends()):
     if deleted:
         return {"messsage": "event deleted successful"}
     return status.HTTP_403_FORBIDDEN
+
+
+@router.post("/export-to-word")
+async def export_event_to_word(event_ids: List[str]):
+    events = await get_events_by_ids(event_ids)
+    news_ids_spec = []
+    for event in events:
+        for news_id in event["new_list"]:
+            news_ids_spec.append(news_id)
+    news = await get_news_by_ids(news_ids_spec)
+    for event in events:
+        if event.get("source_list") is None:
+            event["source_list"] = []
+        for source_id in event["new_list"]:
+            event["source_list"].append(news[source_id])
+    file_buff = export_events_to_words(events)
+    nowstr = datetime.now().strftime("%d-%m-%Y")
+    return Response(
+        file_buff.read(),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename=su_kien({nowstr}).docx"},
+    )
