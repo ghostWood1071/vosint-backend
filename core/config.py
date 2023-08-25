@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     PRIVATE_KEY: str
     PUBLIC_KEY: str
 
-    MONGO_DETAILS: str = "mongodb://127.0.0.1:27017"
+    MONGO_DETAILS: str = "mongodb://vosint:vosint_2022@118.70.52.237:27017/?authMechanism=DEFAULT"
     DATABASE_NAME: str = "vosint_db"
 
     ROOT_PATH: str = ""

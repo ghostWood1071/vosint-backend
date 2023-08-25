@@ -1,6 +1,6 @@
 import datetime
 import json
-
+from typing import *
 from bson.objectid import ObjectId
 
 from db.init_db import get_collection_client
@@ -78,3 +78,13 @@ async def unread_by_id(new_id: str, user_id: str):
             await client.update_many(
                 {"_id": ObjectId(new_id)}, {"$set": {"is_read": False}}
             )
+
+
+async def find_news_by_ids(ids: List[str], projection: Dict["str", Any]):
+    list_ids = []
+    for index in ids:
+        list_ids.append(ObjectId(index))
+    news_list = []
+    async for news in client.find({"_id": {"$in": list_ids}}, projection):
+        news_list.append(news)
+    return news_list

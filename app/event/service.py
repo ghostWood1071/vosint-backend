@@ -994,3 +994,22 @@ async def delete_event(id, user_id):
         )
         await client3.delete_one({"_id": ObjectId(id)})
         return 200
+    
+async def get_events_by_ids(ids: List[str]):
+    list_obj_ids = []
+    for event_id in ids:
+        list_obj_ids.append(ObjectId(event_id))
+    events = []
+    async for event in client3.find({"_id": {"$in": list_obj_ids}}):
+        events.append(event)
+    return events
+
+
+async def get_news_by_ids(ids: List[str]):
+    list_obj_ids = []
+    for event_id in ids:
+        list_obj_ids.append(ObjectId(event_id))
+    news = {}
+    async for doc in client2.find({"_id": {"$in": list_obj_ids}}):
+        news[str(doc["_id"])] = f"({doc['source_host_name']}) {doc['data:title']}"
+    return news

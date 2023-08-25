@@ -5,15 +5,20 @@ from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 
 from app.user.services import find_user_by_id
-
+from typing import *
+from datetime import datetime
 from .services import (
     count_news,
     find_news_by_filter_and_paginate,
     find_news_by_id,
     read_by_id,
     unread_by_id,
+    find_news_by_ids,
 )
 from .utils import news_to_json
+from fastapi import Response
+
+from word_exporter import export_news_to_words
 
 router = APIRouter()
 
@@ -90,3 +95,19 @@ async def read_id(id: str, authorize: AuthJWT = Depends()):
     user_id = authorize.get_jwt_subject()
     await unread_by_id(id, user_id)
     return id
+
+
+@router.post("/export-to-word")
+async def export_to_word(ids: List[str]):
+    news = await find_news_by_ids(
+        ids,
+        {"data:title": 1, "pub_date": 1, "data:content": 1, "source_host_name": 1},
+    )
+    file_buff = export_news_to_words(news)
+
+    now_str = datetime.now().strftime("%d-%m-%Y")
+    return Response(
+        file_buff.read(),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename=tin({now_str}).docx"},
+    )
