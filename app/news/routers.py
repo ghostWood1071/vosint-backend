@@ -79,6 +79,7 @@ async def get_news_detail(id: str, authorize: AuthJWT = Depends()):
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=news_to_json(news))
 
+
 @router.post("/read/{id}")
 async def read_id(id: str, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
@@ -107,5 +108,8 @@ async def export_to_word(ids: List[str]):
     return Response(
         file_buff.read(),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f"attachment; filename=tin({now_str}).docx"},
+        headers={
+            "Access-Control-Expose-Headers": "Content-Disposition",
+            "Content-Disposition": f"attachment; filename=tin({now_str}).docx",
+        },
     )

@@ -120,7 +120,9 @@ def export_news_to_words(news):
         insert_html_to_docx(doc, event["data:content"])
         doc_content = doc.add_paragraph("\n")
         doc_content.add_run("Nguồn tin \n").italic = True
-        doc_content.add_run(f"+ {event['source_host_name']}\n").italic = True
+        doc_content.add_run(
+            f"+ ({event['source_host_name']}) {event['data:title']}\n"
+        ).italic = True
     buff = BytesIO()
     doc.save(buff)
     buff.seek(0)

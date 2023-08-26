@@ -407,5 +407,8 @@ async def export_event_to_word(event_ids: List[str]):
     return Response(
         file_buff.read(),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f"attachment; filename=su_kien({nowstr}).docx"},
+        headers={
+            "Access-Control-Expose-Headers": "Content-Disposition",
+            "Content-Disposition": f"attachment; filename=su_kien({nowstr}).docx",
+        },
     )
