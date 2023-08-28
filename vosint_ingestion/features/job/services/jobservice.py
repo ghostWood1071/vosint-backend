@@ -8,8 +8,10 @@ from logger import Logger
 from models import HBaseRepository, MongoRepository
 from scheduler import Scheduler
 from utils import get_time_now_string
+
 # from models import MongoRepository
 from features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
+
 # from nlp.hieu.vosint_v3_document_clustering_main_16_3.create_keyword import Create_vocab_corpus
 # from nlp.keyword_extraction.keywords_ext import Keywords_Ext
 
@@ -31,14 +33,14 @@ class JobService:
         self.__mongo_repo = MongoRepository()
         self.__elastic_search = My_ElasticSearch()
 
-    def run_only(self, id: str, mode_test = None):
+    def run_only(self, id: str, mode_test=None):
         pipeline_dto = self.__pipeline_service.get_pipeline_by_id(id)
         session = Session(
             driver_name="playwright",
             storage_name="hbase",
             actions=pipeline_dto.schema,
             pipeline_id=id,
-            mode_test = mode_test
+            mode_test=mode_test,
         )
         result = session.start()
         # try:
@@ -53,7 +55,10 @@ class JobService:
 
     def get_result_job(self, News, order_spec, pagination_spec, filter):
         results = self.__mongo_repo.get_many_News(
-            News, order_spec=order_spec, pagination_spec=pagination_spec, filter_spec = filter
+            News,
+            order_spec=order_spec,
+            pagination_spec=pagination_spec,
+            filter_spec=filter,
         )
         # results['_id'] = str(results['_id'])
         # results['pub_date'] = str(results['pub_date'])
@@ -68,11 +73,10 @@ class JobService:
         )
 
         return results
-    
+
     def get_log_history_last(self, id: str):
         results = self.__mongo_repo.get_many_his_log(
-            "his_log",
-            {"pipeline_id": id,"log":"error"}
+            "his_log", {"pipeline_id": id, "log": "error"}
         )
 
         return results
@@ -155,26 +159,45 @@ class JobService:
 
     def stop_job(self, id: str):
         Scheduler.instance().remove_job(id)
-    
-    def create_required_keyword(self,newsletter_id):
-        a = self.__mongo_repo.get_one(collection_name="newsletter",filter_spec={"_id":newsletter_id})['news_samples']
-        #print('len aaaaaaaaaa',len(a))
+
+    def create_required_keyword(self, newsletter_id):
+        a = self.__mongo_repo.get_one(
+            collection_name="newsletter", filter_spec={"_id": newsletter_id}
+        )["news_samples"]
+        # print('len aaaaaaaaaa',len(a))
         list_keyword = []
         for i in a:
-            #print(i['title']+i['content'])
-            b = Keywords_Ext().extracting(document=i['title']+i['content'],num_keywords= 10)
-            #print('aaaaaaaaaaaaaaa',b)
+            # print(i['title']+i['content'])
+            b = Keywords_Ext().extracting(
+                document=i["title"] + i["content"], num_keywords=10
+            )
+            # print('aaaaaaaaaaaaaaa',b)
             list_keyword.append(",".join(b))
-    
-        doc = self.__mongo_repo.get_one(collection_name="newsletter",filter_spec={"_id":newsletter_id})
-        doc['required_keyword_extract'] = list_keyword
-        self.__mongo_repo.update_one(collection_name="newsletter",doc=doc)
 
-    def get_news_from_id_source(sefl, id, type,page_number,page_size,start_date,end_date,sac_thai,language_source,text_search ):
-        size = page_number*page_size
-        if type == 'source':
-            name = sefl.__mongo_repo.get_one(collection_name="infor",filter_spec={"_id":id})['name']
-            list_source_name =[]
+        doc = self.__mongo_repo.get_one(
+            collection_name="newsletter", filter_spec={"_id": newsletter_id}
+        )
+        doc["required_keyword_extract"] = list_keyword
+        self.__mongo_repo.update_one(collection_name="newsletter", doc=doc)
+
+    def get_news_from_id_source(
+        sefl,
+        id,
+        type,
+        page_number,
+        page_size,
+        start_date,
+        end_date,
+        sac_thai,
+        language_source,
+        text_search,
+    ):
+        size = page_number * page_size
+        if type == "source":
+            name = sefl.__mongo_repo.get_one(
+                collection_name="infor", filter_spec={"_id": id}
+            )["name"]
+            list_source_name = []
             list_source_name.append(name)
             if list_source_name == []:
                 return []
@@ -188,19 +211,29 @@ class JobService:
             #     'size':size
             # }
             # a = sefl.__elastic_search.query(index_name='vosint',query=query)
-            a =sefl.__elastic_search.search_main(index_name='vosint',query=text_search,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai,list_source_name=list_source_name)
+            a = sefl.__elastic_search.search_main(
+                index_name="vosint",
+                query=text_search,
+                gte=start_date,
+                lte=end_date,
+                lang=language_source,
+                sentiment=sac_thai,
+                list_source_name=list_source_name,
+            )
             for i in range(len(a)):
-                a[i]['_source']['_id'] = a[i]['_source']['id']
-                a[i] = a[i]['_source']
+                a[i]["_source"]["_id"] = a[i]["_source"]["id"]
+                a[i] = a[i]["_source"]
             return a
 
-        elif type == 'source_group':
-            name = sefl.__mongo_repo.get_one(collection_name="Source",filter_spec={"_id":id})['news']
-            #value = []
-            list_source_name =[]
+        elif type == "source_group":
+            name = sefl.__mongo_repo.get_one(
+                collection_name="Source", filter_spec={"_id": id}
+            )["news"]
+            # value = []
+            list_source_name = []
             for i in name:
                 list_source_name.append(i["name"])
-            
+
             if list_source_name == []:
                 return []
             # print(value)
@@ -213,15 +246,19 @@ class JobService:
             #     'size':size
             # }
             # a = sefl.__elastic_search.query(index_name='vosint',query=query)
-            a =sefl.__elastic_search.search_main(index_name='vosint',query=text_search,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai,list_source_name=list_source_name)
+            a = sefl.__elastic_search.search_main(
+                index_name="vosint",
+                query=text_search,
+                gte=start_date,
+                lte=end_date,
+                lang=language_source,
+                sentiment=sac_thai,
+                list_source_name=list_source_name,
+            )
             for i in range(len(a)):
-                a[i]['_source']['_id'] = a[i]['_source']['id']
-                a[i] = a[i]['_source']
+                a[i]["_source"]["_id"] = a[i]["_source"]["id"]
+                a[i] = a[i]["_source"]
             return a
-
-            
-
-
 
     def stop_all_jobs(self, pipeline_ids: list[str] = None):
         # Split pipeline_ids from string to list of strings
@@ -236,3 +273,15 @@ class JobService:
                 Scheduler.instance().remove_job(pipeline_dto._id)
             except InternalError as error:
                 Logger.instance().error(str(error))
+
+    def elt_search(self, start_date, end_date, sac_thai, language_source, text_search):
+        my_es = My_ElasticSearch()
+        pipeline_dtos = my_es.search_main(
+            index_name="vosint",
+            query=text_search,
+            gte=start_date,
+            lte=end_date,
+            lang=language_source,
+            sentiment=sac_thai,
+        )
+        return pipeline_dtos

@@ -4,11 +4,12 @@ from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
 from db.init_db import get_collection_client
+from bson import ObjectId
 
 my_es = My_ElasticSearch()
 
 
-async def get_news_from_newsletter_id__(
+def get_news_from_newsletter_id__(
     list_id=None,
     type=None,
     id_nguon_nhom_nguon=None,
@@ -23,6 +24,7 @@ async def get_news_from_newsletter_id__(
     vital: str = "",
     bookmarks: str = "",
     user_id=None,
+    is_get_read_state=False,
 ):
     # list_id = None
     query = None
@@ -317,28 +319,18 @@ async def get_news_from_newsletter_id__(
         except:
             pass
         pipeline_dtos[i] = pipeline_dtos[i]["_source"].copy()
-
-    client = get_collection_client("News")
-    news_ids = [row["id"] for row in pipeline_dtos]
-    raw_isreads = client.find(
-        {"_id": {"$in": news_ids}}, {"_id": 1, "list_user_read": 1}
-    )
-    isreads = {}
-    async for raw_read in raw_isreads:
-        if raw_read.get("is_read") != None and raw_read.get("list_user_read"):
-            if user_id in raw_read.get("list_user_read"):
-                # isreads.append(str(raw_read.get("_id")))
-                isreads[raw_isreads["_id"]] = True
-    for row in pipeline_dtos:
-        row["is_read"] = True if isreads.get(row["id"]) != None else False
-    return JSONResponse(
-        {
-            "success": True,
-            "total_record": len(pipeline_dtos),
-            "result": pipeline_dtos[
-                (int(page_number) - 1)
-                * int(page_size) : (int(page_number))
-                * int(page_size)
-            ],
-        }
-    )
+    if is_get_read_state:
+        news_ids = [ObjectId(row["id"]) for row in pipeline_dtos]
+        raw_isreads, _ = MongoRepository().get_many("News", {"_id": {"$in": news_ids}})
+        isreads = {}
+        for raw_read in raw_isreads:
+            if (
+                raw_read.get("is_read") != None
+                and raw_read.get("list_user_read") != None
+            ):
+                if user_id in raw_read.get("list_user_read"):
+                    # isreads.append(str(raw_read.get("_id")))
+                    isreads[str(raw_read["_id"])] = True
+        for row in pipeline_dtos:
+            row["is_read"] = True if isreads.get(row["id"]) != None else False
+    return pipeline_dtos
