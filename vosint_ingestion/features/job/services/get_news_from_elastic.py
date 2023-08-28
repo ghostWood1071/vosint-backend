@@ -3,6 +3,7 @@ from models import MongoRepository
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
+from bson import ObjectId
 
 my_es = My_ElasticSearch()
 
@@ -262,6 +263,7 @@ def get_news_from_newsletter_id__(
             lang=language_source,
             sentiment=sac_thai,
             list_id=list_id,
+            size=(int(page_number)) * int(page_size),
         )
     elif text_search == None and list_source_name != None:
         pipeline_dtos = my_es.search_main(
@@ -273,6 +275,7 @@ def get_news_from_newsletter_id__(
             sentiment=sac_thai,
             list_id=list_id,
             list_source_name=list_source_name,
+            size=(int(page_number)) * int(page_size),
         )
     else:
         if list_source_name == None:
@@ -284,6 +287,7 @@ def get_news_from_newsletter_id__(
                 lang=language_source,
                 sentiment=sac_thai,
                 list_id=list_id,
+                size=(int(page_number)) * int(page_size),
             )
         else:
             pipeline_dtos = my_es.search_main(
@@ -295,33 +299,60 @@ def get_news_from_newsletter_id__(
                 sentiment=sac_thai,
                 list_id=list_id,
                 list_source_name=list_source_name,
+                size=(int(page_number)) * int(page_size),
             )
         if list_id == None:
             list_id = []
         for i in range(len(pipeline_dtos)):
             list_id.append(pipeline_dtos[i]["_source"]["id"])
-        pipeline_dtos = my_es.search_main(
-            index_name="vosint",
-            query=text_search,
-            gte=start_date,
-            lte=end_date,
-            lang=language_source,
-            sentiment=sac_thai,
-            list_id=list_id,
-        )
-
+        if text_search and list_id != []:
+            pipeline_dtos = my_es.search_main(
+                index_name="vosint",
+                query=text_search,
+                gte=start_date,
+                lte=end_date,
+                lang=language_source,
+                sentiment=sac_thai,
+                list_id=list_id,
+            )
+    list_id = []
+    query = {}
+    # query['$and']=[]
+    if pipeline_dtos == []:
+        return JSONResponse({"success": True, "total_record": 0, "result": None})
     for i in range(len(pipeline_dtos)):
         try:
-            pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"]["id"]
+            # pipeline_dtos[i]['_source']['_id'] = pipeline_dtos[i]['_source']['id']
+            # print('aaaaaaaaaaaaa',pipeline_dtos[i]['_source']['id'])
+            # list_id.append(pipeline_dtos[i]['_source']['id'])
+
+            list_id.append({"_id": ObjectId(str(pipeline_dtos[i]["_source"]["id"]))})
+
+            if len(list_id) != 0:
+                query["$or"] = list_id
         except:
             pass
-        pipeline_dtos[i] = pipeline_dtos[i]["_source"].copy()
-
+        # pipeline_dtos[i] = pipeline_dtos[i]['_source'].copy()
+    # if str(query) == "{'$and': []}":
+    #     query = {}
+    a, _ = MongoRepository().get_many_News(collection_name="News", filter_spec=query)
+    for document in pipeline_dtos:
+        for key in document:
+            document[key] = str(document[key])
+    for i in a:
+        try:
+            i["_id"] = str(i["_id"])
+        except:
+            pass
+        try:
+            i["pub_date"] = str(i["pub_date"])
+        except:
+            pass
     return JSONResponse(
         {
             "success": True,
-            "total_record": len(pipeline_dtos),
-            "result": pipeline_dtos[
+            "total_record": len(pipeline_dtos) + 1,
+            "result": a[
                 (int(page_number) - 1)
                 * int(page_size) : (int(page_number))
                 * int(page_size)
