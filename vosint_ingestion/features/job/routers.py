@@ -106,7 +106,7 @@ def get_news_from_ttxvn(
 def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
     # authorize.jwt_required()
     user_id = "64aae3b628920312b13905de"  # authorize.get_jwt_subject()
-    print("aa", elt.search_Query)
+    # print("aa", elt.search_Query)
     vital = ""
     bookmarks = ""
     if elt.groupType == "vital":
@@ -1015,8 +1015,8 @@ def get_result_job(
     bookmarks: str = "",
 ):
     print(text_search)
-    authorize.jwt_required()
-    user_id = authorize.get_jwt_subject()
+    # authorize.jwt_required()
+    user_id = "64aae3b628920312b13905de" #authorize.get_jwt_subject()
     # print(user_id)
     try:
         query = {}
@@ -1117,6 +1117,7 @@ def get_result_job(
                         {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
                     )
         elif text_search != "":
+            print("vào rồi nhé")
             tmp = my_es.search_main(index_name="vosint", query=text_search)
             # print(text_search)
             # print(tmp)

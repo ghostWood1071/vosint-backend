@@ -14,7 +14,7 @@ from core.config import settings
 class My_ElasticSearch:
     def __init__(
         self,
-        host=["http://192.168.1.99:9200"],
+        host=["http://118.70.52.237:9200"],
         user="USER",
         password="PASS",
         verify_certs=False,
@@ -406,6 +406,23 @@ class My_ElasticSearch:
         _lang_query = " OR ".join(_lang)
         # print(_sentiment)
         # print(_lang_query)
+        sorting = [
+            {
+                "_script": {
+                    "type": "number",
+                    "script": {
+                        "source": """
+                            if (doc.containsKey('pub_date')) {
+                                return doc['pub_date'].value.getMillis();
+                            } else {
+                                return 0;
+                            }
+                        """
+                    },
+                    "order": "desc",  # You can change the sorting order (asc or desc) as needed
+                }
+            }
+        ]
         simple_filter = {
             "query": {
                 "bool": {
@@ -427,7 +444,7 @@ class My_ElasticSearch:
                     "filter": {"range": {"pub_date": {"gte": _gte, "lte": _lte}}},
                 }
             },
-            "sort": [{"pub_date": {"order": "desc"}}],
+            # "sort": sorting,  # [{"pub_date": {"order": "desc", "ignore_unmapped": True}}],
             "size": size,
         }
         if list_source_name != None:
@@ -456,9 +473,10 @@ class My_ElasticSearch:
         #     }
         #     simple_filter["query"]["bool"]["must"].append(a)
 
-        print(simple_filter)
+        print("asdasdasdasdasd:", simple_filter)
 
-        searched = self.es.search(index=index_name, body=simple_filter)
+        # searched = self.es.search(index=index_name, body=simple_filter)
+        searched = self.es.search(index=index_name, body={"query": {"match_all": {}}})
         result = []
         hits = searched["hits"]["hits"]
         if hits:
@@ -525,6 +543,7 @@ class My_ElasticSearch:
         _lang_query = " OR ".join(_lang)
         # print(_sentiment)
         # print(_lang_query)
+
         simple_filter = {
             "query": {
                 "bool": {
@@ -534,7 +553,7 @@ class My_ElasticSearch:
                     "filter": {"range": {"PublishDate": {"gte": _gte, "lte": _lte}}},
                 }
             },
-            "sort": [{"PublishDate": {"order": "desc"}}],
+            "sort": [{"PublishDate": {"order": "desc", "ignore_unmapped": True}}],
             "size": size,
         }
         if list_source_name != None:
@@ -563,7 +582,7 @@ class My_ElasticSearch:
         #     }
         #     simple_filter["query"]["bool"]["must"].append(a)
 
-        print(simple_filter)
+        print("asdasdasdasd:", simple_filter)
 
         searched = self.es.search(index=index_name, body=simple_filter)
         result = []
