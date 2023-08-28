@@ -14,7 +14,7 @@ from core.config import settings
 class My_ElasticSearch:
     def __init__(
         self,
-        host=[settings.ELASTIC_CONNECT],
+        host=["http://localhost:9200"],
         user="USER",
         password="PASS",
         verify_certs=False,
