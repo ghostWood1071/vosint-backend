@@ -69,7 +69,7 @@ async def unread_by_id(new_id: str, user_id: str):
             return await client.update_many(
                 {"_id": ObjectId(new_id)},
                 {
-                    "$set": {"is_read": True},
+                    "$set": {"is_read": False},
                     "$pull": {"list_user_read": {"$in": [user_id]}},
                 },
             )
