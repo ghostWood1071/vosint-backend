@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     mongo_passwd = "vosint_2022"
     mongo_db_name = "vosint_db"
 
-    ELASTIC_CONNECT: str = "http://192.168.1.99:9200"
+    ELASTIC_CONNECT: str = "http://localhost:9200"
 
     ROOT_PATH: str = ""
 

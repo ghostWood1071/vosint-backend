@@ -103,10 +103,9 @@ def get_news_from_ttxvn(
 
 
 @router.post("/api/get_news_from_elt")
-def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
+async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
     # authorize.jwt_required()
-    #user_id = "" #authorize.get_jwt_subject()
-    user_id = "64aae3b628920312b13905de" #authorize.get_jwt_subject()
+    user_id = "64aae3b628920312b13905de"  # authorize.get_jwt_subject()
     print("aa", elt.search_Query)
     vital = ""
     bookmarks = ""
@@ -114,7 +113,7 @@ def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
         vital = "1"
     elif elt.groupType == "bookmarks":
         bookmarks = "1"
-    result_elt = get_news_from_newsletter_id__(
+    result_elt = await get_news_from_newsletter_id__(
         user_id=user_id,
         list_id=elt.newList,
         type=elt.type,
@@ -320,163 +319,171 @@ def get_event_from_newsletter_list_id(
         infor_tree.append(a)
 
         try:
-            if news_letter_id != '' and news_letter_id != None:
-                a = MongoRepository().get_one(collection_name='newsletter',filter_spec={"_id":news_letter_id})
+            if news_letter_id != "" and news_letter_id != None:
+                a = MongoRepository().get_one(
+                    collection_name="newsletter", filter_spec={"_id": news_letter_id}
+                )
 
-                if news_letter_id != '' and a['tag'] == 'gio_tin':
+                if news_letter_id != "" and a["tag"] == "gio_tin":
                     ls = []
                     kt_rong = 1
                     try:
-                        for new_id in a['news_id']:
+                        for new_id in a["news_id"]:
                             ls.append(str(new_id))
                     except:
                         pass
-                    if ls ==[]:
+                    if ls == []:
                         return []
-                    list_id = ls 
+                    list_id = ls
 
-                if news_letter_id != '' and a['tag'] != 'gio_tin':
-                    if a['is_sample']:
-                        query = ''
+                if news_letter_id != "" and a["tag"] != "gio_tin":
+                    if a["is_sample"]:
+                        query = ""
                         first_flat = 1
                         try:
-                            for i in a['required_keyword_extract']:
+                            for i in a["required_keyword_extract"]:
                                 if first_flat == 1:
-                                    first_flat = 0 
-                                    query += '('
+                                    first_flat = 0
+                                    query += "("
                                 else:
-                                    query += '| ('
-                                j = i.split(',')
-                                
+                                    query += "| ("
+                                j = i.split(",")
+
                                 for k in j:
-                                    query += '+'+'\"' + k + '\"'
-                                query += ')'
+                                    query += "+" + '"' + k + '"'
+                                query += ")"
                         except:
                             pass
                     else:
-
                         first_lang = 1
-                        query = ''
+                        query = ""
                         ### vi
-                        query_vi = ''
+                        query_vi = ""
                         first_flat = 1
                         try:
-                            for i in a['keyword_vi']['required_keyword']:
+                            for i in a["keyword_vi"]["required_keyword"]:
                                 if first_flat == 1:
-                                    first_flat = 0 
-                                    query_vi += '('
+                                    first_flat = 0
+                                    query_vi += "("
                                 else:
-                                    query_vi += '| ('
-                                j = i.split(',')
-                                
+                                    query_vi += "| ("
+                                j = i.split(",")
+
                                 for k in j:
-                                    query_vi += '+'+'\"' + k + '\"'
-                                query_vi += ')'
+                                    query_vi += "+" + '"' + k + '"'
+                                query_vi += ")"
                         except:
                             pass
                         try:
-                            j = a['keyword_vi']['exclusion_keyword'].split(',')
+                            j = a["keyword_vi"]["exclusion_keyword"].split(",")
                             for k in j:
-                                query_vi += '-'+'\"' + k + '\"'
+                                query_vi += "-" + '"' + k + '"'
                         except:
                             pass
 
                         ### cn
-                        query_cn = ''
+                        query_cn = ""
                         first_flat = 1
                         try:
-                            for i in a['keyword_vn']['required_keyword']:
+                            for i in a["keyword_vn"]["required_keyword"]:
                                 if first_flat == 1:
-                                    first_flat = 0 
-                                    query_cn += '('
+                                    first_flat = 0
+                                    query_cn += "("
                                 else:
-                                    query_cn += '| ('
-                                j = i.split(',')
-                                
+                                    query_cn += "| ("
+                                j = i.split(",")
+
                                 for k in j:
-                                    query_cn += '+'+'\"' + k + '\"'
-                                query_cn += ')'
+                                    query_cn += "+" + '"' + k + '"'
+                                query_cn += ")"
                         except:
                             pass
                         try:
-                            j = a['keyword_cn']['exclusion_keyword'].split(',')
+                            j = a["keyword_cn"]["exclusion_keyword"].split(",")
                             for k in j:
-                                query_cn += '-'+'\"' + k + '\"'
+                                query_cn += "-" + '"' + k + '"'
                         except:
                             pass
 
                         ### cn
-                        query_ru = ''
+                        query_ru = ""
                         first_flat = 1
                         try:
-                            for i in a['keyword_ru']['required_keyword']:
+                            for i in a["keyword_ru"]["required_keyword"]:
                                 if first_flat == 1:
-                                    first_flat = 0 
-                                    query_ru += '('
+                                    first_flat = 0
+                                    query_ru += "("
                                 else:
-                                    query_ru += '| ('
-                                j = i.split(',')
-                                
+                                    query_ru += "| ("
+                                j = i.split(",")
+
                                 for k in j:
-                                    query_ru += '+'+'\"' + k + '\"'
-                                query_ru += ')'
+                                    query_ru += "+" + '"' + k + '"'
+                                query_ru += ")"
                         except:
                             pass
                         try:
-                            j = a['keyword_ru']['exclusion_keyword'].split(',')
+                            j = a["keyword_ru"]["exclusion_keyword"].split(",")
                             for k in j:
-                                query_ru += '-'+'\"' + k + '\"'
+                                query_ru += "-" + '"' + k + '"'
                         except:
                             pass
 
                         ### cn
-                        query_en = ''
+                        query_en = ""
                         first_flat = 1
                         try:
-                            for i in a['keyword_en']['required_keyword']:
+                            for i in a["keyword_en"]["required_keyword"]:
                                 if first_flat == 1:
-                                    first_flat = 0 
-                                    query_en += '('
+                                    first_flat = 0
+                                    query_en += "("
                                 else:
-                                    query_en += '| ('
-                                j = i.split(',')
-                                
+                                    query_en += "| ("
+                                j = i.split(",")
+
                                 for k in j:
-                                    query_en += '+'+'\"' + k + '\"'
-                                query_en += ')'
+                                    query_en += "+" + '"' + k + '"'
+                                query_en += ")"
                         except:
                             pass
                         try:
-                            j = a['keyword_en']['exclusion_keyword'].split(',')
+                            j = a["keyword_en"]["exclusion_keyword"].split(",")
                             for k in j:
-                                query_en += '-'+'\"' + k + '\"'
+                                query_en += "-" + '"' + k + '"'
                         except:
                             pass
-                        
-                        if query_vi != '':
+
+                        if query_vi != "":
                             if first_lang == 1:
                                 first_lang = 0
-                                query += '('+query_vi+')'
-                        if query_en != '':
+                                query += "(" + query_vi + ")"
+                        if query_en != "":
                             if first_lang == 1:
                                 first_lang = 0
-                                query += '('+query_en+')'
+                                query += "(" + query_en + ")"
                             else:
-                                query += '| ('+query_en+')'
-                        if query_ru != '':
+                                query += "| (" + query_en + ")"
+                        if query_ru != "":
                             if first_lang == 1:
                                 first_lang = 0
-                                query += '('+query_ru+')'
+                                query += "(" + query_ru + ")"
                             else:
-                                query += '| ('+query_ru+')'
-                        if query_cn != '':
+                                query += "| (" + query_ru + ")"
+                        if query_cn != "":
                             if first_lang == 1:
                                 first_lang = 0
-                                query += '('+query_cn+')'
+                                query += "(" + query_cn + ")"
                             else:
-                                query += '| ('+query_cn+')'
-        
-            pipeline_dtos = my_es.search_main(index_name='vosint',query=query,gte=start_date,lte=end_date,lang=language_source,sentiment=sac_thai)
+                                query += "| (" + query_cn + ")"
+
+            pipeline_dtos = my_es.search_main(
+                index_name="vosint",
+                query=query,
+                gte=start_date,
+                lte=end_date,
+                lang=language_source,
+                sentiment=sac_thai,
+            )
             list_link = []
             for i in pipeline_dtos:
                 list_link.append({"data:url": i["_source"]["data:url"]})
@@ -488,9 +495,9 @@ def get_event_from_newsletter_list_id(
             )
             list_id = []
             for i in a:
-                list_id.append(str(i['_id']))
-            
-            a,_ = MongoRepository().get_many_d(collection_name='events')
+                list_id.append(str(i["_id"]))
+
+            a, _ = MongoRepository().get_many_d(collection_name="events")
 
             sk = []
             for i in a:
@@ -551,6 +558,7 @@ def get_event_from_newsletter_list_id(
             ],
         }
     )
+
 
 @router.get("/api/get_news_from_newsletter_id")
 def get_news_from_newsletter_id(
