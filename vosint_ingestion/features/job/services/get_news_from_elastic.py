@@ -333,4 +333,7 @@ def get_news_from_newsletter_id__(
                     isreads[str(raw_read["_id"])] = True
         for row in pipeline_dtos:
             row["is_read"] = True if isreads.get(row["id"]) != None else False
+            if row.get("list_user_read") is not None:
+                row.pop("list_user_read")
+                row["list_user_read"] = [user_id]
     return pipeline_dtos

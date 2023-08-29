@@ -11,6 +11,7 @@ import json
 from core.config import settings
 
 
+# http://118.70.52.237:9200/
 class My_ElasticSearch:
     def __init__(
         self,
