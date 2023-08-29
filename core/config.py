@@ -35,6 +35,8 @@ class Settings(BaseSettings):
 
     ROOT_PATH: str = ""
 
+    SUMMARIZE_API = "http://sumthesis.aiacademy.edu.vn/ext"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

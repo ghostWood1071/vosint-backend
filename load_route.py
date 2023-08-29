@@ -18,6 +18,7 @@ from vosint_ingestion.features.job.routers import router as Job
 
 # from vosint_ingestion.features.nlp.routers import router as Nlp
 from vosint_ingestion.features.pipeline.routers import router as PipeLine
+from app.nlp.routers import router as NLPRouter
 
 ROUTE_LIST = [
     {"route": AuthRouter, "tags": ["Xác Thực"], "prefix": ""},
@@ -28,7 +29,7 @@ ROUTE_LIST = [
     {"route": ObjectRouter, "tags": ["Object"], "prefix": "/object"},
     {"route": Job, "tags": ["Job"], "prefix": "/Job"},
     {"route": PipeLine, "tags": ["Pipeline"], "prefix": "/Pipeline"},
-    # {"route": Nlp, "tags": ["Nlp"], "prefix": "/Nlp"},
+    {"route": NLPRouter, "tags": ["NLP"], "prefix": "/nlp"},
     {"route": ProxyRouter, "tags": ["Proxy"], "prefix": "/Proxy"},
     {"route": InformationRouter, "tags": ["Source"], "prefix": "/Source"},
     {"route": ManageNewsRouter, "tags": ["Source-group"], "prefix": "/Source-group"},
