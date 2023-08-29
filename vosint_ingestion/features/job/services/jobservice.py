@@ -128,6 +128,8 @@ class JobService:
             )
 
         pipeline_id = str(id)
+        print("this is id:", id)
+        # start_job(pipeline_dto.schema, id)
         Scheduler.instance().add_job(
             id, start_job, pipeline_dto.cron_expr, args=[pipeline_dto.schema, id]
         )
