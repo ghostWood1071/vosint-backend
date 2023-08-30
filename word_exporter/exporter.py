@@ -104,10 +104,30 @@ def insert_html_to_docx(doc, html):
             p.add_run(run)
 
 
+def add_hyperlink_into_run(paragraph, run, url):
+    # runs = paragraph.runs
+    # for i in range(len(runs)):
+    #     if runs[i].text == run.text:
+    #         break
+    part = paragraph.part
+    r_id = part.relate_to(
+        url, docx.opc.constants.RELATIONSHIP_TYPE.HYPERLINK, is_external=True
+    )
+    hyperlink = docx.oxml.shared.OxmlElement("w:hyperlink")
+    hyperlink.set(
+        docx.oxml.shared.qn("r:id"),
+        r_id,
+    )
+    hyperlink.append(run._r)
+    paragraph._p.insert(2, hyperlink)
+    run.font.color.rgb = docx.shared.RGBColor(0, 0, 255)
+    run.italic = True
+
+
 def export_news_to_words(news):
     doc: Document = Document()
     for event in news:
-        heading = doc.add_heading(event["data:title"], level=1)
+        heading = doc.add_heading("-" + event["data:title"], level=1)
         heading_run = heading.runs[0]
         heading_run.bold = True
         heading_run.italic = True
@@ -120,9 +140,10 @@ def export_news_to_words(news):
         insert_html_to_docx(doc, event["data:content"])
         doc_content = doc.add_paragraph("\n")
         doc_content.add_run("Nguồn tin \n").italic = True
-        doc_content.add_run(
+        doc_run = doc_content.add_run(
             f"+ ({event['source_host_name']}) {event['data:title']}\n"
-        ).italic = True
+        )
+        add_hyperlink_into_run(doc_content, doc_run, event["data:url"])
     buff = BytesIO()
     doc.save(buff)
     buff.seek(0)

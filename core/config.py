@@ -20,22 +20,23 @@ class Settings(BaseSettings):
     PRIVATE_KEY: str
     PUBLIC_KEY: str
 
-    MONGO_DETAILS: str = (
-        "mongodb://vosint:vosint_2022@118.70.52.237:27017/?authMechanism=DEFAULT"
-    )
-    DATABASE_NAME: str = "vosint_db"
+    # MONGO_DETAILS: str = (
+    #     "mongodb://vosint:vosint_2022@118.70.52.237:27017/?authMechanism=DEFAULT"
+    # )
+    MONGO_DETAILS: str  # = "mongodb://localhost:27017"
+    DATABASE_NAME: str  # = "vosint_db"
 
-    mong_host = "118.70.52.237"
-    mongo_port = 27017
-    mongo_username = "vosint"
-    mongo_passwd = "vosint_2022"
-    mongo_db_name = "vosint_db"
+    mong_host: str  # = "localhost"  # "118.70.52.237"
+    mongo_port: str  # = 27017
+    mongo_username: str  # = "vosint"
+    mongo_passwd: str  # = "vosint_2022"
+    mongo_db_name: str  # = "vosint_db"
 
-    ELASTIC_CONNECT: str = "http://localhost:9200"
+    ELASTIC_CONNECT: str  # = "http://localhost:9200"
 
-    ROOT_PATH: str = ""
+    ROOT_PATH: str  # = ""
 
-    SUMMARIZE_API = "http://sumthesis.aiacademy.edu.vn/ext"
+    SUMMARIZE_API: str  # = "http://sumthesis.aiacademy.edu.vn/ext"
 
     class Config:
         env_file = ".env"

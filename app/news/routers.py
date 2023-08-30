@@ -13,6 +13,7 @@ from .services import (
     read_by_id,
     unread_by_id,
     find_news_by_ids,
+    check_news_contain,
 )
 from .utils import news_to_json
 from fastapi import Response
@@ -100,7 +101,13 @@ async def read_id(id: str, authorize: AuthJWT = Depends()):
 async def export_to_word(ids: List[str]):
     news = await find_news_by_ids(
         ids,
-        {"data:title": 1, "pub_date": 1, "data:content": 1, "source_host_name": 1},
+        {
+            "data:title": 1,
+            "pub_date": 1,
+            "data:content": 1,
+            "source_host_name": 1,
+            "data:url": 1,
+        },
     )
     file_buff = export_news_to_words(news)
 
@@ -113,3 +120,8 @@ async def export_to_word(ids: List[str]):
             "Content-Disposition": f"attachment; filename=tin({now_str}).docx",
         },
     )
+
+
+@router.post("/check-news-contain-keywords")
+def add_news_to_objects(object_ids: List[str], news_ids: List[str]):
+    return check_news_contain(object_ids, news_ids)

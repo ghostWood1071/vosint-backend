@@ -15,13 +15,13 @@ from core.config import settings
 class My_ElasticSearch:
     def __init__(
         self,
-        host=["http://localhost:9200"],
+        host="",
         user="USER",
         password="PASS",
         verify_certs=False,
     ):
         """Constructor function that initializes the ElasticSearch object with connection parameters."""
-        self.host = host
+        self.host = settings.ELASTIC_CONNECT
         self.user = user
         self.password = password
         self.verify_certs = verify_certs
@@ -370,6 +370,7 @@ class My_ElasticSearch:
         list_id=None,
         text_search=None,
     ):
+        print("vào rồi đù đĩ mẹ mày asdddddddddddddddddddddddddd")
         """Tìm kiếm document theo query
         Args:
             index_name (str): Tên index
@@ -384,7 +385,7 @@ class My_ElasticSearch:
             query = "*"
         _query_string = self.query_process(query)
         # print(_query_string)
-        _fields = ["data:title^2", "data:content"]
+        _fields = ["keywords"]  # ["data:title^2", "data:content", "keywords"]
         if gte is None:
             _gte = "1990-03-28T00:00:00Z"
         else:
@@ -444,15 +445,16 @@ class My_ElasticSearch:
         if list_id != None and list_id != []:
             _id_query_list_id = " OR ".join(list_id)
             a = {"query_string": {"query": _id_query_list_id, "default_field": "id"}}
+
             simple_filter["query"]["bool"]["must"].append(a)
 
         # if text_search != None:
-        #     # text_search = self.query_process(text_search)
-        #     # _id_query_list_id = " OR ".join(list_id)
+        #     text_search = self.query_process(text_search)
+        #     _id_query_list_id = " OR ".join(list_id)
         #     a = {
-        #         "query_string":{
+        #         "query_string": {
         #             "query": text_search,
-        #             "default_field": ["data:title", "data:content"]
+        #             "default_field": ["data:title", "data:content"],
         #         }
         #     }
         #     simple_filter["query"]["bool"]["must"].append(a)

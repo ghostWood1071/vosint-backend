@@ -6,6 +6,11 @@ from bson.objectid import ObjectId
 from db.init_db import get_collection_client
 
 from .utils import news_to_json
+from vosint_ingestion.models import MongoRepository
+from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
+    My_ElasticSearch,
+)
+from elasticsearch import helpers
 
 client = get_collection_client("News")
 
@@ -88,3 +93,60 @@ async def find_news_by_ids(ids: List[str], projection: Dict["str", Any]):
     async for news in client.find({"_id": {"$in": list_ids}}, projection):
         news_list.append(news)
     return news_list
+
+
+def add_keywords_to_elasticsearch(index, keywords, doc_ids):
+    es = My_ElasticSearch()
+    actions = []
+    for document_id in doc_ids:
+        update_action = {
+            "_op_type": "update",
+            "_index": index,
+            "_id": document_id,
+            "script": {
+                "source": """
+                if (ctx._source.{keywords} == null) {{
+                    ctx._source.{keywords} = [];
+                }}
+                ctx._source.{keywords}.addAll(params.values_to_add);
+            """,
+                "params": {"values_to_add": keywords},
+            },
+        }
+    actions.append(update_action)
+    ressult = helpers.bulk(es.es, actions)
+    print(ressult)
+
+
+def get_check_news_contain_list(news_ids, keywords):
+    object_filter = [ObjectId(object_id) for object_id in news_ids]
+    news, _ = MongoRepository().get_many("News", {"_id": {"$in": object_filter}})
+    for item in news:
+        item["is_contain"] = False
+        item["_id"] = str(item["_id"])
+        item["pub_date"] = str(item["pub_date"])
+        for keyword in keywords:
+            if (
+                keyword.lower() in item["title"].lower()
+                or keyword.lower() in item["data:content"].lower()
+                or keyword.lower() in item["keywords"]
+            ):
+                item["is_contain"] = True
+                break
+    return news
+
+
+def check_news_contain(object_ids: List[str], news_ids: List[str]):
+    object_filter = [ObjectId(object_id) for object_id in object_ids]
+    objects, _ = MongoRepository().get_many("object", {"_id": {"$in": object_filter}})
+    keywords = {}
+    for object in objects:
+        if object.get("keywords"):
+            keywords[str(object["_id"])] = []
+            for keyword in list(object["keywords"].values()):
+                item_key_words = [key.strip() for key in keyword.split(",")]
+                while "" in keywords:
+                    keywords.remove("")
+                keywords[str(object["_id"])].extend(item_key_words)
+    result = get_check_news_contain_list(news_ids, keywords)
+    return result

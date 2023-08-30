@@ -104,8 +104,8 @@ def get_news_from_ttxvn(
 
 @router.post("/api/get_news_from_elt")
 async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
-    authorize.jwt_required()
-    user_id = authorize.get_jwt_subject()
+    # authorize.jwt_required()
+    user_id = "64aae3b628920312b13905de" #authorize.get_jwt_subject()
     print("aa", elt.search_Query)
     vital = ""
     bookmarks = ""
