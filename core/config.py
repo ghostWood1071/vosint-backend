@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     DATABASE_NAME: str  # = "vosint_db"
 
     mong_host: str  # = "localhost"  # "118.70.52.237"
-    mongo_port: str  # = 27017
+    mongo_port: int  # = 27017
     mongo_username: str  # = "vosint"
     mongo_passwd: str  # = "vosint_2022"
     mongo_db_name: str  # = "vosint_db"
