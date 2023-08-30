@@ -14,6 +14,7 @@ from .services import (
     unread_by_id,
     find_news_by_ids,
     check_news_contain,
+    remove_news_from_object,
 )
 from .utils import news_to_json
 from fastapi import Response
@@ -127,3 +128,9 @@ def add_news_to_objects(
     object_ids: List[str], news_ids: List[str], new_keywords: List[str] = []
 ):
     return check_news_contain(object_ids, news_ids, new_keywords)
+
+
+@router.post("/remove-news-from-object")
+def add_news_to_objects(object_id: str, news_ids: List[str]):
+    remove_news_from_object(news_ids, object_id)
+    return {"status_code": 200}
