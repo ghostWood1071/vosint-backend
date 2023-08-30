@@ -136,17 +136,21 @@ def get_check_news_contain_list(news_ids, keywords):
     return news
 
 
-def check_news_contain(object_ids: List[str], news_ids: List[str]):
+def check_news_contain(
+    object_ids: List[str], news_ids: List[str], new_keywords: List[str] = []
+):
     object_filter = [ObjectId(object_id) for object_id in object_ids]
     objects, _ = MongoRepository().get_many("object", {"_id": {"$in": object_filter}})
-    keywords = {}
+    keywords = []
     for object in objects:
         if object.get("keywords"):
-            keywords[str(object["_id"])] = []
             for keyword in list(object["keywords"].values()):
                 item_key_words = [key.strip() for key in keyword.split(",")]
-                while "" in keywords:
-                    keywords.remove("")
-                keywords[str(object["_id"])].extend(item_key_words)
+                keywords.extend(item_key_words)
+    if len(new_keywords) > 0:
+        keywords.extend(new_keywords)
+    while "" in keywords:
+        keywords.remove("")
+    print(keywords)
     result = get_check_news_contain_list(news_ids, keywords)
     return result

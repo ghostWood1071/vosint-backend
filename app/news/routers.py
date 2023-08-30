@@ -123,5 +123,7 @@ async def export_to_word(ids: List[str]):
 
 
 @router.post("/check-news-contain-keywords")
-def add_news_to_objects(object_ids: List[str], news_ids: List[str]):
-    return check_news_contain(object_ids, news_ids)
+def add_news_to_objects(
+    object_ids: List[str], news_ids: List[str], new_keywords: List[str] = []
+):
+    return check_news_contain(object_ids, news_ids, new_keywords)
