@@ -127,7 +127,7 @@ def get_check_news_contain_list(news_ids, keywords):
         item["pub_date"] = str(item["pub_date"])
         for keyword in keywords:
             if (
-                keyword.lower() in item["title"].lower()
+                keyword.lower() in item["data:title"].lower()
                 or keyword.lower() in item["data:content"].lower()
                 or keyword.lower() in item["keywords"]
             ):
