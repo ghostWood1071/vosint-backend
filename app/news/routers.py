@@ -11,7 +11,7 @@ from .services import (
     find_news_by_filter_and_paginate,
     find_news_by_id,
     read_by_id,
-    unread_by_id,
+    unread_news,
     find_news_by_ids,
     check_news_contain_keywords,
     remove_news_from_object,
@@ -83,20 +83,20 @@ async def get_news_detail(id: str, authorize: AuthJWT = Depends()):
     return JSONResponse(status_code=status.HTTP_200_OK, content=news_to_json(news))
 
 
-@router.post("/read/{id}")
-async def read_id(id: str, authorize: AuthJWT = Depends()):
+@router.post("/read")
+async def read_id(news_ids: List[str], authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    await read_by_id(id, user_id)
-    return id
+    await read_by_id(news_ids, user_id)
+    return news_ids
 
 
-@router.post("/unread/{id}")
-async def read_id(id: str, authorize: AuthJWT = Depends()):
+@router.post("/unread")
+async def read_id(news_ids: List[str], authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    await unread_by_id(id, user_id)
-    return id
+    await unread_news(news_ids, user_id)
+    return news_ids
 
 
 @router.post("/export-to-word")

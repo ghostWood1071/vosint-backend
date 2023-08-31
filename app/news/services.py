@@ -60,29 +60,20 @@ async def find_news_by_id(news_id: ObjectId, projection):
     return await client.find_one({"_id": news_id}, projection)
 
 
-async def read_by_id(new_id: str, user_id: str):
+async def read_by_id(news_ids: List[str], user_id: str):
+    news_id_list = [ObjectId(news_id) for news_id in news_ids]
     return await client.update_many(
-        {"_id": ObjectId(new_id)},
-        {"$set": {"is_read": True}, "$addToSet": {"list_user_read": user_id}},
+        {"_id": {"$in": news_id_list}, "list_user_read": {"$not": {"$all": [user_id]}}},
+        {"$set": {"is_read": True}, "$push": {"list_user_read": user_id}},
     )
 
 
-async def unread_by_id(new_id: str, user_id: str):
-    news = await client.find().to_list(length=None)
-    for item in news:
-        if "list_user_read" in item:
-            return await client.update_many(
-                {"_id": ObjectId(new_id)},
-                {
-                    "$set": {"is_read": False},
-                    "$pull": {"list_user_read": {"$in": [user_id]}},
-                },
-            )
-
-        if item["list_user_read"] == [] or item["list_user_read"] not in news:
-            await client.update_many(
-                {"_id": ObjectId(new_id)}, {"$set": {"is_read": False}}
-            )
+async def unread_news(new_ids: List[str], user_id: str):
+    news_id_list = [ObjectId(row_new) for row_new in new_ids]
+    news_filter = {"_id": {"$in": news_id_list}}
+    return await client.update_many(
+        news_filter, {"$pull": {"list_user_read": {"$in": [user_id]}}}
+    )
 
 
 async def find_news_by_ids(ids: List[str], projection: Dict["str", Any]):
