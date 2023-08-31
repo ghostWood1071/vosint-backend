@@ -136,7 +136,7 @@ def get_check_news_contain_list(news_ids, keywords):
     return news
 
 
-def check_news_contain(
+def check_news_contain_keywords(
     object_ids: List[str], news_ids: List[str], new_keywords: List[str] = []
 ):
     object_filter = [ObjectId(object_id) for object_id in object_ids]

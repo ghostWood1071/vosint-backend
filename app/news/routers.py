@@ -13,7 +13,7 @@ from .services import (
     read_by_id,
     unread_by_id,
     find_news_by_ids,
-    check_news_contain,
+    check_news_contain_keywords,
     remove_news_from_object,
     add_news_to_object,
 )
@@ -128,7 +128,7 @@ async def export_to_word(ids: List[str]):
 def check_news_contain(
     object_ids: List[str], news_ids: List[str], new_keywords: List[str] = []
 ):
-    return check_news_contain(object_ids, news_ids, new_keywords)
+    return check_news_contain_keywords(object_ids, news_ids, new_keywords)
 
 
 @router.post("/remove-news-from-object")
