@@ -1231,8 +1231,8 @@ def get_log_history_error_or_getnews(
     )
 
 
-@router.post("/api/elt_search")
-def elt_search(
+@router.post("/search_news_from_object")
+def search_news_from_object(
     page_number=1,
     page_size=30,
     start_date: str = None,
