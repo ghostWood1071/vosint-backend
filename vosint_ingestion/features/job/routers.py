@@ -105,7 +105,7 @@ def get_news_from_ttxvn(
 @router.post("/api/get_news_from_elt")
 async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
     # authorize.jwt_required()
-    user_id = "64aae3b628920312b13905de" #authorize.get_jwt_subject()
+    user_id = "64aae3b628920312b13905de"  # authorize.get_jwt_subject()
     print("aa", elt.search_Query)
     vital = ""
     bookmarks = ""
@@ -1240,6 +1240,7 @@ def elt_search(
     sac_thai: str = None,
     language_source: str = None,
     text_search=None,
+    object_id=None,
 ):
     try:
         start_date = (
@@ -1264,14 +1265,14 @@ def elt_search(
     except:
         pass
 
-    return JSONResponse(
-        job_controller.elt_search(
-            page_number,
-            page_size,
-            start_date,
-            end_date,
-            sac_thai,
-            language_source,
-            text_search,
-        )
+    data = job_controller.search_news_by_object(
+        page_number,
+        page_size,
+        start_date,
+        end_date,
+        sac_thai,
+        language_source,
+        text_search,
+        object_id,
     )
+    return JSONResponse(data, status_code=200)

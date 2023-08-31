@@ -276,7 +276,9 @@ class JobService:
             except InternalError as error:
                 Logger.instance().error(str(error))
 
-    def elt_search(self, start_date, end_date, sac_thai, language_source, text_search):
+    def elt_search(
+        self, start_date, end_date, sac_thai, language_source, text_search, ids
+    ):
         my_es = My_ElasticSearch()
         pipeline_dtos = my_es.search_main(
             index_name="vosint",
@@ -285,5 +287,6 @@ class JobService:
             lte=end_date,
             lang=language_source,
             sentiment=sac_thai,
+            ids=ids,
         )
         return pipeline_dtos

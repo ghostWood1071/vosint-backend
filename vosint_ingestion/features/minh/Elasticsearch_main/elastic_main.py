@@ -369,8 +369,9 @@ class My_ElasticSearch:
         size=100,
         list_id=None,
         text_search=None,
+        ids=None,
     ):
-        print("vào rồi đù đĩ mẹ mày asdddddddddddddddddddddddddd")
+        print(ids)
         """Tìm kiếm document theo query
         Args:
             index_name (str): Tên index
@@ -385,7 +386,7 @@ class My_ElasticSearch:
             query = "*"
         _query_string = self.query_process(query)
         # print(_query_string)
-        _fields = ["keywords"]  # ["data:title^2", "data:content", "keywords"]
+        _fields = ["data:title^2", "data:content", "keywords"]
         if gte is None:
             _gte = "1990-03-28T00:00:00Z"
         else:
@@ -448,16 +449,8 @@ class My_ElasticSearch:
 
             simple_filter["query"]["bool"]["must"].append(a)
 
-        # if text_search != None:
-        #     text_search = self.query_process(text_search)
-        #     _id_query_list_id = " OR ".join(list_id)
-        #     a = {
-        #         "query_string": {
-        #             "query": text_search,
-        #             "default_field": ["data:title", "data:content"],
-        #         }
-        #     }
-        #     simple_filter["query"]["bool"]["must"].append(a)
+        if ids is not None:
+            simple_filter["query"]["bool"]["should"] = {"terms": {"_id": ids}}
 
         print(simple_filter)
 

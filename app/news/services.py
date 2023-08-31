@@ -156,30 +156,21 @@ def check_news_contain(
     return result
 
 
-def remove_news_from_object(news_ids: List[str], object_id: str):
-    object_filter = {"_id": ObjectId(object_id)}
-    news_id_list = [ObjectId(news_id) for news_id in news_ids]
-    news_filter = {"_id": {"$in": news_id_list}}
-    object = MongoRepository().get_one("object", object_filter)
-    news_list, _ = MongoRepository().get_many("News", news_filter)
-    keywords_map = object.get("keywords")
-    for lang_key_type in list(keywords_map.keys()):
-        keywords = keywords_map[lang_key_type].split(", ")
-        keywords_copy = keywords.copy()
-        print(keywords_copy)
-        for keyword in keywords:
-            keyword = keyword.strip()
-            if keyword == "":
-                continue
-            for news in news_list:
-                if (
-                    keyword.lower() in news["data:title"].lower()
-                    or keyword.lower() in news["data:content"].lower()
-                    or keyword.lower() in news["keywords"]
-                ):
-                    keywords_copy.remove(keyword)
-        keywords_map[lang_key_type] = ", ".join(keywords_copy)
-    object["keywords"] = keywords_map
-    sucess = MongoRepository().update_one("object", object)
-    print(sucess)
-    return sucess
+def remove_news_from_object(news_ids: List[str], object_ids: List[str]):
+    object_filter = {"_id": {"$in": [ObjectId(object_id) for object_id in object_ids]}}
+    news_id_values = [ObjectId(news_id) for news_id in news_ids]
+    object_filter["news_list"] = {"$all": news_id_values}
+    result = MongoRepository().update_many(
+        "object", object_filter, {"$pull": {"news_list": {"$in": news_id_values}}}
+    )
+    return result
+
+
+def add_news_to_object(object_ids: List[str], news_ids: List[str]):
+    object_filter = {"_id": {"$in": [ObjectId(object_id) for object_id in object_ids]}}
+    news_id_values = [ObjectId(news_id) for news_id in news_ids]
+    object_filter["news_list"] = {"$not": {"$all": news_id_values}}
+    result = MongoRepository().update_many(
+        "object", object_filter, {"$push": {"news_list": {"$each": news_id_values}}}
+    )
+    return result

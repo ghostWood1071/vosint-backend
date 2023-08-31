@@ -15,6 +15,7 @@ from .services import (
     find_news_by_ids,
     check_news_contain,
     remove_news_from_object,
+    add_news_to_object,
 )
 from .utils import news_to_json
 from fastapi import Response
@@ -124,13 +125,19 @@ async def export_to_word(ids: List[str]):
 
 
 @router.post("/check-news-contain-keywords")
-def add_news_to_objects(
+def check_news_contain(
     object_ids: List[str], news_ids: List[str], new_keywords: List[str] = []
 ):
     return check_news_contain(object_ids, news_ids, new_keywords)
 
 
 @router.post("/remove-news-from-object")
-def add_news_to_objects(object_id: str, news_ids: List[str]):
-    remove_news_from_object(news_ids, object_id)
-    return {"status_code": 200}
+def remove_news_from_objects(object_ids: List[str], news_ids: List[str]):
+    remove_news_from_object(news_ids, object_ids)
+    return JSONResponse({"result": "updated sucess"}, 200)
+
+
+@router.post("/add-news-to-object")
+def add_news_to_objects(object_ids: List[str], news_ids: List[str]):
+    result = add_news_to_object(object_ids, news_ids)
+    return JSONResponse({"result": "updated sucess"}, 200)
