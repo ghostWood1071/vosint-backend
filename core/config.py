@@ -38,6 +38,8 @@ class Settings(BaseSettings):
 
     SUMMARIZE_API: str  # = "http://sumthesis.aiacademy.edu.vn/ext"
 
+    PIPELINE_API: str
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

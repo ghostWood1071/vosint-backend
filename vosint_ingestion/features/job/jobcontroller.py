@@ -86,29 +86,7 @@ class JobController:
 
     def run_only(self, pipeline_id: str, mode_test):
         result = self.__job_service.run_only(pipeline_id, mode_test)
-        # print('huuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu',get_depth(result))
-        # print(result)
-        try:
-            depth = get_depth(result)
-        except:
-            depth = 0
-        try:
-            if type(result) == list and mode_test == True and depth != 0:
-                for i in range(depth):
-                    result = result[0]
-                try:
-                    result["pub_date"] = str(result["pub_date"])
-                except:
-                    pass
-                try:
-                    result["_id"] = str(result["_id"])
-                except:
-                    pass
-                return {"success": True, "result": result}
-            else:
-                return {"success": True, "result": str(result)}
-        except:
-            return {"success": True, "result": str(result)}
+        return result
 
     def get_result_job(self, News, order, page_number, page_size, filter):
         # Receives request data
@@ -148,7 +126,7 @@ class JobController:
     def test_only(self, pipeline_id: str):
         result = self.__job_service.test_only(pipeline_id)
 
-        return {"result": result}
+        return result
 
     def get_log_history(self, pipeline_id: str, order, page_number, page_size):
         # Receives request data
@@ -274,10 +252,11 @@ class JobController:
         object_id,
     ):
         object = MongoRepository().get_one("object", {"_id": ObjectId(object_id)})
-        news_list_id = object.get("news_list")
-
+        news_list_id = (
+            object.get("news_list") if object.get("news_list") != None else list()
+        )
         filter_spec = {
-            "_id": {"$in": news_list_id},
+            "_id": {"$in": list(news_list_id)},
         }
         if text_search != None and text_search != "":
             filter_spec.update({"$text": {"$search": text_search}})
@@ -289,7 +268,6 @@ class JobController:
             filter_spec.update({"data:class_sacthai": sac_thai})
         if language_source != None and language_source != "":
             filter_spec.update({"source_language": language_source})
-
         news, num_record = MongoRepository().get_many_News(
             "News",
             filter_spec,

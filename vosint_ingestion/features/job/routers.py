@@ -20,6 +20,8 @@ from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_newsletter_id__,
 )
 
+import asyncio
+
 
 class elt(BaseModel):
     page_number: int = 1
@@ -253,7 +255,9 @@ def run_only_job(pipeline_id: str, mode_test=True):
     # url = "http://vosint.aiacademy.edu.vn/api/pipeline/Pipeline/api/get_pipeline_by_id/"+str(pipeline_id)
     # requests.get(url)
     # time.sleep(5)
-    return JSONResponse(job_controller.run_only(pipeline_id, mode_test))
+    result = job_controller.run_only(pipeline_id, mode_test)
+    # return JSONResponse(job_controller.run_only(pipeline_id, mode_test))
+    return result
 
 
 @router.post("/api/create_required_keyword}")
@@ -1180,7 +1184,7 @@ def get_result_job(
 
 
 # @feature.route('/api/run_one_foreach/<pipeline_id>', methods=['GET','POST'])
-# def run_one_foreach(pipeline_id: str):
+# def run_one_foreach(pipeline_id: str):run_only
 #     return job_controller.run_one_foreach(pipeline_id)
 
 
