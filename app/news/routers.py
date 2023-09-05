@@ -16,6 +16,7 @@ from .services import (
     check_news_contain_keywords,
     remove_news_from_object,
     add_news_to_object,
+    get_timeline,
 )
 from .utils import news_to_json
 from fastapi import Response
@@ -64,7 +65,7 @@ async def get_news(title: str = "", skip=1, limit=20, authorize: AuthJWT = Depen
     )
 
 
-@router.get("/{id}")
+@router.get("/get-detail/{id}")
 async def get_news_detail(id: str, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -143,9 +144,8 @@ def add_news_to_objects(object_ids: List[str], news_ids: List[str]):
     return JSONResponse({"result": "updated sucess"}, 200)
 
 
-@router.get("/view_time_line")
-def get_result_job(
-    order=None,
+@router.get("/get_time_line")
+def get_timeline_data(
     text_search="",
     page_number=None,
     page_size=None,
@@ -153,10 +153,7 @@ def get_result_job(
     end_date: str = "",
     sac_thai: str = "",
     language_source: str = "",
-    news_letter_id: str = "",
-    authorize: AuthJWT = Depends(),
-    vital: str = "",
-    bookmarks: str = "",
+    object_id: str = "",
 ):
     try:
         start_date = (
@@ -180,3 +177,14 @@ def get_result_job(
         )
     except:
         pass
+    data = get_timeline(
+        text_search,
+        page_number,
+        page_size,
+        start_date,
+        end_date,
+        sac_thai,
+        language_source,
+        object_id,
+    )
+    return JSONResponse({"count": len(data), "results": data}, 200)

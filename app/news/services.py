@@ -177,10 +177,9 @@ def get_timeline(
     language_source: str = "",
     object_id: str = "",
 ):
-    filter_spec = {
-        {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)}
-    }
-
+    filter_spec = {}
+    skip = int(page_size) * (int(page_number) - 1)
+    print("skip: ", skip)
     if text_search != "":
         filter_spec.update({"$text": {"$search": text_search.strip()}})
     if end_date != None and end_date != "":
@@ -194,28 +193,50 @@ def get_timeline(
         filter_spec.update({"data:class_sacthai": sac_thai})
     if language_source != None and language_source != "":
         filter_spec.update({"source_language": language_source})
-
+    data = []
     if object_id != "":
-        MongoRepository().aggregate(
-            "object",
-            [
-                {"$match": {"_id": ObjectId("64eeeb172d1a6006d553e2fb")}},
-                {"$unwin": "$news_list"},
-                {
-                    "$lookup": {
-                        "from": "events",
-                        "localField": "new_list",
-                        "foreignField": "id",
-                        "as": "$matchedDoc",
-                    }
+        query = [
+            {"$unwind": "$new_list"},
+            {
+                "$lookup": {
+                    "from": "object",
+                    "let": {"news_id": "$new_list"},
+                    "pipeline": [
+                        {
+                            "$match": {
+                                "news_list": {"$ne": None},
+                                "$expr": {"$in": ["$$news_id", "$news_list"]},
+                            }
+                        }
+                    ],
+                    "as": "result",
+                }
+            },
+            {
+                "$match": {
+                    "result": {"$ne": []},
+                    "result._id": ObjectId(object_id),
                 },
-                {"$unwind": "$matchedDoc"},
-                {
-                    "$group": {
-                        "_id": "$_id",
-                        "news_list": {"$push": "$new_list"},
-                        "matchedDoc": {"$push": "$matchedDoc"},
-                    }
-                },
-            ],
+            },
+            {"$project": {"result": 0}},
+            {
+                "$limit": int(page_size),
+            },
+            {"$skip": skip},
+            {"$sort": {"date_created": -1}},
+        ]
+        if len(filter_spec.keys()) > 2:
+            query.insert(0, {"$match": filter_spec})
+        print(query)
+        data = MongoRepository().aggregate("events", query)
+    else:
+        data, _ = MongoRepository().get_many(
+            "events",
+            filter_spec,
+            ["date_created"],
+            {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)},
         )
+    for row in data:
+        row["_id"] = str(row["_id"])
+        row["date_created"] = str(row["date_created"])
+    return data

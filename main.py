@@ -18,14 +18,14 @@ from db import init_db
 
 app = FastAPI(title=settings.APP_TITLE, root_path=settings.ROOT_PATH)
 
-if settings.APP_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.APP_ORIGINS],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# if settings.APP_ORIGINS:
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.APP_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class Settings(BaseModel):
