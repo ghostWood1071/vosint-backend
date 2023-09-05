@@ -141,3 +141,42 @@ def remove_news_from_objects(object_ids: List[str], news_ids: List[str]):
 def add_news_to_objects(object_ids: List[str], news_ids: List[str]):
     result = add_news_to_object(object_ids, news_ids)
     return JSONResponse({"result": "updated sucess"}, 200)
+
+
+@router.get("/view_time_line")
+def get_result_job(
+    order=None,
+    text_search="",
+    page_number=None,
+    page_size=None,
+    start_date: str = "",
+    end_date: str = "",
+    sac_thai: str = "",
+    language_source: str = "",
+    news_letter_id: str = "",
+    authorize: AuthJWT = Depends(),
+    vital: str = "",
+    bookmarks: str = "",
+):
+    try:
+        start_date = (
+            start_date.split("/")[2]
+            + "-"
+            + start_date.split("/")[1]
+            + "-"
+            + start_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
+    try:
+        end_date = (
+            end_date.split("/")[2]
+            + "-"
+            + end_date.split("/")[1]
+            + "-"
+            + end_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass

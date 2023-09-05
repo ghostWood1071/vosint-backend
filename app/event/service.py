@@ -1016,20 +1016,33 @@ async def get_news_by_ids(ids: List[str]):
     return news
 
 
-async def check_read_events(event_ids: List[str], user_id):
+async def check_read_events(event_ids: List[str], user_id, is_system_created=True):
     event_id_list = [ObjectId(event_id) for event_id in event_ids]
-    return await client3.update_many(
-        {
-            "_id": {"$in": event_id_list},
-            "list_user_read": {"$not": {"$all": [user_id]}},
-        },
-        {"$push": {"list_user_read": user_id}},
-    )
+    if is_system_created:
+        return await client3.update_many(
+            {
+                "_id": {"$in": event_id_list},
+                "list_user_read": {"$not": {"$all": [user_id]}},
+            },
+            {"$push": {"list_user_read": user_id}},
+        )
+    return await client.update_many(
+            {
+                "_id": {"$in": event_id_list},
+                "list_user_read": {"$not": {"$all": [user_id]}},
+            },
+            {"$push": {"list_user_read": user_id}},
+        )
 
 
-async def un_check_read_events(event_ids: List[str], user_id):
+async def un_check_read_events(event_ids: List[str], user_id, is_system_created=True):
     event_id_list = [ObjectId(event_id) for event_id in event_ids]
-    return await client3.update_many(
+    if is_system_created:
+        return await client3.update_many(
+            {"_id": {"$in": event_id_list}},
+            {"$pull": {"list_user_read": {"$in": [user_id]}}},
+        )
+    return await client.update_many(
         {"_id": {"$in": event_id_list}},
         {"$pull": {"list_user_read": {"$in": [user_id]}}},
     )

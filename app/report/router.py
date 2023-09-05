@@ -57,9 +57,7 @@ async def read_reports(
     user_id = auth.get_jwt_subject()
 
     query = {
-        "$or": [
-            {"title": {"$regex": title, "$options": "i"}},
-        ],
+        "$text": {"$search": title},
         "user_id": user_id,
     }
 
