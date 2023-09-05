@@ -36,6 +36,8 @@ from app.event.service import (
     update_event,
     get_events_by_ids,
     get_news_by_ids,
+    check_read_events,
+    un_check_read_events,
 )
 from db.init_db import get_collection_client
 from word_exporter import export_events_to_words
@@ -412,3 +414,19 @@ async def export_event_to_word(event_ids: List[str]):
             "Content-Disposition": f"attachment; filename=su_kien({nowstr}).docx",
         },
     )
+
+
+@router.post("/read-check")
+async def read_events(event_ids: List[str], authorize: AuthJWT = Depends()):
+    # authorize.jwt_required()
+    # user_id = authorize.get_jwt_subject()
+    await check_read_events(event_ids, "64aae3b628920312b13905de")
+    return event_ids
+
+
+@router.post("/read-uncheck")
+async def unread_events(event_ids: List[str], authorize: AuthJWT = Depends()):
+    # authorize.jwt_required()
+    # user_id = authorize.get_jwt_subject()
+    await un_check_read_events(event_ids, "64aae3b628920312b13905de")
+    return event_ids

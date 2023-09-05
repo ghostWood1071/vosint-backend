@@ -20,6 +20,8 @@ from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_newsletter_id__,
 )
 
+import asyncio
+
 
 class elt(BaseModel):
     page_number: int = 1
@@ -105,7 +107,7 @@ def get_news_from_ttxvn(
 @router.post("/api/get_news_from_elt")
 async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
     # authorize.jwt_required()
-    user_id = "64aae3b628920312b13905de" #authorize.get_jwt_subject()
+    user_id = "64aae3b628920312b13905de"  # authorize.get_jwt_subject()
     print("aa", elt.search_Query)
     vital = ""
     bookmarks = ""
@@ -253,7 +255,9 @@ def run_only_job(pipeline_id: str, mode_test=True):
     # url = "http://vosint.aiacademy.edu.vn/api/pipeline/Pipeline/api/get_pipeline_by_id/"+str(pipeline_id)
     # requests.get(url)
     # time.sleep(5)
-    return JSONResponse(job_controller.run_only(pipeline_id, mode_test))
+    result = job_controller.run_only(pipeline_id, mode_test)
+    # return JSONResponse(job_controller.run_only(pipeline_id, mode_test))
+    return result
 
 
 @router.post("/api/create_required_keyword}")
@@ -1180,7 +1184,7 @@ def get_result_job(
 
 
 # @feature.route('/api/run_one_foreach/<pipeline_id>', methods=['GET','POST'])
-# def run_one_foreach(pipeline_id: str):
+# def run_one_foreach(pipeline_id: str):run_only
 #     return job_controller.run_one_foreach(pipeline_id)
 
 
@@ -1231,8 +1235,8 @@ def get_log_history_error_or_getnews(
     )
 
 
-@router.post("/api/elt_search")
-def elt_search(
+@router.post("/search_news_from_object")
+def search_news_from_object(
     page_number=1,
     page_size=30,
     start_date: str = None,
@@ -1240,6 +1244,7 @@ def elt_search(
     sac_thai: str = None,
     language_source: str = None,
     text_search=None,
+    object_id=None,
 ):
     try:
         start_date = (
@@ -1264,14 +1269,14 @@ def elt_search(
     except:
         pass
 
-    return JSONResponse(
-        job_controller.elt_search(
-            page_number,
-            page_size,
-            start_date,
-            end_date,
-            sac_thai,
-            language_source,
-            text_search,
-        )
+    data = job_controller.search_news_by_object(
+        page_number,
+        page_size,
+        start_date,
+        end_date,
+        sac_thai,
+        language_source,
+        text_search,
+        object_id,
     )
+    return JSONResponse(data, status_code=200)

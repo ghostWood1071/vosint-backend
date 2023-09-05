@@ -64,6 +64,7 @@ async def add_object(
 
     Object["object_type"] = type
     Object["status"] = Status
+    Object["news_list"] = []
 
     new_object = await create_object(Object)
     if new_object:

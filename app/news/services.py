@@ -60,29 +60,20 @@ async def find_news_by_id(news_id: ObjectId, projection):
     return await client.find_one({"_id": news_id}, projection)
 
 
-async def read_by_id(new_id: str, user_id: str):
+async def read_by_id(news_ids: List[str], user_id: str):
+    news_id_list = [ObjectId(news_id) for news_id in news_ids]
     return await client.update_many(
-        {"_id": ObjectId(new_id)},
-        {"$set": {"is_read": True}, "$addToSet": {"list_user_read": user_id}},
+        {"_id": {"$in": news_id_list}, "list_user_read": {"$not": {"$all": [user_id]}}},
+        {"$set": {"is_read": True}, "$push": {"list_user_read": user_id}},
     )
 
 
-async def unread_by_id(new_id: str, user_id: str):
-    news = await client.find().to_list(length=None)
-    for item in news:
-        if "list_user_read" in item:
-            return await client.update_many(
-                {"_id": ObjectId(new_id)},
-                {
-                    "$set": {"is_read": False},
-                    "$pull": {"list_user_read": {"$in": [user_id]}},
-                },
-            )
-
-        if item["list_user_read"] == [] or item["list_user_read"] not in news:
-            await client.update_many(
-                {"_id": ObjectId(new_id)}, {"$set": {"is_read": False}}
-            )
+async def unread_news(new_ids: List[str], user_id: str):
+    news_id_list = [ObjectId(row_new) for row_new in new_ids]
+    news_filter = {"_id": {"$in": news_id_list}}
+    return await client.update_many(
+        news_filter, {"$pull": {"list_user_read": {"$in": [user_id]}}}
+    )
 
 
 async def find_news_by_ids(ids: List[str], projection: Dict["str", Any]):
@@ -136,7 +127,7 @@ def get_check_news_contain_list(news_ids, keywords):
     return news
 
 
-def check_news_contain(
+def check_news_contain_keywords(
     object_ids: List[str], news_ids: List[str], new_keywords: List[str] = []
 ):
     object_filter = [ObjectId(object_id) for object_id in object_ids]
@@ -156,30 +147,21 @@ def check_news_contain(
     return result
 
 
-def remove_news_from_object(news_ids: List[str], object_id: str):
-    object_filter = {"_id": ObjectId(object_id)}
-    news_id_list = [ObjectId(news_id) for news_id in news_ids]
-    news_filter = {"_id": {"$in": news_id_list}}
-    object = MongoRepository().get_one("object", object_filter)
-    news_list, _ = MongoRepository().get_many("News", news_filter)
-    keywords_map = object.get("keywords")
-    for lang_key_type in list(keywords_map.keys()):
-        keywords = keywords_map[lang_key_type].split(", ")
-        keywords_copy = keywords.copy()
-        print(keywords_copy)
-        for keyword in keywords:
-            keyword = keyword.strip()
-            if keyword == "":
-                continue
-            for news in news_list:
-                if (
-                    keyword.lower() in news["data:title"].lower()
-                    or keyword.lower() in news["data:content"].lower()
-                    or keyword.lower() in news["keywords"]
-                ):
-                    keywords_copy.remove(keyword)
-        keywords_map[lang_key_type] = ", ".join(keywords_copy)
-    object["keywords"] = keywords_map
-    sucess = MongoRepository().update_one("object", object)
-    print(sucess)
-    return sucess
+def remove_news_from_object(news_ids: List[str], object_ids: List[str]):
+    object_filter = {"_id": {"$in": [ObjectId(object_id) for object_id in object_ids]}}
+    news_id_values = [ObjectId(news_id) for news_id in news_ids]
+    object_filter["news_list"] = {"$all": news_id_values}
+    result = MongoRepository().update_many(
+        "object", object_filter, {"$pull": {"news_list": {"$in": news_id_values}}}
+    )
+    return result
+
+
+def add_news_to_object(object_ids: List[str], news_ids: List[str]):
+    object_filter = {"_id": {"$in": [ObjectId(object_id) for object_id in object_ids]}}
+    news_id_values = [ObjectId(news_id) for news_id in news_ids]
+    object_filter["news_list"] = {"$not": {"$all": news_id_values}}
+    result = MongoRepository().update_many(
+        "object", object_filter, {"$push": {"news_list": {"$each": news_id_values}}}
+    )
+    return result
