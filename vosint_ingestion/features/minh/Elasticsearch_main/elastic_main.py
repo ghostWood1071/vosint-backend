@@ -25,7 +25,9 @@ class My_ElasticSearch:
         self.user = user
         self.password = password
         self.verify_certs = verify_certs
-        self.es = Elasticsearch(hosts=self.host, verify_certs=self.verify_certs)
+        self.es = Elasticsearch(
+            hosts=self.host.split(","), verify_certs=self.verify_certs
+        )
 
     def log_cluster_health(self):
         """

@@ -4,6 +4,7 @@ from common.internalerror import *
 from utils import get_time_now_string
 from core.config import settings
 
+
 class MongoRepository:
     def __init__(self):
         self.__host = settings.mong_host
@@ -16,10 +17,10 @@ class MongoRepository:
 
     def __connect(self):
         self.__client = pymongo.MongoClient(
-            host=self.__host,
-            port=self.__port,
-            username=self.__username,
-            password=self.__passwd,
+            host=self.__host  # ,
+            # port=self.__port,
+            # username=self.__username,
+            # password=self.__passwd,
         )
         self.__db = self.__client[self.__db_name]
 
@@ -29,7 +30,9 @@ class MongoRepository:
             self.__client = None
             self.__db = None
 
-    def get_one(self, collection_name: str, filter_spec: dict={}, filter_other: dict ={}):
+    def get_one(
+        self, collection_name: str, filter_spec: dict = {}, filter_other: dict = {}
+    ):
         if not collection_name:
             raise InternalError(
                 ERROR_REQUIRED,
@@ -50,7 +53,7 @@ class MongoRepository:
         try:
             self.__connect()
             collection = self.__db[collection_name]
-            doc = collection.find_one(filter_spec,filter_other)
+            doc = collection.find_one(filter_spec, filter_other)
         finally:
             self.__close()
 
@@ -149,7 +152,7 @@ class MongoRepository:
         # Normalize _id field
         if "_id" in filter_spec and filter_spec["_id"]:
             filter_spec["_id"] = ObjectId(filter_spec["_id"])
-            
+
         docs = []
         total_docs = 0
         try:
@@ -259,7 +262,7 @@ class MongoRepository:
                     return by, direction
 
                 order_spec = list(map(lambda o: __map_order(o), order_spec))
-            query = query.sort([('pub_date', -1), ('created_at', -1)])#(order_spec)
+            query = query.sort([("pub_date", -1), ("created_at", -1)])  # (order_spec)
 
             # Apply pagination
             if pagination_spec:

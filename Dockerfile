@@ -1,8 +1,10 @@
-FROM python:3.10
+FROM python:3.10-bullseye
 
-ADD requirements.txt requirements.txt
+WORKDIR /usr/app
 
-RUN pip install --no-cache-dir -r requirements.txt
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt 
 
 COPY . .
 
@@ -12,4 +14,6 @@ RUN ssh-keygen -t rsa -b 4096 -m PEM -E SHA512 -f secrets/PRIVATE_KEY
 
 RUN openssl rsa -in secrets/PRIVATE_KEY -pubout -outform PEM -out secrets/PUBLIC_KEY
 
-CMD python main.py
+EXPOSE 6102
+
+CMD [ "python","main.py"]
