@@ -470,7 +470,7 @@ def get_international_graph(
     return JSONResponse(data, 200)
 
 
-@router.post("/get-evnets-by-edge")
+@router.post("/get-events-by-edge")
 def git_events_by_edge(objects: List[str], start_date: str = "", end_date: str = ""):
     data = get_events_data_by_edge(objects, start_date, end_date)
     return JSONResponse(data, 200)
