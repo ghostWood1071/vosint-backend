@@ -16,8 +16,20 @@ services:
             placement:
                 constraints:
                     - node.hostname==aivn
+
+        volumes:
+            - vosint_backend_static:/usr/app/static
         networks:
             - vosint3_system_network
+
+volumes:
+    vosint_backend_static:
+        driver: local
+        name: vosint_backend_static
+        driver_opts:
+            type: none
+            o: bind
+            device: "/vienai/web/static"
 
 networks:
     vosint3_system_network:
