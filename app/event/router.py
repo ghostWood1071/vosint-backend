@@ -471,6 +471,28 @@ def get_international_graph(
 
 
 @router.post("/get-events-by-edge")
-def git_events_by_edge(objects: List[str], start_date: str = "", end_date: str = ""):
+def get_events_by_edge(objects: List[str], start_date: str = "", end_date: str = ""):
+    try:
+        start_date = (
+            start_date.split("/")[2]
+            + "-"
+            + start_date.split("/")[1]
+            + "-"
+            + start_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
+    try:
+        end_date = (
+            end_date.split("/")[2]
+            + "-"
+            + end_date.split("/")[1]
+            + "-"
+            + end_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
     data = get_events_data_by_edge(objects, start_date, end_date)
     return JSONResponse(data, 200)
