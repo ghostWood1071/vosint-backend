@@ -32,12 +32,24 @@ ROUTE_LIST = [
     {"route": NLPRouter, "tags": ["NLP"], "prefix": "/nlp"},
     {"route": ProxyRouter, "tags": ["Proxy"], "prefix": "/Proxy"},
     {"route": InformationRouter, "tags": ["Source"], "prefix": "/Source"},
-    {"route": ManageNewsRouter, "tags": ["Source-group"], "prefix": "/Source-group"},
-    {"route": SocialMediaRouter, "tags": ["Social-media"], "prefix": "/Social-media"},
+    {
+        "route": ManageNewsRouter,
+        "tags": ["Source-group"],
+        "prefix": "/Source-group",
+    },
+    {
+        "route": SocialMediaRouter,
+        "tags": ["Social-media"],
+        "prefix": "/Social-media",
+    },
     {"route": SocialRouter, "tags": ["Social"], "prefix": "/account-monitor"},
     {"route": EventRouter, "tags": ["Event"], "prefix": "/event"},
     {"route": ReportRouter, "tags": ["Report"], "prefix": "/report"},
     {"route": VNNewRouter, "tags": ["VNNew"], "prefix": "/vnnew"},
-    {"route": UserConfigRouter, "tags": ["Account ttxvn config"], "prefix": "/account-ttxvn-config"},
-    {"route": DashboardRouter, "tags": ["Dashboard"], "prefix": "/dashboard"}
+    {
+        "route": UserConfigRouter,
+        "tags": ["Account ttxvn config"],
+        "prefix": "/account-ttxvn-config",
+    },
+    {"route": DashboardRouter, "tags": ["Dashboard"], "prefix": "/dashboard"},
 ]
