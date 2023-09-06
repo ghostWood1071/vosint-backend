@@ -11,6 +11,7 @@ from app.event.model import AddNewEvent, CreateEvent
 from app.news.services import find_news_by_filter
 from app.report.service import find_report_by_filter
 from db.init_db import get_collection_client
+from vosint_ingestion.models import MongoRepository
 
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 
@@ -1027,12 +1028,12 @@ async def check_read_events(event_ids: List[str], user_id, is_system_created=Tru
             {"$push": {"list_user_read": user_id}},
         )
     return await client.update_many(
-            {
-                "_id": {"$in": event_id_list},
-                "list_user_read": {"$not": {"$all": [user_id]}},
-            },
-            {"$push": {"list_user_read": user_id}},
-        )
+        {
+            "_id": {"$in": event_id_list},
+            "list_user_read": {"$not": {"$all": [user_id]}},
+        },
+        {"$push": {"list_user_read": user_id}},
+    )
 
 
 async def un_check_read_events(event_ids: List[str], user_id, is_system_created=True):
@@ -1046,3 +1047,85 @@ async def un_check_read_events(event_ids: List[str], user_id, is_system_created=
         {"_id": {"$in": event_id_list}},
         {"$pull": {"list_user_read": {"$in": [user_id]}}},
     )
+
+
+def get_graph_data(object_ids, start_date, end_date):
+    object_filter = [ObjectId(object_id) for object_id in object_ids]
+    objects, _ = MongoRepository().get_many("object", {"_id": {"$in": object_filter}})
+    object_names = [object["name"] for object in objects]
+    object_image_dict = {}
+    for object in objects:
+        object_image_dict[object["name"]] = object["avatar_url"]
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"chu_the": {"$in": object_names}},
+                    {"khach_the": {"$in": object_names}},
+                ]
+            }
+        },
+        {
+            "$project": {
+                "khach_the": 1,
+                "chu_the": 1,
+                "normal": {"$cond": [{"$eq": ["$sentiment", "0"]}, 1, 0]},
+                "negative": {"$cond": [{"$eq": ["$sentiment", "2"]}, 1, 0]},
+                "positive": {"$cond": [{"$eq": ["$sentiment", "1"]}, 1, 0]},
+            }
+        },
+        {
+            "$group": {
+                "_id": {"source": "$chu_the", "target": "$khach_the"},
+                "normal": {"$sum": "$normal"},
+                "negative": {"$sum": "$negative"},
+                "positive": {"$sum": "$positive"},
+            }
+        },
+    ]
+    if start_date != None and start_date != "":
+        pipeline[0]["$match"]["$and"].append({"date_created": {"$gte": ""}})
+
+    if end_date != None and end_date != "":
+        pipeline[0]["$match"]["$and"].append({"date_created": {"$lte": ""}})
+
+    data = MongoRepository().aggregate("events", pipeline)
+    result = {"nodes": [], "edges": []}
+    for object_name in object_names:
+        result["nodes"].append(
+            {"id": object_name, "img": object_image_dict[object_name]}
+        )
+    for row in data:
+        count_sentiment = (
+            int(row["normal"]) + int(row["negative"]) + int(row["positive"])
+        )
+        result["edges"].append(
+            {
+                "source": row["_id"]["source"],
+                "target": row["_id"]["target"],
+                "label": f"{count_sentiment} Sự kiện: Tích cực({row['positive']}) Tiêu cực({row['negative']}) Trung tính({row['normal']})",
+            }
+        )
+    return result
+
+
+def get_events_data_by_edge(objects, start_date, end_date):
+    result = {}
+    query = {
+        "$and": [
+            {"chu_the": {"$in": objects}},
+            {"khach_the": {"$in": objects}},
+        ]
+    }
+    if start_date != None and start_date != "":
+        query["$and"].append({"date_created": {"$gt": start_date}})
+    if end_date != None and end_date != "":
+        query["$and"].append({"date_created": {"$lt": end_date}})
+    data, _ = MongoRepository().get_many("events", query)
+    for row in data:
+        row["_id"] = str(row['_id'])
+        row["date_created"] = str(row['date_created'])
+        if result.get(row["sentiment"]) == None:
+            result[row["sentiment"]] = []
+        result[row["sentiment"]].append(row)
+    return result

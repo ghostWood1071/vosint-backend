@@ -38,6 +38,8 @@ from app.event.service import (
     get_news_by_ids,
     check_read_events,
     un_check_read_events,
+    get_graph_data,
+    get_events_data_by_edge,
 )
 from db.init_db import get_collection_client
 from word_exporter import export_events_to_words
@@ -207,8 +209,8 @@ async def search_by_name(
     limit=10,
     authorize: AuthJWT = Depends(),
 ):
-    # authorize.jwt_required()
-    user_id = "64aae3b628920312b13905de"  # authorize.get_jwt_subject()
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
     search_list = await search_event(
         event_name,
         id_new,
@@ -417,7 +419,9 @@ async def export_event_to_word(event_ids: List[str]):
 
 
 @router.post("/read-check")
-async def read_events(event_ids: List[str], is_system_created=True, authorize: AuthJWT = Depends()):
+async def read_events(
+    event_ids: List[str], is_system_created=True, authorize: AuthJWT = Depends()
+):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
     await check_read_events(event_ids, user_id, is_system_created)
@@ -434,3 +438,39 @@ async def unread_events(
     user_id = authorize.get_jwt_subject()
     await un_check_read_events(event_ids, user_id, is_system_created)
     return event_ids
+
+
+@router.post("/get-international-graph")
+def get_international_graph(
+    object_ids: List[str], start_date: str = "", end_date: str = ""
+):
+    try:
+        start_date = (
+            start_date.split("/")[2]
+            + "-"
+            + start_date.split("/")[1]
+            + "-"
+            + start_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
+    try:
+        end_date = (
+            end_date.split("/")[2]
+            + "-"
+            + end_date.split("/")[1]
+            + "-"
+            + end_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
+    data = get_graph_data(object_ids, start_date, end_date)
+    return JSONResponse(data, 200)
+
+
+@router.post("/get-evnets-by-edge")
+def git_events_by_edge(objects: List[str], start_date: str = "", end_date: str = ""):
+    data = get_events_data_by_edge(objects, start_date, end_date)
+    return JSONResponse(data, 200)
