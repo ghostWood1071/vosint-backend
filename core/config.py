@@ -34,6 +34,8 @@ class Settings(BaseSettings):
 
     PIPELINE_API: str
 
+    KEYWORD_EXTRACTION_API: str
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
