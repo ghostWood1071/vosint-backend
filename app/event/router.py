@@ -420,10 +420,10 @@ async def export_event_to_word(event_ids: List[str]):
 
 @router.post("/read-check")
 async def read_events(
-    event_ids: List[str], is_system_created=True, authorize: AuthJWT = Depends()
+    event_ids: List[str], is_system_created: bool = True, authorize: AuthJWT = Depends()
 ):
-    authorize.jwt_required()
-    user_id = authorize.get_jwt_subject()
+    # authorize.jwt_required()
+    user_id = "64c362467061eacc07af3bad"  # authorize.get_jwt_subject()
     await check_read_events(event_ids, user_id, is_system_created)
     return event_ids
 
@@ -431,11 +431,11 @@ async def read_events(
 @router.post("/read-uncheck")
 async def unread_events(
     event_ids: List[str],
-    is_system_created=True,
+    is_system_created: bool = True,
     authorize: AuthJWT = Depends(),
 ):
-    authorize.jwt_required()
-    user_id = authorize.get_jwt_subject()
+    # authorize.jwt_required()
+    user_id = "64c362467061eacc07af3bad"  # authorize.get_jwt_subject()
     await un_check_read_events(event_ids, user_id, is_system_created)
     return event_ids
 

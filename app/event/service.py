@@ -1103,7 +1103,10 @@ def get_graph_data(object_ids, start_date, end_date):
             {
                 "source": row["_id"]["source"],
                 "target": row["_id"]["target"],
-                "label": f"{count_sentiment} Sự kiện: Tích cực({row['positive']}) Tiêu cực({row['negative']}) Trung tính({row['normal']})",
+                "positive": row["positive"],
+                "normal": row["normal"],
+                "negative": row["negative"],
+                "total": count_sentiment,
             }
         )
     return result
@@ -1123,8 +1126,8 @@ def get_events_data_by_edge(objects, start_date, end_date):
         query["$and"].append({"date_created": {"$lt": end_date}})
     data, _ = MongoRepository().get_many("events", query)
     for row in data:
-        row["_id"] = str(row['_id'])
-        row["date_created"] = str(row['date_created'])
+        row["_id"] = str(row["_id"])
+        row["date_created"] = str(row["date_created"])
         if result.get(row["sentiment"]) == None:
             result[row["sentiment"]] = []
         result[row["sentiment"]].append(row)

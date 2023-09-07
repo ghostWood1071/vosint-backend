@@ -322,18 +322,9 @@ def get_news_from_newsletter_id__(
     if is_get_read_state:
         news_ids = [ObjectId(row["id"]) for row in pipeline_dtos]
         raw_isreads, _ = MongoRepository().get_many("News", {"_id": {"$in": news_ids}})
-        isreads = {}
-        for raw_read in raw_isreads:
-            if (
-                raw_read.get("is_read") != None
-                and raw_read.get("list_user_read") != None
-            ):
-                if user_id in raw_read.get("list_user_read"):
-                    # isreads.append(str(raw_read.get("_id")))
-                    isreads[str(raw_read["_id"])] = True
+        isread = {}
+        for raw_isread in raw_isreads:
+            isread[str(raw_isread["_id"])] = raw_isread.get("list_user_read")
         for row in pipeline_dtos:
-            row["is_read"] = True if isreads.get(row["id"]) != None else False
-            if row.get("list_user_read") is not None:
-                row.pop("list_user_read")
-                row["list_user_read"] = [user_id]
+            row["list_user_read"] = isread.get(row["_id"])
     return pipeline_dtos
