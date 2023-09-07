@@ -5,6 +5,7 @@ from fastapi import APIRouter, Body, status
 from fastapi.params import Depends
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
+import re
 
 from db.init_db import get_collection_client
 
@@ -80,12 +81,17 @@ async def read_report(id: str):
 async def post_quick_report(
     report: CreateQuickReport = Body(...), auth: AuthJWT = Depends()
 ):
-    auth.jwt_required()
-
-    report_dict = report.dict()
-    print(report_dict)
-    report_created = await create_report(report_dict)
-    return report_created.inserted_id
+    try:
+        auth.jwt_required()
+        pattern = r'[!@#$%^&*+{}\[\]:;<>,.?~\\|"]'
+        if re.search(pattern, report.title):
+            raise Exception("Tiêu đề không chứa ký tự đặc biệt")
+        report_dict = report.dict()
+        print(report_dict)
+        report_created = await create_report(report_dict)
+        return report_created.inserted_id
+    except Exception as e:
+        return JSONResponse(str(e), 500)
 
 
 @router.post("")
