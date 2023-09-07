@@ -84,7 +84,7 @@ async def post_quick_report(
     try:
         auth.jwt_required()
         pattern = r'[!@#$%^&*+{}\[\]:;<>,.?~\\|"]'
-        if re.search(pattern, report.title):
+        if re.search(pattern, report.title) or report.title.strip() == "":
             raise Exception("Tiêu đề không chứa ký tự đặc biệt")
         report_dict = report.dict()
         print(report_dict)
