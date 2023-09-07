@@ -218,7 +218,7 @@ def get_timeline(
                     "result._id": ObjectId(object_id),
                 },
             },
-            {"$project": {"result": 0}},
+            {"$project": {"result": 1}},
             {
                 "$limit": int(page_size),
             },
@@ -239,4 +239,6 @@ def get_timeline(
     for row in data:
         row["_id"] = str(row["_id"])
         row["date_created"] = str(row["date_created"])
+        if row.get("new_list") != None and type(row.get("new_list")) == str:
+            row["new_list"] = [row["new_list"]]
     return data

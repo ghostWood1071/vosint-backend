@@ -419,25 +419,25 @@ async def export_event_to_word(event_ids: List[str]):
 
 
 @router.post("/read-check")
-async def read_events(
+def read_events(
     event_ids: List[str], is_system_created: bool = True, authorize: AuthJWT = Depends()
 ):
-    # authorize.jwt_required()
-    user_id = "64c362467061eacc07af3bad"  # authorize.get_jwt_subject()
-    await check_read_events(event_ids, user_id, is_system_created)
-    return event_ids
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    result = check_read_events(event_ids, user_id, is_system_created)
+    return result
 
 
 @router.post("/read-uncheck")
-async def unread_events(
+def unread_events(
     event_ids: List[str],
     is_system_created: bool = True,
     authorize: AuthJWT = Depends(),
 ):
-    # authorize.jwt_required()
-    user_id = "64c362467061eacc07af3bad"  # authorize.get_jwt_subject()
-    await un_check_read_events(event_ids, user_id, is_system_created)
-    return event_ids
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    result = un_check_read_events(event_ids, user_id, is_system_created)
+    return result
 
 
 @router.post("/get-international-graph")

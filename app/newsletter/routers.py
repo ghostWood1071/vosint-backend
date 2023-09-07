@@ -189,9 +189,7 @@ async def delete_many_by_id(body: NewsletterDeleteMany, authorize: AuthJWT = Dep
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
 
-@router.put(
-    "/{newsletter_id}/news",
-)
+@router.put("/{newsletter_id}/news")
 async def delete_news_in_newsletter(
     newsletter_id: str, news_ids: List[str] = Body(...), authorize: AuthJWT = Depends()
 ):

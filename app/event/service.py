@@ -1017,36 +1017,23 @@ async def get_news_by_ids(ids: List[str]):
     return news
 
 
-async def check_read_events(event_ids: List[str], user_id, is_system_created=True):
+def check_read_events(event_ids: List[str], user_id, is_system_created=True):
     event_id_list = [ObjectId(event_id) for event_id in event_ids]
-    if is_system_created:
-        return await client3.update_many(
-            {
-                "_id": {"$in": event_id_list},
-                "list_user_read": {"$not": {"$all": [user_id]}},
-            },
-            {"$push": {"list_user_read": user_id}},
-        )
-    return await client.update_many(
-        {
-            "_id": {"$in": event_id_list},
-            "list_user_read": {"$not": {"$all": [user_id]}},
-        },
-        {"$push": {"list_user_read": user_id}},
-    )
+    filter_spec = {
+        "_id": {"$in": event_id_list},
+        "list_user_read": {"$not": {"$all": [user_id]}},
+    }
+    update_command = {"$push": {"list_user_read": user_id}}
+    collection = "events" if is_system_created == True else "event"
+    return MongoRepository().update_many(collection, filter_spec, update_command)
 
 
-async def un_check_read_events(event_ids: List[str], user_id, is_system_created=True):
+def un_check_read_events(event_ids: List[str], user_id, is_system_created=True):
     event_id_list = [ObjectId(event_id) for event_id in event_ids]
-    if is_system_created:
-        return await client3.update_many(
-            {"_id": {"$in": event_id_list}},
-            {"$pull": {"list_user_read": {"$in": [user_id]}}},
-        )
-    return await client.update_many(
-        {"_id": {"$in": event_id_list}},
-        {"$pull": {"list_user_read": {"$in": [user_id]}}},
-    )
+    filter_spec = {"_id": {"$in": event_id_list}}
+    update_command = {"$pull": {"list_user_read": {"$in": [user_id]}}}
+    collection = "events" if is_system_created == True else "event"
+    return MongoRepository().update_many(collection, filter_spec, update_command)
 
 
 def get_graph_data(object_ids, start_date, end_date):
