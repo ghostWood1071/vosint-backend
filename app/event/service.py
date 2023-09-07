@@ -183,6 +183,7 @@ projection_event_system = {
     "date_created": True,
     "chu_the": True,
     "khach_the": True,
+    "sentiment": True,
 }
 
 
