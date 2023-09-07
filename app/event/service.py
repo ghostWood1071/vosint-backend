@@ -1104,8 +1104,8 @@ def get_events_data_by_edge(objects, start_date, end_date):
     result = {}
     query = {
         "$and": [
-            {"chu_the": {"$in": objects}},
-            {"khach_the": {"$in": objects}},
+            {"chu_the": objects["source"]},
+            {"khach_the": objects["target"]},
         ]
     }
     if start_date != None and start_date != "":

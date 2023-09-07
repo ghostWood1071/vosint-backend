@@ -44,6 +44,7 @@ from app.event.service import (
 from db.init_db import get_collection_client
 from word_exporter import export_events_to_words
 from fastapi import Response
+from typing import *
 
 router = APIRouter()
 client = get_collection_client("event")
@@ -471,7 +472,9 @@ def get_international_graph(
 
 
 @router.post("/get-events-by-edge")
-def get_events_by_edge(objects: List[str], start_date: str = "", end_date: str = ""):
+def get_events_by_edge(
+    objects: Dict[str, Any], start_date: str = "", end_date: str = ""
+):
     try:
         start_date = (
             start_date.split("/")[2]
