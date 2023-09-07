@@ -70,8 +70,8 @@ async def delete_news_ids_in_newsletter(
     )
 
 
-async def check_duplicate(name):
-    pattern = rf"{name}"
+async def check_duplicate(name: str):
+    pattern = rf"{name}|{name.upper()}"
     query = {"title": {"$regex": re.compile(pattern)}}
     data = [row async for row in client.find(query)]
     if len(list(data)) > 0:
