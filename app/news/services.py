@@ -238,7 +238,7 @@ def get_timeline(
         )
     for row in data:
         row["_id"] = str(row["_id"])
-        row["date_created"] = str(row["date_created"])
+        row["date_created"] = str(row.get("date_created"))
         if row.get("new_list") != None and type(row.get("new_list")) == str:
             row["new_list"] = [row["new_list"]]
     return data
