@@ -94,7 +94,7 @@ class MongoRepository:
                     terms = o.split("-")
                     by = terms[0]
                     direction = (
-                        -1 if len(terms) > 1 and terms[1] == "desc" else 1
+                        -1  # if len(terms) > 1 and terms[1] == "desc" else 1
                     )  # 1: asc; -1: desc
                     return by, direction
 
