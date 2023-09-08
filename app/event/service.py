@@ -1037,19 +1037,69 @@ def un_check_read_events(event_ids: List[str], user_id, is_system_created=True):
     return MongoRepository().update_many(collection, filter_spec, update_command)
 
 
+def get_countries():
+    countries, _ = MongoRepository().get_many("object", {"object_type": "Quốc gia"})
+    result_dict = {}
+    for country in countries:
+        result_dict[country["name"]] = 1
+    return result_dict
+
+
+def process_source_target(value: str, country_dict):
+    if "," not in value:
+        return value
+    result = []
+    data = [r.strip() for r in value.split(",")]
+    for row in data:
+        if country_dict.get(row) != None:
+            result.append(row)
+    return result
+
+
+def process_duplicate_source_target(source, target):
+    target_dict = {}
+    if type(target) == str:
+        target = [target]
+    for country in target:
+        target_dict[country] = 1
+    if type(source) == str:
+        source = [source]
+    for country in source:
+        if target_dict.get(country) != None:
+            target_dict.pop(country)
+    return list(target_dict.keys())
+
+
+def create_source_target_pair(source, target):
+    pairs = []
+    if type(source) == str:
+        source = [source]
+    if type(target) == str:
+        target = [target]
+    # Sử dụng hai vòng lặp để tạo các cặp
+    for country1 in source:
+        for country2 in target:
+            if country1 != country2:
+                pairs.append((country1, country2))
+    print("pair:", pairs)
+    return pairs
+
+
 def get_graph_data(object_ids, start_date, end_date):
     object_filter = [ObjectId(object_id) for object_id in object_ids]
     objects, _ = MongoRepository().get_many("object", {"_id": {"$in": object_filter}})
     object_names = [object["name"] for object in objects]
+    regex = "|".join(object_names)
     object_image_dict = {}
+    countries_dict = get_countries()
     for object in objects:
         object_image_dict[object["name"]] = object["avatar_url"]
     pipeline = [
         {
             "$match": {
                 "$and": [
-                    {"chu_the": {"$in": object_names}},
-                    {"khach_the": {"$in": object_names}},
+                    {"chu_the": {"$regex": regex}},
+                    {"khach_the": {"$regex": regex}},
                 ]
             }
         },
@@ -1087,16 +1137,22 @@ def get_graph_data(object_ids, start_date, end_date):
         count_sentiment = (
             int(row["normal"]) + int(row["negative"]) + int(row["positive"])
         )
-        result["edges"].append(
-            {
-                "source": row["_id"]["source"],
-                "target": row["_id"]["target"],
-                "positive": row["positive"],
-                "normal": row["normal"],
-                "negative": row["negative"],
-                "total": count_sentiment,
-            }
-        )
+        source = process_source_target(row["_id"]["source"], countries_dict)
+        target = process_source_target(row["_id"]["target"], countries_dict)
+        target = process_duplicate_source_target(source, target)
+        pairs = create_source_target_pair(source, target)
+        for pair in pairs:
+            result["edges"].append(
+                {
+                    "source": pair[0],
+                    "target": pair[1],
+                    "positive": row["positive"],
+                    "normal": row["normal"],
+                    "negative": row["negative"],
+                    "total": count_sentiment,
+                }
+            )
+
     return result
 
 
@@ -1119,4 +1175,5 @@ def get_events_data_by_edge(objects, start_date, end_date):
         if result.get(row["sentiment"]) == None:
             result[row["sentiment"]] = []
         result[row["sentiment"]].append(row)
+
     return result
