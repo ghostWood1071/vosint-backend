@@ -28,8 +28,10 @@ from .services import (
     find_newsletter_by_id,
     find_newsletters_and_filter,
     update_newsletter,
+    check_duplicate,
 )
 from .utils import newsletter_to_json, newsletter_to_object_id
+from vosint_ingestion.features.job.services.jobservice import JobService
 
 router = APIRouter()
 
@@ -53,17 +55,15 @@ projection = {
 async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-
+    is_duplicate = await check_duplicate(body.title)
+    if is_duplicate:
+        return JSONResponse(
+            "Chủ đề đã tồn tại", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
     newsletter_dict = body.dict()
     newsletter_dict["user_id"] = user_id
-
     a = await create_newsletter(newsletter_to_object_id(newsletter_dict))
-    url = "http://vosint.aiacademy.edu.vn/api/pipeline/Job/api/create_required_keyword}"
-    headers = {"accept": "application/json"}
-    params = {"newsletter_id": str(a.inserted_id)}
-
-    requests.post(url, headers=headers, params=params)
-
+    JobService().create_required_keyword(a.inserted_id)
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
 
@@ -189,9 +189,7 @@ async def delete_many_by_id(body: NewsletterDeleteMany, authorize: AuthJWT = Dep
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
 
-@router.put(
-    "/{newsletter_id}/news",
-)
+@router.put("/{newsletter_id}/news")
 async def delete_news_in_newsletter(
     newsletter_id: str, news_ids: List[str] = Body(...), authorize: AuthJWT = Depends()
 ):
@@ -211,15 +209,14 @@ async def update(
     newsletter_id: str, body: NewsLetterUpdateModel, authorize: AuthJWT = Depends()
 ):
     authorize.jwt_required()
-
+    is_duplicate = await check_duplicate(body.title)
+    if is_duplicate:
+        return JSONResponse(
+            "Chủ đề đã tồn tại", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
     parsed_newsletter = newsletter_to_object_id(body.dict())
     await update_newsletter(ObjectId(newsletter_id), parsed_newsletter)
-    url = "http://vosint.aiacademy.edu.vn/api/pipeline/Job/api/create_required_keyword}"
-    headers = {"accept": "application/json"}
-    params = {"newsletter_id": str(newsletter_id)}
-
-    requests.post(url, headers=headers, params=params)
-
+    JobService().create_required_keyword(newsletter_id)
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
 

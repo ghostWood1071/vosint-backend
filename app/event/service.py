@@ -11,6 +11,7 @@ from app.event.model import AddNewEvent, CreateEvent
 from app.news.services import find_news_by_filter
 from app.report.service import find_report_by_filter
 from db.init_db import get_collection_client
+from vosint_ingestion.models import MongoRepository
 
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 
@@ -182,6 +183,7 @@ projection_event_system = {
     "date_created": True,
     "chu_the": True,
     "khach_the": True,
+    "sentiment": True,
 }
 
 
@@ -1016,20 +1018,162 @@ async def get_news_by_ids(ids: List[str]):
     return news
 
 
-async def check_read_events(event_ids: List[str], user_id):
+def check_read_events(event_ids: List[str], user_id, is_system_created=True):
     event_id_list = [ObjectId(event_id) for event_id in event_ids]
-    return await client3.update_many(
+    filter_spec = {
+        "_id": {"$in": event_id_list},
+        "list_user_read": {"$not": {"$all": [user_id]}},
+    }
+    update_command = {"$push": {"list_user_read": user_id}}
+    collection = "events" if is_system_created == True else "event"
+    return MongoRepository().update_many(collection, filter_spec, update_command)
+
+
+def un_check_read_events(event_ids: List[str], user_id, is_system_created=True):
+    event_id_list = [ObjectId(event_id) for event_id in event_ids]
+    filter_spec = {"_id": {"$in": event_id_list}}
+    update_command = {"$pull": {"list_user_read": {"$in": [user_id]}}}
+    collection = "events" if is_system_created == True else "event"
+    return MongoRepository().update_many(collection, filter_spec, update_command)
+
+
+def get_countries():
+    countries, _ = MongoRepository().get_many("object", {"object_type": "Quốc gia"})
+    result_dict = {}
+    for country in countries:
+        result_dict[country["name"]] = 1
+    return result_dict
+
+
+def process_source_target(value: str, country_dict):
+    if "," not in value:
+        return value
+    result = []
+    data = [r.strip() for r in value.split(",")]
+    for row in data:
+        if country_dict.get(row) != None:
+            result.append(row)
+    return result
+
+
+def process_duplicate_source_target(source, target):
+    target_dict = {}
+    if type(target) == str:
+        target = [target]
+    for country in target:
+        target_dict[country] = 1
+    if type(source) == str:
+        source = [source]
+    for country in source:
+        if target_dict.get(country) != None:
+            target_dict.pop(country)
+    return list(target_dict.keys())
+
+
+def create_source_target_pair(source, target):
+    pairs = []
+    if type(source) == str:
+        source = [source]
+    if type(target) == str:
+        target = [target]
+    # Sử dụng hai vòng lặp để tạo các cặp
+    for country1 in source:
+        for country2 in target:
+            if country1 != country2:
+                pairs.append((country1, country2))
+    print("pair:", pairs)
+    return pairs
+
+
+def get_graph_data(object_ids, start_date, end_date):
+    object_filter = [ObjectId(object_id) for object_id in object_ids]
+    objects, _ = MongoRepository().get_many("object", {"_id": {"$in": object_filter}})
+    object_names = [object["name"] for object in objects]
+    regex = "|".join(object_names)
+    object_image_dict = {}
+    countries_dict = get_countries()
+    for object in objects:
+        object_image_dict[object["name"]] = object["avatar_url"]
+    pipeline = [
         {
-            "_id": {"$in": event_id_list},
-            "list_user_read": {"$not": {"$all": [user_id]}},
+            "$match": {
+                "$and": [
+                    {"chu_the": {"$regex": regex}},
+                    {"khach_the": {"$regex": regex}},
+                ]
+            }
         },
-        {"$push": {"list_user_read": user_id}},
-    )
+        {
+            "$project": {
+                "khach_the": 1,
+                "chu_the": 1,
+                "normal": {"$cond": [{"$eq": ["$sentiment", "0"]}, 1, 0]},
+                "negative": {"$cond": [{"$eq": ["$sentiment", "2"]}, 1, 0]},
+                "positive": {"$cond": [{"$eq": ["$sentiment", "1"]}, 1, 0]},
+            }
+        },
+        {
+            "$group": {
+                "_id": {"source": "$chu_the", "target": "$khach_the"},
+                "normal": {"$sum": "$normal"},
+                "negative": {"$sum": "$negative"},
+                "positive": {"$sum": "$positive"},
+            }
+        },
+    ]
+    if start_date != None and start_date != "":
+        pipeline[0]["$match"]["$and"].append({"date_created": {"$gte": ""}})
+
+    if end_date != None and end_date != "":
+        pipeline[0]["$match"]["$and"].append({"date_created": {"$lte": ""}})
+
+    data = MongoRepository().aggregate("events", pipeline)
+    result = {"nodes": [], "edges": []}
+    for object_name in object_names:
+        result["nodes"].append(
+            {"id": object_name, "img": object_image_dict[object_name]}
+        )
+    for row in data:
+        count_sentiment = (
+            int(row["normal"]) + int(row["negative"]) + int(row["positive"])
+        )
+        source = process_source_target(row["_id"]["source"], countries_dict)
+        target = process_source_target(row["_id"]["target"], countries_dict)
+        target = process_duplicate_source_target(source, target)
+        pairs = create_source_target_pair(source, target)
+        for pair in pairs:
+            result["edges"].append(
+                {
+                    "source": pair[0],
+                    "target": pair[1],
+                    "positive": row["positive"],
+                    "normal": row["normal"],
+                    "negative": row["negative"],
+                    "total": count_sentiment,
+                }
+            )
+
+    return result
 
 
-async def un_check_read_events(event_ids: List[str], user_id):
-    event_id_list = [ObjectId(event_id) for event_id in event_ids]
-    return await client3.update_many(
-        {"_id": {"$in": event_id_list}},
-        {"$pull": {"list_user_read": {"$in": [user_id]}}},
-    )
+def get_events_data_by_edge(objects, start_date, end_date):
+    result = {}
+    query = {
+        "$and": [
+            {"chu_the": objects["source"]},
+            {"khach_the": objects["target"]},
+        ]
+    }
+    if start_date != None and start_date != "":
+        query["$and"].append({"date_created": {"$gt": start_date}})
+    if end_date != None and end_date != "":
+        query["$and"].append({"date_created": {"$lt": end_date}})
+    data, _ = MongoRepository().get_many("events", query)
+    for row in data:
+        row["_id"] = str(row["_id"])
+        row["date_created"] = str(row["date_created"])
+        if result.get(row["sentiment"]) == None:
+            result[row["sentiment"]] = []
+        result[row["sentiment"]].append(row)
+
+    return result

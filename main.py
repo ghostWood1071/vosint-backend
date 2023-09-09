@@ -28,7 +28,6 @@ if settings.APP_ORIGINS:
         allow_headers=["*"],
     )
 
-
 class Settings(BaseModel):
     expires = datetime.timedelta(days=1)
     authjwt_algorithm: str = "RS512"

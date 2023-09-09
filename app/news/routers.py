@@ -16,6 +16,7 @@ from .services import (
     check_news_contain_keywords,
     remove_news_from_object,
     add_news_to_object,
+    get_timeline,
 )
 from .utils import news_to_json
 from fastapi import Response
@@ -64,7 +65,7 @@ async def get_news(title: str = "", skip=1, limit=20, authorize: AuthJWT = Depen
     )
 
 
-@router.get("/{id}")
+@router.get("/get-detail/{id}")
 async def get_news_detail(id: str, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -141,3 +142,49 @@ def remove_news_from_objects(object_ids: List[str], news_ids: List[str]):
 def add_news_to_objects(object_ids: List[str], news_ids: List[str]):
     result = add_news_to_object(object_ids, news_ids)
     return JSONResponse({"result": "updated sucess"}, 200)
+
+
+@router.get("/get_time_line")
+def get_timeline_data(
+    text_search="",
+    page_number=None,
+    page_size=None,
+    start_date: str = "",
+    end_date: str = "",
+    sac_thai: str = "",
+    language_source: str = "",
+    object_id: str = "",
+):
+    try:
+        start_date = (
+            start_date.split("/")[2]
+            + "-"
+            + start_date.split("/")[1]
+            + "-"
+            + start_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
+    try:
+        end_date = (
+            end_date.split("/")[2]
+            + "-"
+            + end_date.split("/")[1]
+            + "-"
+            + end_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
+    data = get_timeline(
+        text_search,
+        page_number,
+        page_size,
+        start_date,
+        end_date,
+        sac_thai,
+        language_source,
+        object_id,
+    )
+    return JSONResponse({"count": len(data), "results": data}, 200)

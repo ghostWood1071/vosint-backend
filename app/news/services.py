@@ -149,7 +149,7 @@ def check_news_contain_keywords(
 
 def remove_news_from_object(news_ids: List[str], object_ids: List[str]):
     object_filter = {"_id": {"$in": [ObjectId(object_id) for object_id in object_ids]}}
-    news_id_values = [ObjectId(news_id) for news_id in news_ids]
+    news_id_values = [news_id for news_id in news_ids]
     object_filter["news_list"] = {"$all": news_id_values}
     result = MongoRepository().update_many(
         "object", object_filter, {"$pull": {"news_list": {"$in": news_id_values}}}
@@ -159,9 +159,86 @@ def remove_news_from_object(news_ids: List[str], object_ids: List[str]):
 
 def add_news_to_object(object_ids: List[str], news_ids: List[str]):
     object_filter = {"_id": {"$in": [ObjectId(object_id) for object_id in object_ids]}}
-    news_id_values = [ObjectId(news_id) for news_id in news_ids]
+    news_id_values = [news_id for news_id in news_ids]
     object_filter["news_list"] = {"$not": {"$all": news_id_values}}
     result = MongoRepository().update_many(
         "object", object_filter, {"$push": {"news_list": {"$each": news_id_values}}}
     )
     return result
+
+
+def get_timeline(
+    text_search="",
+    page_number=None,
+    page_size=None,
+    start_date: str = "",
+    end_date: str = "",
+    sac_thai: str = "",
+    language_source: str = "",
+    object_id: str = "",
+):
+    filter_spec = {}
+    skip = int(page_size) * (int(page_number) - 1)
+    print("skip: ", skip)
+    if text_search != "":
+        filter_spec.update({"$text": {"$search": text_search.strip()}})
+    if end_date != None and end_date != "":
+        filter_spec.update({"date_created": {"$lt": end_date}})
+    if start_date != None and start_date != "":
+        if filter_spec.get("date_created") == None:
+            filter_spec.update({"date_created": {"$gt": start_date}})
+        else:
+            filter_spec["date_created"].update({"$gt": start_date})
+    if sac_thai != None and sac_thai != "":
+        filter_spec.update({"data:class_sacthai": sac_thai})
+    if language_source != None and language_source != "":
+        filter_spec.update({"source_language": language_source})
+    data = []
+    if object_id != "":
+        query = [
+            {"$unwind": "$new_list"},
+            {
+                "$lookup": {
+                    "from": "object",
+                    "let": {"news_id": "$new_list"},
+                    "pipeline": [
+                        {
+                            "$match": {
+                                "news_list": {"$ne": None},
+                                "$expr": {"$in": ["$$news_id", "$news_list"]},
+                            }
+                        }
+                    ],
+                    "as": "result",
+                }
+            },
+            {
+                "$match": {
+                    "result": {"$ne": []},
+                    "result._id": ObjectId(object_id),
+                },
+            },
+            {"$project": {"result": 1}},
+            {
+                "$limit": int(page_size),
+            },
+            {"$skip": skip},
+            {"$sort": {"date_created": -1}},
+        ]
+        if len(filter_spec.keys()) > 2:
+            query.insert(0, {"$match": filter_spec})
+        print(query)
+        data = MongoRepository().aggregate("events", query)
+    else:
+        data, _ = MongoRepository().get_many(
+            "events",
+            filter_spec,
+            ["date_created"],
+            {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)},
+        )
+    for row in data:
+        row["_id"] = str(row["_id"])
+        row["date_created"] = str(row.get("date_created"))
+        if row.get("new_list") != None and type(row.get("new_list")) == str:
+            row["new_list"] = [row["new_list"]]
+    return data

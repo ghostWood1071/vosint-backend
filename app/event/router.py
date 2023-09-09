@@ -38,10 +38,13 @@ from app.event.service import (
     get_news_by_ids,
     check_read_events,
     un_check_read_events,
+    get_graph_data,
+    get_events_data_by_edge,
 )
 from db.init_db import get_collection_client
 from word_exporter import export_events_to_words
 from fastapi import Response
+from typing import *
 
 router = APIRouter()
 client = get_collection_client("event")
@@ -417,16 +420,82 @@ async def export_event_to_word(event_ids: List[str]):
 
 
 @router.post("/read-check")
-async def read_events(event_ids: List[str], authorize: AuthJWT = Depends()):
-    # authorize.jwt_required()
-    # user_id = authorize.get_jwt_subject()
-    await check_read_events(event_ids, "64aae3b628920312b13905de")
-    return event_ids
+def read_events(
+    event_ids: List[str], is_system_created: bool = True, authorize: AuthJWT = Depends()
+):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    result = check_read_events(event_ids, user_id, is_system_created)
+    return result
 
 
 @router.post("/read-uncheck")
-async def unread_events(event_ids: List[str], authorize: AuthJWT = Depends()):
-    # authorize.jwt_required()
-    # user_id = authorize.get_jwt_subject()
-    await un_check_read_events(event_ids, "64aae3b628920312b13905de")
-    return event_ids
+def unread_events(
+    event_ids: List[str],
+    is_system_created: bool = True,
+    authorize: AuthJWT = Depends(),
+):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    result = un_check_read_events(event_ids, user_id, is_system_created)
+    return result
+
+
+@router.post("/get-international-graph")
+def get_international_graph(
+    object_ids: List[str], start_date: str = "", end_date: str = ""
+):
+    try:
+        start_date = (
+            start_date.split("/")[2]
+            + "-"
+            + start_date.split("/")[1]
+            + "-"
+            + start_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
+    try:
+        end_date = (
+            end_date.split("/")[2]
+            + "-"
+            + end_date.split("/")[1]
+            + "-"
+            + end_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
+    data = get_graph_data(object_ids, start_date, end_date)
+    return JSONResponse(data, 200)
+
+
+@router.post("/get-events-by-edge")
+def get_events_by_edge(
+    objects: Dict[str, Any], start_date: str = "", end_date: str = ""
+):
+    try:
+        start_date = (
+            start_date.split("/")[2]
+            + "-"
+            + start_date.split("/")[1]
+            + "-"
+            + start_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
+    try:
+        end_date = (
+            end_date.split("/")[2]
+            + "-"
+            + end_date.split("/")[1]
+            + "-"
+            + end_date.split("/")[0]
+            + "T00:00:00Z"
+        )
+    except:
+        pass
+    data = get_events_data_by_edge(objects, start_date, end_date)
+    return JSONResponse(data, 200)

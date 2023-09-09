@@ -94,7 +94,7 @@ class MongoRepository:
                     terms = o.split("-")
                     by = terms[0]
                     direction = (
-                        -1 if len(terms) > 1 and terms[1] == "desc" else 1
+                        -1  # if len(terms) > 1 and terms[1] == "desc" else 1
                     )  # 1: asc; -1: desc
                     return by, direction
 
@@ -501,3 +501,19 @@ class MongoRepository:
             self.__close()
 
         return success
+
+    def aggregate(self, collection_name: str, pipeline):
+        if not collection_name:
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
+        data = None
+        try:
+            self.__connect()
+            collection = self.__db[collection_name]
+            cur = collection.aggregate(pipeline)
+            data = [row for row in cur]
+        finally:
+            self.__close()
+        return data

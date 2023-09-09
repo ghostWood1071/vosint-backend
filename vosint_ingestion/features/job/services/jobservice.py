@@ -127,9 +127,17 @@ class JobService:
         list_keyword = []
         for i in a:
             # print(i['title']+i['content'])
-            b = Keywords_Ext().extracting(
-                document=i["title"] + i["content"], num_keywords=10
+            # b = Keywords_Ext().extracting(
+            #     document=i["title"] + i["content"], num_keywords=10
+            # )
+            req = requests.post(
+                settings.KEYWORD_EXTRACTION_API,
+                {"text": i["title"] + i["content"], "number_keyword": 10},
             )
+            if req.ok:
+                b = req.json().get("translate_text")
+            else:
+                raise Exception("create keyword failed")
             # print('aaaaaaaaaaaaaaa',b)
             list_keyword.append(",".join(b))
 
