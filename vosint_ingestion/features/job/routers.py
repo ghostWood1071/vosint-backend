@@ -1279,3 +1279,58 @@ def search_news_from_object(
         object_id,
     )
     return JSONResponse(data, status_code=200)
+
+
+@router.post("/api/get_table_ttxvn")
+def get_table_ttxvn(
+    name,
+    order=None,
+    page_number=None,
+    page_size=None,
+    crawling: str = None,
+    text_search: str = None,
+    start_date="",
+    end_date="",
+):
+    query = {}
+    query["$and"] = []
+    if start_date != "" and end_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+
+        query["$and"].append({"PublishDate": {"$gte": start_date, "$lte": end_date}})
+    elif start_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        query["$and"].append({"PublishDate": {"$gte": start_date}})
+    elif end_date != "":
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        query["$and"].append({"PublishDate": {"$lte": end_date}})
+    if text_search != None and text_search != "":
+        query["$and"].append({"Title": {"$regex": str(text_search), "$options": "i"}})
+    if crawling != None:
+        if crawling == "crawled":
+            query["$and"].append({"content": {"$exists": True}})
+        elif crawling == "not_crawled":
+            query["$and"].append({"content": {"$exists": False}})
+    if query["$and"] == []:
+        query = {}
+
+    return JSONResponse(
+        job_controller.get_result_job(name, order, page_number, page_size, filter=query)
+    )
