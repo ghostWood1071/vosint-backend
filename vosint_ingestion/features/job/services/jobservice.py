@@ -93,13 +93,13 @@ class JobService:
             pipeline_ids
         )
 
-        def func(pipeline_id):
-            return start_job(pipeline_id)
-
         for pipeline_dto in enabled_pipeline_dtos:
             try:
                 Scheduler.instance().add_job(
-                    pipeline_dto._id, func(pipeline_dto._id), pipeline_dto.cron_expr
+                    pipeline_dto._id,
+                    start_job,
+                    pipeline_dto.cron_expr,
+                    args=[pipeline_dto._id],
                 )
             except InternalError as error:
                 Logger.instance().error(str(error))
