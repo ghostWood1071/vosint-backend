@@ -43,9 +43,10 @@ class JobService:
 
     # control job crawl
     # ----------------------------------------------------------------------------------------------------
-    def run_only(self, id: str, mode_test=None):
+    # start job imidiately
+    def run_only(self, job_id: str, mode_test=None):
         request = requests.post(
-            f"{settings.PIPELINE_API}/Job/api/run_only_job/{id}",
+            f"{settings.PIPELINE_API}/Job/api/run_only_job/{job_id}",
             params={"mode_test": mode_test},
         )
         if not request.ok:
@@ -59,6 +60,7 @@ class JobService:
         pipeline_dto = self.__pipeline_service.get_pipeline_by_id(id)
         return pipeline_dto.schema
 
+    # add single job to scheduler
     def start_job(self, pipeline_id: str):
         pipeline_dto = self.__pipeline_service.get_pipeline_by_id(pipeline_id)
         if not pipeline_dto:
@@ -82,6 +84,7 @@ class JobService:
             pipeline_id, start_job, pipeline_dto.cron_expr, args=[pipeline_id]
         )
 
+    # add multiple job to
     def start_all_jobs(self, pipeline_ids: list[str] = None):
         # Split pipeline_ids from string to list of strings
         pipeline_ids = pipeline_ids.split(",") if pipeline_ids else None

@@ -113,7 +113,8 @@ class JobController:
             except:
                 pass
             try:
-                i["pub_date"] = str(i["pub_date"])
+                i["pub_date"] = str(i.get("pub_date"))
+                i["created"] = str(i.get("created"))
             except:
                 pass
         return {"success": True, "total_record": total_records, "result": pipeline_dtos}

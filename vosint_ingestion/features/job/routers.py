@@ -250,35 +250,13 @@ def get_news_from_id_source(
 def run_only_job(pipeline_id: str, mode_test=True):
     if str(mode_test) == "True" or str(mode_test) == "true":
         mode_test = True
-    # url = "http://vosint.aiacademy.edu.vn/api/pipeline/Pipeline/api/get_action_infos"
-    # requests.get(url)
-    # url = "http://vosint.aiacademy.edu.vn/api/pipeline/Pipeline/api/get_pipeline_by_id/"+str(pipeline_id)
-    # requests.get(url)
-    # time.sleep(5)
     result = job_controller.run_only(pipeline_id, mode_test)
-    # return JSONResponse(job_controller.run_only(pipeline_id, mode_test))
     return result
 
 
 @router.post("/api/create_required_keyword}")
 def create_required_keyword(newsletter_id: str):
     return JSONResponse(job_controller.create_required_keyword(newsletter_id))
-
-
-# @router.get("/api/run_only_job/{pipeline_id}")
-# def run_only_job(pipeline_id: str, mode_test = True):
-#     return JSONResponse(job_controller.run_only(pipeline_id,mode_test))
-
-
-# @router.get("/api/get_result_job/{News}")
-# def get_result_job(News='News', order = None, page_number = None, page_size = None, start_date : str, end_date = str, sac_thai : str, language_source : list):
-#     return JSONResponse(
-#         job_controller.get_result_job(News, order, page_number, page_size, start_date, end_date, sac_thai, language_source)
-#     )
-# from typing import Annotated
-# @router.get("/api/test__")
-# def test__(q: Annotated[list[str]):
-#     return JSONResponse({"a":1})
 
 
 def find_child(_id, list_id_find_child):
@@ -1182,14 +1160,6 @@ def get_result_job(
     )
 
 
-# @feature.route('/api/run_one_foreach/<pipeline_id>', methods=['GET','POST'])
-# def run_one_foreach(pipeline_id: str):run_only
-#     return job_controller.run_one_foreach(pipeline_id)
-
-
-# @feature.route('/api/test/<pipeline_id>', methods=['GET','POST'])
-# def test_only_job(pipeline_id: str):
-#     return job_controller.test_only(pipeline_id)
 @router.get("/api/get_table")
 def get_table(name, id=None, order=None, page_number=None, page_size=None):
     query = {}
@@ -1330,7 +1300,10 @@ def get_table_ttxvn(
             query["$and"].append({"content": {"$exists": False}})
     if query["$and"] == []:
         query = {}
-
-    return JSONResponse(
-        job_controller.get_result_job(name, order, page_number, page_size, filter=query)
+    data = job_controller.get_result_job(
+        name, order, page_number, page_size, filter=query
     )
+    for row in data.get("result"):
+        row["PublishDate"] = str(row.get("PublishDate"))
+        row["Created"] = str(row.get("Created"))
+    return JSONResponse(data)
