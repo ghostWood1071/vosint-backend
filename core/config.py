@@ -36,6 +36,8 @@ class Settings(BaseSettings):
 
     KEYWORD_EXTRACTION_API: str
 
+    TRANSLATE_API: str
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

@@ -4,6 +4,9 @@ from vosint_ingestion.features.job.services.get_news_from_elastic import (
 )
 from bson.objectid import ObjectId
 from models import MongoRepository
+import requests
+from core.config import settings
+import json
 
 
 def get_depth(mylist):
@@ -283,3 +286,12 @@ class JobController:
             row_new["_id"] = str(row_new["_id"])
             row_new["pub_date"] = str(row_new["pub_date"])
         return {"result": news, "total_record": len(news)}
+
+    def translate(self, lang, content):
+        req = requests.post(
+            settings.TRANSLATE_API, data=json.dumps({"language": lang, "text": content})
+        )
+        if req.ok:
+            return req.json().get("translate_text")
+        else:
+            return ""

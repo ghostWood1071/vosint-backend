@@ -23,6 +23,11 @@ from vosint_ingestion.features.job.services.get_news_from_elastic import (
 import asyncio
 
 
+class Translate(BaseModel):
+    lang: str
+    content: str
+
+
 class elt(BaseModel):
     page_number: int = 1
     page_size: int = 30
@@ -1305,3 +1310,9 @@ def get_table_ttxvn(
         row["PublishDate"] = str(row.get("PublishDate"))
         row["Created"] = str(row.get("Created"))
     return JSONResponse(data)
+
+
+@router.post("/api/translate")
+def translate(data: Translate):
+    result = job_controller.translate(data.lang, data.content)
+    return JSONResponse({"results": result})
