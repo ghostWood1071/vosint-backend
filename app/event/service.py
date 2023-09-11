@@ -12,6 +12,7 @@ from app.news.services import find_news_by_filter
 from app.report.service import find_report_by_filter
 from db.init_db import get_collection_client
 from vosint_ingestion.models import MongoRepository
+import re
 
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 
@@ -1045,14 +1046,24 @@ def get_countries():
     return result_dict
 
 
-def process_source_target(value: str, country_dict):
-    if "," not in value:
+def process_source_target(value: str, country_dict, country_regex):
+    if "," not in value and country_dict.get(value) != None:
         return value
+    if "," not in value and country_dict.get(value) == None:
+        match = re.findall(country_regex, value)
+        if len(match) > 0:
+            return match[0]
+        return ""
     result = []
     data = [r.strip() for r in value.split(",")]
     for row in data:
-        if country_dict.get(row) != None:
-            result.append(row)
+        val = row
+        if country_dict.get(val) == None:
+            match = re.findall(country_regex, val)
+            if len(match) > 0:
+                val = match[0]
+        if country_dict.get(val) != None:
+            result.append(val)
     return result
 
 
@@ -1085,6 +1096,39 @@ def create_source_target_pair(source, target):
     return pairs
 
 
+def group_edges_by_pair(data):
+    data_dict = {}
+    for row in data.get("edges"):
+        if data_dict.get(row["source"] + row["target"]) == None:
+            data_dict[row["source"] + row["target"]] = []
+        data_dict[row["source"] + row["target"]].append(row)
+    result = []
+    for key_pair in list(data_dict.keys()):
+        edge_data = data_dict.get(key_pair)
+        sum_edge = {
+            "source": "Ukraine",
+            "target": "Nga",
+            "positive": 0,
+            "normal": 0,
+            "negative": 0,
+            "total": 0,
+        }
+
+        for edge in edge_data:
+            if sum_edge == None:
+                sum_edge = edge.copy()
+                continue
+            else:
+                sum_edge["source"] = edge["source"]
+                sum_edge["target"] = edge["target"]
+                sum_edge["normal"] += edge["normal"]
+                sum_edge["positive"] += edge["positive"]
+                sum_edge["negative"] += edge["negative"]
+                sum_edge["total"] += edge["total"]
+        result.append(sum_edge.copy())
+    return result
+
+
 def get_graph_data(object_ids, start_date, end_date):
     object_filter = [ObjectId(object_id) for object_id in object_ids]
     objects, _ = MongoRepository().get_many("object", {"_id": {"$in": object_filter}})
@@ -1092,6 +1136,7 @@ def get_graph_data(object_ids, start_date, end_date):
     regex = "|".join(object_names)
     object_image_dict = {}
     countries_dict = get_countries()
+    country_regex = "|".join(list(countries_dict.keys()))
     for object in objects:
         object_image_dict[object["name"]] = object["avatar_url"]
     pipeline = [
@@ -1137,8 +1182,12 @@ def get_graph_data(object_ids, start_date, end_date):
         count_sentiment = (
             int(row["normal"]) + int(row["negative"]) + int(row["positive"])
         )
-        source = process_source_target(row["_id"]["source"], countries_dict)
-        target = process_source_target(row["_id"]["target"], countries_dict)
+        source = process_source_target(
+            row["_id"]["source"], countries_dict, country_regex
+        )
+        target = process_source_target(
+            row["_id"]["target"], countries_dict, country_regex
+        )
         target = process_duplicate_source_target(source, target)
         pairs = create_source_target_pair(source, target)
         for pair in pairs:
@@ -1152,7 +1201,7 @@ def get_graph_data(object_ids, start_date, end_date):
                     "total": count_sentiment,
                 }
             )
-
+    result["edges"] = group_edges_by_pair(result)
     return result
 
 
@@ -1160,8 +1209,8 @@ def get_events_data_by_edge(objects, start_date, end_date):
     result = {}
     query = {
         "$and": [
-            {"chu_the": objects["source"]},
-            {"khach_the": objects["target"]},
+            {"chu_the": {"$regex": objects["source"]}},
+            {"khach_the": {"$regex": objects["target"]}},
         ]
     }
     if start_date != None and start_date != "":
