@@ -176,10 +176,8 @@ def start_job(pipeline_id: str):
 
 
 @router.post("/api/start_all_jobs")
-def start_all_jobs(
-    pipeline_ids,
-):  # Danh sách Pipeline Id phân tách nhau bởi dấu , (VD: 636b5322243dd7a386d65cbc,636b695bda1ea6210d1b397f)
-    return JSONResponse(job_controller.start_all_jobs(pipeline_ids))
+def start_all_jobs():  # Danh sách Pipeline Id phân tách nhau bởi dấu , (VD: 636b5322243dd7a386d65cbc,636b695bda1ea6210d1b397f)
+    return JSONResponse(job_controller.start_all_jobs(None))
 
 
 @router.post("/api/stop_job/{pipeline_id}")

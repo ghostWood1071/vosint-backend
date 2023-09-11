@@ -22,7 +22,7 @@ class JobController:
 
         return {"success": True}
 
-    def start_all_jobs(self, pipeline_ids):
+    def start_all_jobs(self, pipeline_ids=None):
         # Receives request data
         # pipeline_ids = request.args.get('pipeline_ids')
 
