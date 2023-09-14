@@ -19,8 +19,14 @@ from db.init_db import get_collection_client
 from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_newsletter_id__,
 )
+from core.config import settings
 
 import asyncio
+
+
+class Translate(BaseModel):
+    lang: str
+    content: str
 
 
 class elt(BaseModel):
@@ -176,10 +182,8 @@ def start_job(pipeline_id: str):
 
 
 @router.post("/api/start_all_jobs")
-def start_all_jobs(
-    pipeline_ids,
-):  # Danh sách Pipeline Id phân tách nhau bởi dấu , (VD: 636b5322243dd7a386d65cbc,636b695bda1ea6210d1b397f)
-    return JSONResponse(job_controller.start_all_jobs(pipeline_ids))
+def start_all_jobs():  # Danh sách Pipeline Id phân tách nhau bởi dấu , (VD: 636b5322243dd7a386d65cbc,636b695bda1ea6210d1b397f)
+    return JSONResponse(job_controller.start_all_jobs(None))
 
 
 @router.post("/api/stop_job/{pipeline_id}")
@@ -250,35 +254,13 @@ def get_news_from_id_source(
 def run_only_job(pipeline_id: str, mode_test=True):
     if str(mode_test) == "True" or str(mode_test) == "true":
         mode_test = True
-    # url = "http://vosint.aiacademy.edu.vn/api/pipeline/Pipeline/api/get_action_infos"
-    # requests.get(url)
-    # url = "http://vosint.aiacademy.edu.vn/api/pipeline/Pipeline/api/get_pipeline_by_id/"+str(pipeline_id)
-    # requests.get(url)
-    # time.sleep(5)
     result = job_controller.run_only(pipeline_id, mode_test)
-    # return JSONResponse(job_controller.run_only(pipeline_id, mode_test))
     return result
 
 
 @router.post("/api/create_required_keyword}")
 def create_required_keyword(newsletter_id: str):
     return JSONResponse(job_controller.create_required_keyword(newsletter_id))
-
-
-# @router.get("/api/run_only_job/{pipeline_id}")
-# def run_only_job(pipeline_id: str, mode_test = True):
-#     return JSONResponse(job_controller.run_only(pipeline_id,mode_test))
-
-
-# @router.get("/api/get_result_job/{News}")
-# def get_result_job(News='News', order = None, page_number = None, page_size = None, start_date : str, end_date = str, sac_thai : str, language_source : list):
-#     return JSONResponse(
-#         job_controller.get_result_job(News, order, page_number, page_size, start_date, end_date, sac_thai, language_source)
-#     )
-# from typing import Annotated
-# @router.get("/api/test__")
-# def test__(q: Annotated[list[str]):
-#     return JSONResponse({"a":1})
 
 
 def find_child(_id, list_id_find_child):
@@ -1182,14 +1164,6 @@ def get_result_job(
     )
 
 
-# @feature.route('/api/run_one_foreach/<pipeline_id>', methods=['GET','POST'])
-# def run_one_foreach(pipeline_id: str):run_only
-#     return job_controller.run_one_foreach(pipeline_id)
-
-
-# @feature.route('/api/test/<pipeline_id>', methods=['GET','POST'])
-# def test_only_job(pipeline_id: str):
-#     return job_controller.test_only(pipeline_id)
 @router.get("/api/get_table")
 def get_table(name, id=None, order=None, page_number=None, page_size=None):
     query = {}
@@ -1279,3 +1253,75 @@ def search_news_from_object(
         object_id,
     )
     return JSONResponse(data, status_code=200)
+
+
+@router.post("/api/get_table_ttxvn")
+def get_table_ttxvn(
+    name,
+    order=None,
+    page_number=None,
+    page_size=None,
+    crawling: str = None,
+    text_search: str = None,
+    start_date="",
+    end_date="",
+):
+    query = {}
+    query["$and"] = []
+    if start_date != "" and end_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+
+        query["$and"].append({"PublishDate": {"$gte": start_date, "$lte": end_date}})
+    elif start_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        query["$and"].append({"PublishDate": {"$gte": start_date}})
+    elif end_date != "":
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        query["$and"].append({"PublishDate": {"$lte": end_date}})
+    if text_search != None and text_search != "":
+        query["$and"].append({"Title": {"$regex": str(text_search), "$options": "i"}})
+    if crawling != None:
+        if crawling == "crawled":
+            query["$and"].append({"content": {"$exists": True}})
+        elif crawling == "not_crawled":
+            query["$and"].append({"content": {"$exists": False}})
+    if query["$and"] == []:
+        query = {}
+    data = job_controller.get_result_job(
+        name, order, page_number, page_size, filter=query
+    )
+    for row in data.get("result"):
+        row["PublishDate"] = str(row.get("PublishDate"))
+        row["Created"] = str(row.get("Created"))
+    return JSONResponse(data)
+
+
+@router.post("/api/translate")
+def translate(data: Translate):
+    result = job_controller.translate(data.lang, data.content)
+    return JSONResponse({"results": result})
+
+
+@router.post("/api/crawling_ttxvn")
+def crawling_ttxvn(job_id: str):
+    req = requests.post(settings.PIPELINE_API, params={"job_id": job_id})
+    if req.ok:
+        return JSONResponse(req.json())
+    return JSONResponse({"succes": "False"})

@@ -218,7 +218,7 @@ def get_timeline(
                     "result._id": ObjectId(object_id),
                 },
             },
-            {"$project": {"result": 1}},
+            {"$project": {"result": 0}},
             {
                 "$limit": int(page_size),
             },
@@ -227,7 +227,6 @@ def get_timeline(
         ]
         if len(filter_spec.keys()) > 2:
             query.insert(0, {"$match": filter_spec})
-        print(query)
         data = MongoRepository().aggregate("events", query)
     else:
         data, _ = MongoRepository().get_many(
@@ -236,6 +235,7 @@ def get_timeline(
             ["date_created"],
             {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)},
         )
+
     for row in data:
         row["_id"] = str(row["_id"])
         row["date_created"] = str(row.get("date_created"))

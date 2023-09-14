@@ -17,3 +17,4 @@ RUN openssl rsa -in secrets/PRIVATE_KEY -pubout -outform PEM -out secrets/PUBLIC
 EXPOSE 6102
 
 CMD [ "python","main.py"]
+
