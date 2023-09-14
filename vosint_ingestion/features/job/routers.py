@@ -19,6 +19,7 @@ from db.init_db import get_collection_client
 from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_newsletter_id__,
 )
+from core.config import settings
 
 import asyncio
 
@@ -1316,3 +1317,11 @@ def get_table_ttxvn(
 def translate(data: Translate):
     result = job_controller.translate(data.lang, data.content)
     return JSONResponse({"results": result})
+
+
+@router.post("/api/crawling_ttxvn")
+def crawling_ttxvn(job_id: str):
+    req = requests.post(settings.PIPELINE_API, params={"job_id": job_id})
+    if req.ok:
+        return JSONResponse(req.json())
+    return JSONResponse({"succes": "False"})

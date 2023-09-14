@@ -288,8 +288,11 @@ class JobController:
         return {"result": news, "total_record": len(news)}
 
     def translate(self, lang, content):
+        lang_dict = {"en": "english", "ru": "russian", "cn": "chinese"}
+        lang_code = lang_dict.get(lang)
         req = requests.post(
-            settings.TRANSLATE_API, data=json.dumps({"language": lang, "text": content})
+            settings.TRANSLATE_API,
+            data=json.dumps({"language": lang_code, "text": content}),
         )
         if req.ok:
             return req.json().get("translate_text")
