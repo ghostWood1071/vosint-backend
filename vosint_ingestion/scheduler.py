@@ -4,6 +4,8 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from common.internalerror import *
+from core.config import settings
+from apscheduler.jobstores.mongodb import MongoDBJobStore
 
 
 class Scheduler:
@@ -19,9 +21,16 @@ class Scheduler:
                 },
             )
 
-        self.__bg_scheduler = BackgroundScheduler(
-            jobstores={"default": SQLAlchemyJobStore(url="sqlite:///jobs.sqlite")}
-        )
+        mongo_config = {
+            "host": settings.mong_host,
+            "port": settings.mongo_port,
+            "username": settings.mongo_username,
+            "password": settings.mongo_passwd,
+            "database": settings.mongo_db_name,
+            "collection": "jobstore",
+        }
+        jobstore = {"default": MongoDBJobStore(**mongo_config)}
+        self.__bg_scheduler = BackgroundScheduler(jobstores=jobstore)
         self.__bg_scheduler.start()
 
         Scheduler.__instance = self
@@ -45,7 +54,7 @@ class Scheduler:
     def get_jobs(self) -> list:
         jobs = [job.id for job in self.__bg_scheduler.get_jobs()]
         return jobs
-    
+
     def add_job_interval(
         self,
         id: str,
@@ -62,4 +71,3 @@ class Scheduler:
             seconds=interval,
             next_run_time=next_run_time,
         )
-
