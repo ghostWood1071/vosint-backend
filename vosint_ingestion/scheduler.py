@@ -23,9 +23,9 @@ class Scheduler:
 
         mongo_config = {
             "host": settings.mong_host,
-            "port": settings.mongo_port,
-            "username": settings.mongo_username,
-            "password": settings.mongo_passwd,
+            #"port": settings.mongo_port,
+            #"username": settings.mongo_username,
+            #"password": settings.mongo_passwd,
             "database": settings.mongo_db_name,
             "collection": "jobstore",
         }
