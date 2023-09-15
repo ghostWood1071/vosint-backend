@@ -1056,6 +1056,7 @@ def get_result_job(
             )
 
             query["$and"].append({"pub_date": {"$gte": start_date, "$lte": end_date}})
+
         elif start_date != "":
             start_date = datetime(
                 int(start_date.split("/")[2]),
@@ -1165,10 +1166,74 @@ def get_result_job(
 
 
 @router.get("/api/get_table")
-def get_table(name, id=None, order=None, page_number=None, page_size=None):
+def get_table(
+    name,
+    id=None,
+    order=None,
+    page_number=None,
+    page_size=None,
+    text_search="",
+    start_date="",
+    end_date="",
+    sac_thai="",
+    # language_source="",
+):
     query = {}
+    query["$and"] = []
+
     if id != None:
         query["id"] = str(id)
+
+    # filter by start_date, end_date, text_search
+    if start_date != "" and end_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+
+        start_date = str(start_date).replace("-", "/")
+        end_date = str(end_date).replace("-", "/")
+        query["$and"].append({"created_at": {"$gte": start_date, "$lte": end_date}})
+
+    elif start_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+        query["$and"].append({"created_at": {"$gte": start_date}})
+
+    elif end_date != "":
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_date = str(end_date).replace("-", "/")
+        query["$and"].append({"created_at": {"$lte": end_date}})
+
+    if sac_thai != "" and sac_thai != "all":
+        query["$and"].append({"sentiment": sac_thai})
+
+    if text_search != "":
+        query["$and"].append(
+            {
+                "$or": [
+                    {"header": {"$regex": text_search, "$options": "i"}},
+                    {"content": {"$regex": text_search, "$options": "i"}},
+                ]
+            }
+        )
+
+    if str(query) == "{'$and': []}":
+        query = {}
 
     return JSONResponse(
         job_controller.get_result_job(name, order, page_number, page_size, filter=query)

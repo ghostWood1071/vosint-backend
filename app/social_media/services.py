@@ -1,14 +1,19 @@
 from typing import List
-
+from typing import Optional
 from bson import ObjectId
 from fastapi import status
 
 from app.social_media.models import AddFollowed, UpdateSocial, UpdateStatus
 from app.social_media.utils import object_to_json
 from db.init_db import get_collection_client
+from vosint_ingestion.models import MongoRepository
+from datetime import datetime
 
 client = get_collection_client("social_media")
 client2 = get_collection_client("socials")
+facebook_client = get_collection_client("facebook")
+twitter_client = get_collection_client("twitter")
+tiktok_client = get_collection_client("tiktok")
 
 
 async def create_social_media(user):
@@ -211,3 +216,72 @@ def social_entity(socials) -> dict:
         "is_active": bool(socials["is_active"]),
         "followed_by": socials["followed_by"],
     }
+
+
+async def check_read_socials(post_ids: List[str], social_platform: str, user_id):
+    post_id_list = [ObjectId(post_id) for post_id in post_ids]
+    filter_spec = {
+        "_id": {"$in": post_id_list},
+        "list_user_read": {"$not": {"$all": [user_id]}},
+    }
+    update_command = {"$push": {"list_user_read": user_id}}
+    collection = (
+        "facebook"
+        if social_platform == "facebook"
+        else ("twitter" if social_platform == "twitter" else "tiktok")
+    )
+
+    return MongoRepository().update_many(collection, filter_spec, update_command)
+
+
+async def check_unread_socials(post_ids: List[str], social_platform: str, user_id: str):
+    post_id_list = [ObjectId(post_id) for post_id in post_ids]
+    filter_spec = {"_id": {"$in": post_id_list}}
+    update_command = {"$pull": {"list_user_read": {"$in": [user_id]}}}
+    collection = (
+        "facebook"
+        if social_platform == "facebook"
+        else ("twitter" if social_platform == "twitter" else "tiktok")
+    )
+    return MongoRepository().update_many(collection, filter_spec, update_command)
+
+
+async def feature_keywords(k: int, start_date: str, end_date: str, name: str):
+    start_date = datetime(
+        int(start_date.split("/")[2]),
+        int(start_date.split("/")[1]),
+        int(start_date.split("/")[0]),
+    )
+
+    end_date = datetime(
+        int(end_date.split("/")[2]),
+        int(end_date.split("/")[1]),
+        int(end_date.split("/")[0]),
+    )
+
+    start_date = str(start_date).replace("-", "/")
+    end_date = str(end_date).replace("-", "/")
+
+    pipeline = [
+        {"$match": {"created_at": {"$gte": start_date, "$lte": end_date}}},
+        {"$unwind": {"path": "$keywords"}},
+        {
+            "$group": {"_id": "$keywords", "value": {"$sum": 1}},
+        },
+        {"$sort": {"value": -1}},
+        {"$limit": k},
+    ]
+
+    collection_client = (
+        facebook_client
+        if name == "facebook"
+        else (twitter_client if name == "twitter" else tiktok_client)
+    )
+
+    data = collection_client.aggregate(pipeline)
+
+    result = []
+    async for record in data:
+        result.append(record)
+
+    return result
