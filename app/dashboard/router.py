@@ -2,50 +2,25 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter
 
-from db.init_db import get_collection_client
-
 from .service import (
     count_news_country_today,
     count_news_hours,
     news_country_today,
     news_hours_today,
+    news_seven_nearest,
+    top_news_by_topic,
+    top_news_by_country,
+    top_user_read,
+    total_users,
+    hot_events_today,
 )
 
 router = APIRouter()
 
-client_events = get_collection_client("events")
 
-
-@router.get("/hot-news-today")
-async def get_hot_news_today():
-    now = datetime.now()
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=1, seconds=-1)
-
-    pipeline = [
-        {
-            "$match": {
-                "date_created": {
-                    "$gte": start_of_day,
-                    "$lt": end_of_day,
-                }
-            }
-        },
-        {
-            "$project": {
-                "new_list_length": {"$size": "$new_list"},
-                "event_content": 1,
-                "event_name": 1,
-                "chu_the": 1,
-                "khach_the": 1,
-                "date_created": 1,
-            }
-        },
-        {"$sort": {"new_list_length": -1}},
-        {"$limit": 10},
-    ]
-    result = await client_events.aggregate(pipeline).to_list(None)
-    return {"result": result}
+@router.get("/hot-events-today")
+async def get_hot_events_today():
+    return await hot_events_today()
 
 
 @router.get("/news-country-today")
@@ -66,3 +41,29 @@ async def get_count_news_country_today():
 @router.post("/count-news-hours")
 async def get_count_news_hours():
     return await count_news_hours()
+
+
+# New
+@router.get("/get-news-seven-nearest")
+async def get_news_seven_nearest_r():
+    return await news_seven_nearest()
+
+
+@router.get("/get-top-news-by-topic")
+async def get_top_news_by_topic():
+    return await top_news_by_topic()
+
+
+@router.get("/get-top-news-by-country")
+async def get_top_news_by_country():
+    return await top_news_by_country()
+
+
+@router.get("/get-total-users")
+async def get_total_users():
+    return await total_users()
+
+
+@router.get("/get-top-user-read")
+async def get_top_user_read():
+    return await top_user_read()
