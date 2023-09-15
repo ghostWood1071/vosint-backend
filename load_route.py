@@ -38,6 +38,10 @@ ROUTE_LIST = [
     {"route": EventRouter, "tags": ["Event"], "prefix": "/event"},
     {"route": ReportRouter, "tags": ["Report"], "prefix": "/report"},
     {"route": VNNewRouter, "tags": ["VNNew"], "prefix": "/vnnew"},
-    {"route": UserConfigRouter, "tags": ["Account ttxvn config"], "prefix": "/account-ttxvn-config"},
-    {"route": DashboardRouter, "tags": ["Dashboard"], "prefix": "/dashboard"}
+    {
+        "route": UserConfigRouter,
+        "tags": ["Account ttxvn config"],
+        "prefix": "/account-ttxvn-config",
+    },
+    {"route": DashboardRouter, "tags": ["Dashboard"], "prefix": "/dashboard"},
 ]
