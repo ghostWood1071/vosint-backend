@@ -19,12 +19,22 @@ from .services import (
     update_followed_by,
     update_social_account,
     update_status_account,
+    check_read_socials,
+    check_unread_socials,
+    feature_keywords,
 )
 
 client = get_collection_client("social_media")
 client2 = get_collection_client("users")
 
 router = APIRouter()
+
+
+@router.get("/get-feature-keywords")
+async def get_feature_keywords(
+    k: int = 10, start_date: str = "", end_date: str = "", name: str = "facebook"
+):
+    return await feature_keywords(k, start_date, end_date, name)
 
 
 @router.post("")
@@ -198,3 +208,25 @@ async def update_status(id: str, data: UpdateStatus = Body(...)):
     if updated_status:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
+
+
+@router.post("/read")
+async def read_socials(
+    post_ids: List[str], social_platform: str, authorize: AuthJWT = Depends()
+):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    result = await check_read_socials(post_ids, social_platform, user_id)
+    return result
+
+
+@router.post("/unread")
+async def unread_socials(
+    post_ids: List[str],
+    social_platform: str,
+    authorize: AuthJWT = Depends(),
+):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    await check_unread_socials(post_ids, social_platform, user_id)
+    return post_ids
