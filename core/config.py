@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 6082
-    APP_STATIC_DIR: str = "static"
+    APP_STATIC_DIR: str
 
     PRIVATE_KEY: str
     PUBLIC_KEY: str

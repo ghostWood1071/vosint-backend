@@ -244,7 +244,7 @@ def get_news_from_newsletter_id__(
     list_source_name = None
     if type == "source":
         name = MongoRepository().get_one(
-            collection_name="infor", filter_spec={"_id": id_nguon_nhom_nguon}
+            collection_name="info", filter_spec={"_id": id_nguon_nhom_nguon}
         )["name"]
         list_source_name = []
         list_source_name.append('"' + name + '"')
