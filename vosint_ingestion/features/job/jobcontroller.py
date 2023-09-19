@@ -107,9 +107,11 @@ class JobController:
         page_number = page_number if page_number else 1
         page_size = page_size if page_size else 20
         pagination_spec = {"skip": page_size * (page_number - 1), "limit": page_size}
+
         pipeline_dtos, total_records = self.__job_service.get_result_job(
             News, order_spec=order_spec, pagination_spec=pagination_spec, filter=filter
         )
+
         for i in pipeline_dtos:
             try:
                 i["_id"] = str(i["_id"])
@@ -118,6 +120,7 @@ class JobController:
             try:
                 i["pub_date"] = str(i.get("pub_date"))
                 i["created"] = str(i.get("created"))
+                i["id_social"] = str(i.get("id_social"))
             except:
                 pass
         return {"success": True, "total_record": total_records, "result": pipeline_dtos}

@@ -7,7 +7,7 @@ from app.social_media.models import AddFollowed, UpdateSocial, UpdateStatus
 from app.social_media.utils import object_to_json
 from db.init_db import get_collection_client
 from vosint_ingestion.models import MongoRepository
-from datetime import datetime
+from datetime import datetime, timedelta
 
 client = get_collection_client("social_media")
 client2 = get_collection_client("socials")
@@ -79,7 +79,6 @@ async def update_social_account(data: UpdateSocial):
     if social_name != compare_name:
         social_name = compare_name
     followers = data.get("followed_by", [])
-    print(followers)
 
     await client2.update_many(
         {
@@ -193,6 +192,16 @@ async def find_object_by_filter_and_paginate(filter_object, skip: int, limit: in
 
 async def find_object_by_filter(filter_object):
     objects = []
+    data = client.find(filter_object).sort("_id")
+
+    # result = []
+    # async for record in data:
+    #     record["_id"] = str(record["_id"])
+    #     print("record", record)
+    #     result.append(record)
+    # return result
+
+    # print(filter_object)
     async for new in client.find(filter_object).sort("_id"):
         new = object_to_json(new)
         objects.append(new)
@@ -259,6 +268,8 @@ async def feature_keywords(k: int, start_date: str, end_date: str, name: str):
         int(end_date.split("/")[0]),
     )
 
+    end_date = end_date.replace(hour=23, minute=59, second=59)
+
     start_date = str(start_date).replace("-", "/")
     end_date = str(end_date).replace("-", "/")
 
@@ -293,3 +304,118 @@ async def get_news_facebook(news_ids: List[str]):
     async for row in facebook_client.find({"_id": {"$in": filters}}):
         results.append(row)
     return results
+
+
+async def social_personal(id: str):
+    pipeline = [{"$match": {"$expr": {"$eq": ["$_id", {"$toObjectId": id}]}}}]
+
+    data = client.aggregate(pipeline)
+
+    result = {}
+    async for record in data:
+        result = record
+
+    return result
+
+
+async def statistic_interaction(name: str):
+    date_current = datetime.now()
+    date_ago = date_current - timedelta(days=7)
+
+    date_current = str(date_current)[0:10].replace("-", "/")
+    date_ago = str(date_ago)[0:10].replace("-", "/")
+
+    pipeline = [
+        {"$match": {"created_at": {"$gte": date_ago, "$lte": date_current}}},
+        {
+            "$group": {
+                "_id": {
+                    "$substr": ["$created_at", 0, 10],
+                },
+                "total_like": {"$sum": {"$toInt": "$like"}},
+                "total_share": {"$sum": {"$toInt": "$share"}},
+            }
+        },
+        {"$limit": 7},
+        {"$sort": {"_id": 1}},
+    ]
+
+    collection_client = (
+        facebook_client
+        if name == "facebook"
+        else (twitter_client if name == "twitter" else tiktok_client)
+    )
+
+    data = collection_client.aggregate(pipeline)
+
+    result = []
+    async for record in data:
+        result.append(record)
+
+    return result
+
+
+async def active_member(name: str):
+    # person post the most
+    pipeline = [
+        {
+            "$group": {"_id": "$id_social", "value": {"$sum": 1}},
+        },
+        {
+            "$lookup": {
+                "from": "social_media",
+                "localField": "_id",
+                "foreignField": "_id",
+                "as": "user",
+            }
+        },
+        {"$sort": {"value": -1}},
+    ]
+
+    collection_client = (
+        facebook_client
+        if name == "facebook"
+        else (twitter_client if name == "twitter" else tiktok_client)
+    )
+
+    data = collection_client.aggregate(pipeline)
+
+    result = []
+    async for record in data:
+        result.append(record)
+
+    return result
+
+
+def posts_from_priority(social_type, page_number, page_size, filter):
+    return "Call"
+    # # Receives request data
+    # # order = request.args.get('order')
+    # # order = request.args.get('order')
+    # # page_number = request.args.get('page_number')
+    # page_number = int(page_number) if page_number is not None else None
+    # # page_size = request.args.get('page_size')
+    # page_size = int(page_size) if page_size is not None else None
+
+    # # Create sort condition
+    # order_spec = order.split(",") if order else []
+
+    # # Calculate pagination information
+    # page_number = page_number if page_number else 1
+    # page_size = page_size if page_size else 20
+    # pagination_spec = {"skip": page_size * (page_number - 1), "limit": page_size}
+    # pipeline_dtos, total_records = self.__job_service.get_result_job(
+    #     News, order_spec=order_spec, pagination_spec=pagination_spec, filter=filter
+    # )
+    # for i in pipeline_dtos:
+    #     try:
+    #         i["_id"] = str(i["_id"])
+    #     except:
+    #         pass
+    #     try:
+    #         i["pub_date"] = str(i.get("pub_date"))
+    #         i["created"] = str(i.get("created"))
+    #         i["id_social"] = str(i.get("id_social"))
+    #     except:
+    #         pass
+    # return {"success": True, "total_record": total_records, "result": pipeline_dtos}
