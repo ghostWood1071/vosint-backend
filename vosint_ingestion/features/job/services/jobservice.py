@@ -33,6 +33,7 @@ def start_job(pipeline_id=None):
     request = requests.post(f"{settings.PIPELINE_API}/Job/api/start_job/{pipeline_id}")
     if not request.ok:
         raise Exception(request.json())
+    # print("hello i'm the best programmer in the world")
 
 
 class JobService:

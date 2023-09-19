@@ -137,7 +137,8 @@ def export_news_to_words(news):
         doc.add_paragraph(f"Ngày {date_str}")
         # content = "Ngày " + date_str + "\n" + event["event_content"]
         # doc_content = doc.add_paragraph(content)
-        insert_html_to_docx(doc, event["data:content"])
+        # insert_html_to_docx(doc, event["data:content"])
+        doc_content = doc.add_paragraph(event["data:content"])
         doc_content = doc.add_paragraph("\n")
         doc_content.add_run("Nguồn tin \n").italic = True
         doc_run = doc_content.add_run(
