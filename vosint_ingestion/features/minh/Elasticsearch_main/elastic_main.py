@@ -452,7 +452,7 @@ class My_ElasticSearch:
         if ids is not None:
             simple_filter["query"]["bool"]["should"] = {"terms": {"_id": ids}}
 
-        print(simple_filter)
+        print(json.dumps(simple_filter))
 
         searched = self.es.search(index=index_name, body=simple_filter)
         result = []

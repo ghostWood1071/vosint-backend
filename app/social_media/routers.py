@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 
@@ -22,7 +22,10 @@ from .services import (
     check_read_socials,
     check_unread_socials,
     feature_keywords,
+    get_news_facebook,
 )
+from word_exporter import export_facebook_word
+from datetime import datetime
 
 client = get_collection_client("social_media")
 client2 = get_collection_client("users")
@@ -230,3 +233,18 @@ async def unread_socials(
     user_id = authorize.get_jwt_subject()
     await check_unread_socials(post_ids, social_platform, user_id)
     return post_ids
+
+
+@router.post("/export-to-word")
+async def export_to_word(news_ids: List[str]):
+    news_fb = await get_news_facebook(news_ids)
+    file_buff = export_facebook_word(news_fb)
+    nowstr = datetime.now().strftime("%d-%m-%Y")
+    return Response(
+        file_buff.read(),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Access-Control-Expose-Headers": "Content-Disposition",
+            "Content-Disposition": f"attachment; filename=su_kien(facebook-{nowstr}).docx",
+        },
+    )

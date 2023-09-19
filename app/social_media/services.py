@@ -285,3 +285,11 @@ async def feature_keywords(k: int, start_date: str, end_date: str, name: str):
         result.append(record)
 
     return result
+
+
+async def get_news_facebook(news_ids: List[str]):
+    filters = [ObjectId(n_id) for n_id in news_ids]
+    results = []
+    async for row in facebook_client.find({"_id": {"$in": filters}}):
+        results.append(row)
+    return results
