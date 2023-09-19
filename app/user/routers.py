@@ -156,10 +156,9 @@ async def get_interested(
     if social_type:
         filter["social_type"] = social_type
     if social_name:
-        filter["social_name"] = {"$regex": f"{social_name.lower()}"}
+        filter["social_name"] = {"$regex": f"{social_name.lower()}", "$options": "i"}
 
     objects = await find_object_by_filter(filter)
-
     return JSONResponse(status_code=status.HTTP_200_OK, content={"result": objects})
 
 
