@@ -1,10 +1,9 @@
 from typing import List, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
-
 from app.user.services import find_user_by_id
 from db.init_db import get_collection_client
 
@@ -22,7 +21,14 @@ from .services import (
     check_read_socials,
     check_unread_socials,
     feature_keywords,
+    get_news_facebook,
+    social_personal,
+    statistic_interaction,
+    active_member,
+    posts_from_priority,
 )
+from word_exporter import export_facebook_word
+from datetime import datetime
 
 client = get_collection_client("social_media")
 client2 = get_collection_client("users")
@@ -30,11 +36,103 @@ client2 = get_collection_client("users")
 router = APIRouter()
 
 
+@router.get("/get-social-personal")
+async def get_social_personal(id: str):
+    return await social_personal(id)
+
+
 @router.get("/get-feature-keywords")
 async def get_feature_keywords(
     k: int = 10, start_date: str = "", end_date: str = "", name: str = "facebook"
 ):
     return await feature_keywords(k, start_date, end_date, name)
+
+
+@router.get("/get-statistic-interaction")
+async def get_statistic_interaction(name: str = "facebook"):
+    return await statistic_interaction(name)
+
+
+@router.get("/get-active-member")
+async def get_active_member(name: str = "facebook"):
+    return await active_member(name)
+
+
+@router.get("/get-posts-from-priority")
+def get_posts_from_priority(
+    social_type,
+    id=None,
+    order=None,
+    page_number=None,
+    page_size=None,
+    text_search="",
+    start_date="",
+    end_date="",
+    sac_thai="",
+    # language_source="",
+):
+    query = {}
+    query["$and"] = []
+
+    if id != None:
+        query["id"] = str(id)
+
+    # filter by start_date, end_date, text_search
+    if start_date != "" and end_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+
+        start_date = str(start_date).replace("-", "/")
+        end_date = str(end_date).replace("-", "/")
+        query["$and"].append({"created_at": {"$gte": start_date, "$lte": end_date}})
+
+    elif start_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+        query["$and"].append({"created_at": {"$gte": start_date}})
+
+    elif end_date != "":
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_date = str(end_date).replace("-", "/")
+        query["$and"].append({"created_at": {"$lte": end_date}})
+
+    if sac_thai != "" and sac_thai != "all":
+        query["$and"].append({"sentiment": sac_thai})
+
+    if text_search != "":
+        query["$and"].append(
+            {
+                "$or": [
+                    {"header": {"$regex": text_search, "$options": "i"}},
+                    {"content": {"$regex": text_search, "$options": "i"}},
+                ]
+            }
+        )
+
+    if str(query) == "{'$and': []}":
+        query = {}
+
+    return posts_from_priority(social_type, page_number, page_size, filter=query)
+    # return JSONResponse(
+    #     # job_controller.
+    #     posts_from_priority(social_type, order, page_number, page_size, filter=query)
+    # )
 
 
 @router.post("")
@@ -230,3 +328,18 @@ async def unread_socials(
     user_id = authorize.get_jwt_subject()
     await check_unread_socials(post_ids, social_platform, user_id)
     return post_ids
+
+
+@router.post("/export-to-word")
+async def export_to_word(news_ids: List[str]):
+    news_fb = await get_news_facebook(news_ids)
+    file_buff = export_facebook_word(news_fb)
+    nowstr = datetime.now().strftime("%d-%m-%Y")
+    return Response(
+        file_buff.read(),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Access-Control-Expose-Headers": "Content-Disposition",
+            "Content-Disposition": f"attachment; filename=su_kien(facebook-{nowstr}).docx",
+        },
+    )

@@ -28,6 +28,7 @@ def get_news_from_newsletter_id__(
 ):
     # list_id = None
     query = None
+    index_name = "vosint"
     try:
         start_date = (
             start_date.split("/")[2]
@@ -241,6 +242,7 @@ def get_news_from_newsletter_id__(
                     query += "(" + query_cn + ")"
                 else:
                     query += "| (" + query_cn + ")"
+
     list_source_name = None
     if type == "source":
         name = MongoRepository().get_one(
@@ -249,16 +251,17 @@ def get_news_from_newsletter_id__(
         list_source_name = []
         list_source_name.append('"' + name + '"')
     elif type == "source_group":
-        name = MongoRepository().get_one(
+        source_group = MongoRepository().get_one(
             collection_name="Source", filter_spec={"_id": id_nguon_nhom_nguon}
-        )["news"]
+        )
+        name = source_group.get("news")
         list_source_name = []
         for i in name:
             list_source_name.append('"' + i["name"] + '"')
 
     if text_search == None and list_source_name == None:
         pipeline_dtos = my_es.search_main(
-            index_name="vosint",
+            index_name=index_name,
             query=query,
             gte=start_date,
             lte=end_date,
@@ -268,7 +271,7 @@ def get_news_from_newsletter_id__(
         )
     elif text_search == None and list_source_name != None:
         pipeline_dtos = my_es.search_main(
-            index_name="vosint",
+            index_name=index_name,
             query=query,
             gte=start_date,
             lte=end_date,
@@ -280,7 +283,7 @@ def get_news_from_newsletter_id__(
     else:
         if list_source_name == None:
             pipeline_dtos = my_es.search_main(
-                index_name="vosint",
+                index_name=index_name,
                 query=query,
                 gte=start_date,
                 lte=end_date,
@@ -290,7 +293,7 @@ def get_news_from_newsletter_id__(
             )
         else:
             pipeline_dtos = my_es.search_main(
-                index_name="vosint",
+                index_name=index_name,
                 query=query,
                 gte=start_date,
                 lte=end_date,
@@ -304,7 +307,7 @@ def get_news_from_newsletter_id__(
         for i in range(len(pipeline_dtos)):
             list_id.append(pipeline_dtos[i]["_source"]["id"])
         pipeline_dtos = my_es.search_main(
-            index_name="vosint",
+            index_name=index_name,
             query=text_search,
             gte=start_date,
             lte=end_date,

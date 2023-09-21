@@ -207,6 +207,8 @@ class PipelineService:
             norm_pipeline["logs"] = pipeline["logs"]
         if "enabled" in pipeline:
             norm_pipeline["enabled"] = pipeline["enabled"]
+        if "source_favicon" in pipeline:
+            norm_pipeline["source_favicon"] = pipeline["source_favicon"]
 
         return norm_pipeline
 

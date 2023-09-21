@@ -149,3 +149,27 @@ def export_news_to_words(news):
     doc.save(buff)
     buff.seek(0)
     return buff
+
+
+def export_facebook_word(news_list):
+    doc: Document = Document()
+    for news in news_list:
+        header = news.get("header")
+        content = news.get("content")
+        create_at = datetime.strptime(news.get("created_at"), "%Y/%m/%d %H:%M:%S")
+        heading = doc.add_heading(header, level=1)
+        heading_run = heading.runs[0]
+        heading_run.bold = True
+        heading_run.italic = True
+        heading_run.font_size = Pt(14)
+        heading_run.font.color.rgb = RGBColor(0, 0, 0)
+        date_str = create_at.strftime("%d.%m.%Y")
+        content = "Ngày " + date_str + "\n\n" + content.replace("\nSee translation", "")
+        doc_content = doc.add_paragraph(content)
+        doc_source = doc.add_paragraph()
+        doc_source.add_run("Nguồn tin \n").italic = True
+        doc_source.add_run(f"+ {news.get('id')}\n").italic = True
+    buff = BytesIO()
+    doc.save(buff)
+    buff.seek(0)
+    return buff

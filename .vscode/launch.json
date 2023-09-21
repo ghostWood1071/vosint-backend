@@ -13,7 +13,6 @@
                 "main:app"
             ],
             "jinja": true,
-            "justMyCode": false
         }
     ]
 }
