@@ -1197,6 +1197,8 @@ def get_table(
             int(end_date.split("/")[0]),
         )
 
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+
         start_date = str(start_date).replace("-", "/")
         end_date = str(end_date).replace("-", "/")
         query["$and"].append({"created_at": {"$gte": start_date, "$lte": end_date}})
