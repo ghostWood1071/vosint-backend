@@ -11,7 +11,7 @@ from app.news.services import count_news, find_news_by_filter_and_paginate
 from app.social_media.services import find_object_by_filter
 from db.init_db import get_collection_client
 
-from .models import InterestedModel, Role, UserCreateModel, UserUpdateModel
+from .models import InterestedModel, Role, UserCreateModel, UserUpdateModel, BaseUser
 from .services import (
     count_users,
     create_user,
@@ -26,6 +26,7 @@ from .services import (
     update_user,
     update_vital_user,
     user_entity,
+    set_status_user,
 )
 
 router = APIRouter()
@@ -384,3 +385,9 @@ async def upload_avatar(file: UploadFile = File(...), authorize: AuthJWT = Depen
     return JSONResponse(
         status_code=status.HTTP_202_ACCEPTED, content=f"static/{file.filename}"
     )
+
+# Set online status user
+@router.post("/set-status-user")
+async def set_status_user_(payload: BaseUser):
+    value = payload.dict()
+    return await set_status_user(value)

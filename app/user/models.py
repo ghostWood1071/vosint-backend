@@ -49,3 +49,8 @@ class UserChangePasswordModel(BaseModel):
 
 class InterestedModel(BaseModel):
     id: Optional[str] = Field(...)
+
+
+class BaseUser(BaseModel):
+    id: str
+    online: bool
