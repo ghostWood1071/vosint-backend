@@ -1,4 +1,5 @@
-import datetime
+# import datetime
+from datetime import datetime
 import json
 from typing import *
 from bson.objectid import ObjectId
@@ -179,20 +180,23 @@ def get_timeline(
 ):
     filter_spec = {}
     skip = int(page_size) * (int(page_number) - 1)
-    print("skip: ", skip)
     if text_search != "":
         filter_spec.update({"$text": {"$search": text_search.strip()}})
     if end_date != None and end_date != "":
-        filter_spec.update({"date_created": {"$lt": end_date}})
+        _end_date = datetime.strptime(end_date, "%d/%m/%Y")
+        filter_spec.update({"date_created": {"$lte": _end_date}})
     if start_date != None and start_date != "":
+        _start_date = datetime.strptime(start_date, "%d/%m/%Y")
+
         if filter_spec.get("date_created") == None:
-            filter_spec.update({"date_created": {"$gt": start_date}})
+            filter_spec.update({"date_created": {"$gte": _start_date}})
         else:
-            filter_spec["date_created"].update({"$gt": start_date})
+            filter_spec["date_created"].update({"$gte": _start_date})
     if sac_thai != None and sac_thai != "":
         filter_spec.update({"data:class_sacthai": sac_thai})
     if language_source != None and language_source != "":
         filter_spec.update({"source_language": language_source})
+
     data = []
     if object_id != "":
         query = [
@@ -225,8 +229,10 @@ def get_timeline(
             {"$skip": skip},
             {"$sort": {"date_created": -1}},
         ]
-        if len(filter_spec.keys()) > 2:
-            query.insert(0, {"$match": filter_spec})
+        # if len(filter_spec.keys()) > 2:
+        #     print(1)
+        query.insert(0, {"$match": filter_spec})
+
         data = MongoRepository().aggregate("events", query)
     else:
         data, _ = MongoRepository().get_many(
