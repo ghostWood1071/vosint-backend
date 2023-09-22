@@ -1,20 +1,26 @@
 from datetime import datetime, timedelta
 from typing import List
-from bson.objectid import ObjectId
 
 from db.init_db import get_collection_client
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
+import json
+import os
 
 dashboard_client = get_collection_client("dashboard")
 object_client = get_collection_client("object")
 news_client = get_collection_client("News")
 users_client = get_collection_client("users")
-client_events = get_collection_client("events")
+events_client = get_collection_client("events")
+his_log_client = get_collection_client("his_log")
+newsletter_client = get_collection_client("newsletter")
+report_client = get_collection_client("report")
 
 
 my_es = My_ElasticSearch()
+
+__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
 def convert_to_query(string: List[str]) -> str:
@@ -81,7 +87,7 @@ async def count_news_country_today():
 async def count_news_hours():
     date_lt = datetime.now().replace(minute=0, second=0, microsecond=0)
     date_gte = date_lt - timedelta(hours=1)
-    # convert YYYY-MM-DD HH:mm:ss to YYYY/MM/DD HH:mm:ss
+    """convert YYYY-MM-DD HH:mm:ss to YYYY/MM/DD HH:mm:ss"""
     news_count = await news_client.count_documents(
         {
             "created_at": {
@@ -140,13 +146,13 @@ async def news_hours_today():
     return result
 
 
-# New
-# Get total of news in seven days
-async def news_seven_nearest():
-    day_space = 7
+""" START LEADER """
 
+
+async def news_seven_nearest(day_space: int = 7):
+    """Get total of news in seven days"""
     now = datetime.now()
-    now = now.today() - timedelta(days=day_space)
+    now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
 
@@ -181,18 +187,15 @@ async def news_seven_nearest():
     return result
 
 
-# Get total of news in seven days by topics (top 5)
-async def top_news_by_topic():
-    day_space = 7
-
+async def top_news_by_topic(day_space=7):
+    """Get total of news in seven days by topics (top 5) with key: data:class_linhvuc"""
     now = datetime.now()
-    now = now.today() - timedelta(days=day_space)
+    now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
 
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
-
     pipeline = [
         {
             "$match": {
@@ -202,10 +205,10 @@ async def top_news_by_topic():
                 }
             }
         },
-        {"$unwind": {"path": "$data:class_chude"}},
+        {"$unwind": {"path": "$data:class_linhvuc"}},
         {
             "$group": {
-                "_id": "$data:class_chude",
+                "_id": "$data:class_linhvuc",
                 "value": {"$sum": 1},
             }
         },
@@ -222,12 +225,10 @@ async def top_news_by_topic():
     return result
 
 
-# Get total of news in seven days by countries (top 5)
-async def top_news_by_country():
-    day_space = 7
-
+async def top_news_by_country(day_space: int = 7, top: int = 5):
+    """Get total of news in seven days by countries (top 5)"""
     now = datetime.now()
-    now = now.today() - timedelta(days=day_space)
+    now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
 
@@ -250,7 +251,7 @@ async def top_news_by_country():
             }
         },
         {"$sort": {"value": -1}},
-        {"$limit": 5},
+        {"$limit": top},
     ]
 
     data = news_client.aggregate(pipeline)
@@ -262,8 +263,73 @@ async def top_news_by_country():
     return result
 
 
-# Get total of users
+async def top_country_by_entities(day_space: int = 7, top: int = 5):
+    """Get countries and total of events in seven days by entities (top 5)"""
+    now = datetime.now()
+    now = now.today() - timedelta(days=day_space - 1)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+
+    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    f = open(os.path.join(__location__, "data_static/countries.json"), "r")
+
+    dataJ = json.loads(f.read())
+
+    countries = []
+    if dataJ:
+        for i in dataJ:
+            countries.append(i["name"])
+
+    f.close()
+
+    pipeline = [
+        {"$unionWith": {"coll": "event"}},
+        {
+            "$match": {
+                "created_at": {
+                    "$gte": start_of_day,
+                    "$lt": end_of_day,
+                }
+            }
+        },
+        {
+            "$project": {
+                "_id": 1,
+                "list_KT": {"$split": ["$khach_the", ", "]},
+                "list_CT": {"$split": ["$chu_the", ", "]},
+            },
+        },
+        {
+            "$project": {
+                "_id": 1,
+                "list_entities": {"$concatArrays": ["$list_KT", "$list_CT"]},
+            }
+        },
+        {
+            "$unwind": {
+                "path": "$list_entities",
+            }
+        },
+        {"$match": {"list_entities": {"$in": countries}}},
+        {"$group": {"_id": "$list_entities", "value": {"$sum": 1}}},
+        {"$project": {"country": "$_id", "value": 1}},
+        {"$sort": {"value": -1}},
+        {"$limit": top},
+    ]
+
+    data = events_client.aggregate(pipeline)
+
+    result = []
+    async for document in data:
+        result.append(document)
+
+    return result
+
+
 async def total_users():
+    """Get total of users"""
     data = users_client.find()
 
     result = []
@@ -273,7 +339,8 @@ async def total_users():
     return {"total": len(result)}
 
 
-# Get total of news in seven days by countries (top 5)
+"""Get top users in one month"""
+"""
 async def top_user_read():
     now = datetime.now()
     start_of_day = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -285,10 +352,8 @@ async def top_user_read():
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
-    print(start_of_day, end_of_day)
-
     pipeline = [
-        # Where
+        Where
         {
             "$match": {
                 "created_at": {
@@ -297,16 +362,16 @@ async def top_user_read():
                 }
             }
         },
-        # Flatten
+        Flatten
         {"$unwind": {"path": "$list_user_read"}},
-        # Group with user is key
+        Group with user is key
         {
             "$group": {
                 "_id": {"$toObjectId": "$list_user_read"},
                 "value": {"$sum": 1},
             }
         },
-        # Join with users collection
+        Join with users collection
         {
             "$lookup": {
                 "from": "users",
@@ -334,21 +399,111 @@ async def top_user_read():
     async for document in data:
         result.append(document)
 
-    return result
+    return result 
+"""
+
+
+async def top_user_read(limit=5):
+    """Get users created most reports"""
+    now = datetime.now()
+    start_of_day = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    next_month = now.replace(day=28) + timedelta(days=4)
+    end_of_day = (next_month - timedelta(days=next_month.day)).replace(
+        hour=23, minute=59, second=59
+    )
+
+    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    pipeline = [
+        {
+            "$match": {
+                "user_id": {"$ne": None},
+                # "created_at": {
+                #     "$gte": start_of_day,
+                #     "$lte": end_of_day,
+                # },
+            },
+        },
+        {
+            "$unwind": {
+                "path": "$headings",
+            },
+        },
+        {
+            "$unwind": {
+                "path": "$headings.eventIds",
+            },
+        },
+        {
+            "$group": {
+                "_id": "$user_id",
+                "headings": {"$push": "$headings"},
+            },
+        },
+        {
+            "$addFields": {
+                "total": {"$size": "$headings"},
+            },
+        },
+        {
+            "$lookup": {
+                "from": "users",
+                "let": {"id": "$_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {"$eq": ["$_id", "$$id"]},
+                        },
+                    },
+                    {
+                        "$project": {
+                            "hashed_password": 0,
+                            "news_bookmarks": 0,
+                            "vital_list": 0,
+                        },
+                    },
+                ],
+                "as": "users",
+            },
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "user_id": "$_id",
+                "total": 1,
+                "user": {"$arrayElemAt": ["$users", 0]},
+            },
+        },
+        {
+            "$sort": {
+                "total": -1,
+            },
+        },
+        {
+            "$limit": limit,
+        },
+    ]
+
+    data = await report_client.aggregate(pipeline).to_list(None)
+
+    return data
 
 
 async def hot_events_today():
+    """Get news of current day"""
     now = datetime.now()
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = start_of_day + timedelta(days=1, seconds=-1)
 
     pipeline = [
+        {"$unionWith": {"coll": "event"}},
         {
             "$match": {
                 "date_created": {
                     "$gte": start_of_day,
-                    "$lt": end_of_day,
-                }
+                    "$lte": end_of_day,
+                },
             }
         },
         {
@@ -362,5 +517,77 @@ async def hot_events_today():
         {"$sort": {"new_list_length": -1}},
         {"$limit": 10},
     ]
-    result = await client_events.aggregate(pipeline).to_list(None)
+
+    result = await events_client.aggregate(pipeline).to_list(None)
+
     return result
+
+
+async def users_online():
+    """Get users online"""
+    pipeline = [{"$count": "online"}]
+
+    data = await users_client.aggregate(pipeline).to_list(None)
+
+    return data
+
+
+""" END LEADER """
+
+
+""" START EXPERT """
+
+
+async def source_news_lowest_hightest(top: int = 1):
+    now = datetime.now()
+    end_of_day = now
+    start_of_day = end_of_day - timedelta(hours=24)
+
+    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    pipeline = [
+        {
+            "$match": {
+                "created_at": {
+                    "$gte": start_of_day,
+                    "$lte": end_of_day,
+                }
+            }
+        },
+        {"$group": {"_id": "$source_name", "value": {"$sum": 1}}},
+        {"$project": {"source_name": "$_id", "_id": 0, "value": 1}},
+        {"$sort": {"value": -1}},
+    ]
+
+    data = await news_client.aggregate(pipeline).to_list(None)
+
+    return data
+
+
+""" END EXPERT """
+
+
+""" START ADMIN """
+
+
+async def status_source_news(day_space: int = 7):
+    now = datetime.now()
+    now = now.today() - timedelta(days=day_space)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+
+    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    pipeline = [
+        {"$match": {"created_at": {"$gte": start_of_day, "$lte": end_of_day}}},
+        {"$group": {"_id": "$log", "value": {"$sum": 1}}},
+    ]
+
+    data = await his_log_client.aggregate(pipeline).to_list(None)
+
+    return data
+
+
+""" END ADMIN """
