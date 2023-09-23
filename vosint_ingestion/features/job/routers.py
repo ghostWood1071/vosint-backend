@@ -1388,7 +1388,9 @@ def translate(data: Translate):
 
 @router.post("/api/crawling_ttxvn")
 def crawling_ttxvn(job_id: str):
-    req = requests.post(settings.PIPELINE_API, params={"job_id": job_id})
+    req = requests.post(
+        f"{settings.PIPELINE_API}/Job/api/crawling_ttxvn", params={"job_id": job_id}
+    )
     if req.ok:
         return JSONResponse(req.json())
     return JSONResponse({"succes": "False"})
