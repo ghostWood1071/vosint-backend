@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 
 from db.init_db import get_collection_client
 
-infor_collect = get_collection_client("infor")
+infor_collect = get_collection_client("info")
 
 
 async def create_infor(infor):

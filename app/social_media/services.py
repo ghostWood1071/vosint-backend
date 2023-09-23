@@ -322,8 +322,10 @@ async def statistic_interaction(name: str):
     date_current = datetime.now()
     date_ago = date_current - timedelta(days=7)
 
-    date_current = str(date_current)[0:10].replace("-", "/")
-    date_ago = str(date_ago)[0:10].replace("-", "/")
+    date_current = date_current.replace(hour=23, minute=59, second=59)
+
+    date_current = str(date_current).replace("-", "/")
+    date_ago = str(date_ago).replace("-", "/")
 
     pipeline = [
         {"$match": {"created_at": {"$gte": date_ago, "$lte": date_current}}},
@@ -387,35 +389,108 @@ async def active_member(name: str):
     return result
 
 
-def posts_from_priority(social_type, page_number, page_size, filter):
-    return "Call"
-    # # Receives request data
-    # # order = request.args.get('order')
-    # # order = request.args.get('order')
-    # # page_number = request.args.get('page_number')
-    # page_number = int(page_number) if page_number is not None else None
-    # # page_size = request.args.get('page_size')
-    # page_size = int(page_size) if page_size is not None else None
+async def posts_from_priority(
+    id_social, text_search, page_number, page_size, start_date, end_date, sac_thai
+):
+    filter_spec = {}
+    skip = int(page_size) * (int(page_number) - 1)
 
-    # # Create sort condition
-    # order_spec = order.split(",") if order else []
+    # filter by text_search
+    if text_search != "":
+        filter_spec.update({"$text": {"$search": text_search}})
 
-    # # Calculate pagination information
-    # page_number = page_number if page_number else 1
-    # page_size = page_size if page_size else 20
-    # pagination_spec = {"skip": page_size * (page_number - 1), "limit": page_size}
-    # pipeline_dtos, total_records = self.__job_service.get_result_job(
-    #     News, order_spec=order_spec, pagination_spec=pagination_spec, filter=filter
-    # )
-    # for i in pipeline_dtos:
-    #     try:
-    #         i["_id"] = str(i["_id"])
-    #     except:
-    #         pass
-    #     try:
-    #         i["pub_date"] = str(i.get("pub_date"))
-    #         i["created"] = str(i.get("created"))
-    #         i["id_social"] = str(i.get("id_social"))
-    #     except:
-    #         pass
-    # return {"success": True, "total_record": total_records, "result": pipeline_dtos}
+    # filter by start_date, end_date, text_search
+    if start_date:
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        end_date = str(end_date).replace("-", "/")
+
+    if start_date != "" and end_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
+
+    elif start_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date}})
+
+    elif end_date != "":
+        filter_spec.update({"created_at": {"$lte": end_date}})
+
+    if sac_thai != "" and sac_thai != "all":
+        filter_spec.update({"sentiment": sac_thai})
+
+    filter_spec.update({"$expr": {"$eq": ["$id_social", {"$toObjectId": id_social}]}})
+
+    pipeline = [
+        {"$match": {"$expr": {"$eq": ["$_id", {"$toObjectId": id_social}]}}},
+        {
+            "$lookup": {
+                "from": "facebook",
+                "pipeline": [{"$match": filter_spec}],
+                "as": "facebook_list",
+            }
+        },
+        {
+            "$lookup": {
+                "from": "twitter",
+                "pipeline": [{"$match": filter_spec}],
+                "as": "twitter_list",
+            }
+        },
+        {
+            "$lookup": {
+                "from": "tiktok",
+                "pipeline": [{"$match": filter_spec}],
+                "as": "tiktok_list",
+            }
+        },
+        {
+            "$project": {
+                "post_list": {
+                    "$slice": [
+                        {
+                            "$concatArrays": [
+                                "$facebook_list",
+                                "$twitter_list",
+                                "$tiktok_list",
+                            ],
+                        },
+                        int(skip),
+                        int(50),
+                    ],
+                },
+            },
+        },
+        {"$unwind": "$post_list"},
+        {"$sort": {"post_list.created_at": -1}},
+        {"$group": {"_id": "$_id", "post_list": {"$push": "$post_list"}}},
+    ]
+
+    data = client.aggregate(pipeline)
+
+    result = []
+    async for record in data:
+        result.append(record)
+
+    return result
+
+
+async def statistic_interaction_from_priority(id_social: str):
+    pipeline = [
+        {
+            {"$match": {"_id": ObjectId(id_social)}},
+        }
+    ]
+
+    data = await client.aggregate(pipeline).to_list(None)
+    return data

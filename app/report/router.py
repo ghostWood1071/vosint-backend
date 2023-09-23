@@ -58,9 +58,11 @@ async def read_reports(
     user_id = auth.get_jwt_subject()
 
     query = {
-        "$text": {"$search": title},
+        # "$text": {"$search": title},
         "user_id": user_id,
     }
+    if title != "":
+        query["$text"] = {"$search": title}
 
     reports = await get_reports(query, skip, limit)
     reports_count = await count(query)

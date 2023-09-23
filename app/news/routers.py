@@ -155,28 +155,28 @@ def get_timeline_data(
     language_source: str = "",
     object_id: str = "",
 ):
-    try:
-        start_date = (
-            start_date.split("/")[2]
-            + "-"
-            + start_date.split("/")[1]
-            + "-"
-            + start_date.split("/")[0]
-            + "T00:00:00Z"
-        )
-    except:
-        pass
-    try:
-        end_date = (
-            end_date.split("/")[2]
-            + "-"
-            + end_date.split("/")[1]
-            + "-"
-            + end_date.split("/")[0]
-            + "T00:00:00Z"
-        )
-    except:
-        pass
+    # try:
+    #     start_date = (
+    #         start_date.split("/")[2]
+    #         + "-"
+    #         + start_date.split("/")[1]
+    #         + "-"
+    #         + start_date.split("/")[0]
+    #         + "T00:00:00Z"
+    #     )
+    # except:
+    #     pass
+    # try:
+    #     end_date = (
+    #         end_date.split("/")[2]
+    #         + "-"
+    #         + end_date.split("/")[1]
+    #         + "-"
+    #         + end_date.split("/")[0]
+    #         + "T00:00:00Z"
+    #     )
+    # except:
+    #     pass
     data = get_timeline(
         text_search,
         page_number,
