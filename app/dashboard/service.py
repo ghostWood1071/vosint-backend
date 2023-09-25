@@ -525,7 +525,7 @@ async def hot_events_today():
 
 async def users_online():
     """Get users online"""
-    pipeline = [{"$count": "online"}]
+    pipeline = [{"$match": {"online": True}}, {"$count": "online"}]
 
     data = await users_client.aggregate(pipeline).to_list(None)
 
