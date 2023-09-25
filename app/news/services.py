@@ -14,6 +14,7 @@ from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
 from elasticsearch import helpers
 
 client = get_collection_client("News")
+events_client = get_collection_client("events")
 
 
 async def find_news_by_filter(filter, projection=None):
@@ -180,8 +181,9 @@ def get_timeline(
 ):
     filter_spec = {}
     skip = int(page_size) * (int(page_number) - 1)
-    if text_search != "":
+    if text_search != "" and object_id == "":
         filter_spec.update({"$text": {"$search": text_search.strip()}})
+
     if end_date != None and end_date != "":
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
         filter_spec.update({"date_created": {"$lte": _end_date}})
@@ -198,44 +200,93 @@ def get_timeline(
         filter_spec.update({"source_language": language_source})
 
     data = []
+
     if object_id != "":
+        filter_search = {}
+        if text_search != "":
+            filter_search.update({"$text": {"$search": text_search.strip()}})
+
         query = [
-            {"$unwind": "$new_list"},
+            {"$match": filter_search},
+            # {"$addFields": {"score": {"$meta": "textScore"}}},
             {
-                "$lookup": {
-                    "from": "object",
-                    "let": {"news_id": "$new_list"},
-                    "pipeline": [
+                "$facet": {
+                    "data": [
+                        {"$match": filter_spec},
+                        {"$unwind": "$new_list"},
+                        {
+                            "$lookup": {
+                                "from": "object",
+                                "let": {"news_id": "$new_list"},
+                                "pipeline": [
+                                    {
+                                        "$match": {
+                                            "news_list": {"$ne": None},
+                                            "$expr": {
+                                                "$in": ["$$news_id", "$news_list"]
+                                            },
+                                        }
+                                    }
+                                ],
+                                "as": "result",
+                            }
+                        },
                         {
                             "$match": {
-                                "news_list": {"$ne": None},
-                                "$expr": {"$in": ["$$news_id", "$news_list"]},
-                            }
-                        }
+                                "result": {"$ne": []},
+                                "result._id": ObjectId(object_id),
+                            },
+                        },
+                        {"$project": {"result": 0}},
+                        {"$skip": skip},
+                        {
+                            "$limit": int(page_size),
+                        },
+                        {"$sort": {"date_created": -1}},
                     ],
-                    "as": "result",
+                    "total": [
+                        {"$match": filter_spec},
+                        {"$unwind": "$new_list"},
+                        {
+                            "$lookup": {
+                                "from": "object",
+                                "let": {"news_id": "$new_list"},
+                                "pipeline": [
+                                    {
+                                        "$match": {
+                                            "news_list": {"$ne": None},
+                                            "$expr": {
+                                                "$in": ["$$news_id", "$news_list"]
+                                            },
+                                        }
+                                    }
+                                ],
+                                "as": "result",
+                            }
+                        },
+                        {
+                            "$match": {
+                                "result": {"$ne": []},
+                                "result._id": ObjectId(object_id),
+                            },
+                        },
+                        {"$project": {"result": 0}},
+                        {"$count": "count"},
+                    ],
                 }
             },
-            {
-                "$match": {
-                    "result": {"$ne": []},
-                    "result._id": ObjectId(object_id),
-                },
-            },
-            {"$project": {"result": 0}},
-            {
-                "$limit": int(page_size),
-            },
-            {"$skip": skip},
-            {"$sort": {"date_created": -1}},
         ]
+
         # if len(filter_spec.keys()) > 2:
         #     print(1)
-        query.insert(0, {"$match": filter_spec})
+        # query.insert(0, {"$match": filter_spec})
 
         data = MongoRepository().aggregate("events", query)
+        total_records = data[0]["total"][0]["count"] if data[0]["total"] else 0
+        data = data[0]["data"] if data[0]["data"] else []
+
     else:
-        data, _ = MongoRepository().get_many(
+        data, total_records = MongoRepository().get_many(
             "events",
             filter_spec,
             ["date_created"],
@@ -247,4 +298,4 @@ def get_timeline(
         row["date_created"] = str(row.get("date_created"))
         if row.get("new_list") != None and type(row.get("new_list")) == str:
             row["new_list"] = [row["new_list"]]
-    return data
+    return {"data": data, "total_records": total_records}

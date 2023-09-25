@@ -187,4 +187,5 @@ def get_timeline_data(
         language_source,
         object_id,
     )
-    return JSONResponse({"count": len(data), "results": data}, 200)
+    # return data
+    return JSONResponse({"count": data["total_records"], "results": data["data"]}, 200)
