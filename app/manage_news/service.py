@@ -126,25 +126,16 @@ async def update_source_group(id: str, data: dict, list_source):
 
     source_group = await db.find_one({"_id": ObjectId(id)})
 
-    list_source_group = await db.find().to_list(length=None)
-
-    for item in list_source_group:
-        if (
-            item["_id"] != source_group["_id"]
-            and item["source_name"] == data["source_name"]
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Source group is duplicated",
-            )
-
-    # if infor["name"] == data["name"]:
-    #     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Object already exist")
-
-    updated_source_group = await db.find_one_and_update(
-        {"_id": ObjectId(id)}, {"$set": data}
-    )
-    if updated_source_group:
+    list_source_group = await db.find(
+        {"_id": {"$ne": source_group["_id"]}, "source_name": data["source_name"]}
+    ).to_list(length=None)
+    if len(list_source_group) > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Source group is duplicated",
+        )
+    updated_source_group = await db.update_many({"_id": ObjectId(id)}, {"$set": data})
+    if updated_source_group.modified_count > 0:
         return status.HTTP_200_OK
     else:
         return False
