@@ -13,6 +13,7 @@ object_client = get_collection_client("object")
 news_client = get_collection_client("News")
 users_client = get_collection_client("users")
 events_client = get_collection_client("events")
+event_client = get_collection_client("event")
 his_log_client = get_collection_client("his_log")
 newsletter_client = get_collection_client("newsletter")
 report_client = get_collection_client("report")
@@ -270,8 +271,8 @@ async def top_country_by_entities(day_space: int = 7, top: int = 5):
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
 
-    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
-    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    # start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    # end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
     f = open(os.path.join(__location__, "data_static/countries.json"), "r")
 
@@ -288,7 +289,7 @@ async def top_country_by_entities(day_space: int = 7, top: int = 5):
         {"$unionWith": {"coll": "event"}},
         {
             "$match": {
-                "created_at": {
+                "date_created": {
                     "$gte": start_of_day,
                     "$lt": end_of_day,
                 }
@@ -497,7 +498,6 @@ async def hot_events_today():
     end_of_day = start_of_day + timedelta(days=1, seconds=-1)
 
     pipeline = [
-        {"$unionWith": {"coll": "event"}},
         {
             "$match": {
                 "date_created": {
@@ -515,10 +515,11 @@ async def hot_events_today():
             }
         },
         {"$sort": {"new_list_length": -1}},
+        {"$match": {"new_list_length": {"$ne": 0}}},
         {"$limit": 10},
     ]
 
-    result = await events_client.aggregate(pipeline).to_list(None)
+    result = await event_client.aggregate(pipeline).to_list(None)
 
     return result
 
@@ -538,10 +539,10 @@ async def users_online():
 """ START EXPERT """
 
 
-async def source_news_lowest_hightest(top: int = 1):
+async def source_news_lowest_hightest(days: int = 1):
     now = datetime.now()
     end_of_day = now
-    start_of_day = end_of_day - timedelta(hours=24)
+    start_of_day = end_of_day - timedelta(days=days)
 
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
@@ -558,11 +559,91 @@ async def source_news_lowest_hightest(top: int = 1):
         {"$group": {"_id": "$source_name", "value": {"$sum": 1}}},
         {"$project": {"source_name": "$_id", "_id": 0, "value": 1}},
         {"$sort": {"value": -1}},
+        {
+            "$group": {
+                "_id": None,
+                "highest": {"$first": "$$ROOT"},
+                "lowest": {"$last": "$$ROOT"},
+            }
+        },
+        {"$project": {"_id": 0, "highest": 1, "lowest": 1}},
     ]
 
-    data = await news_client.aggregate(pipeline).to_list(None)
+    result = {}
+    data = news_client.aggregate(pipeline)
 
-    return data
+    async for i in data:
+        result = i
+
+    return result
+
+
+async def total_news_by_time(days: int = 1):
+    now = datetime.now()
+    end_of_day = now
+    start_of_day = end_of_day - timedelta(days=days)
+
+    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    pipeline = [
+        {
+            "$match": {
+                "created_at": {
+                    "$gte": start_of_day,
+                    "$lte": end_of_day,
+                }
+            }
+        },
+        {"$count": "source_name"},
+        {"$project": {"total": "$source_name"}},
+    ]
+
+    result = {}
+    data = news_client.aggregate(pipeline)
+
+    async for i in data:
+        result = i
+
+    return result
+
+
+async def news_read_by_user(day_space: int = 7, user_id=""):
+    if not user_id:
+        return []
+    """Get total of news in seven days by countries (top 5)"""
+
+    """Drunk code. Database hasn't time of read news"""
+    now = datetime.now()
+    now = now.today() - timedelta(days=day_space - 1)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+
+    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    pipeline = [
+        {
+            "$match": {
+                "created_at": {
+                    "$gte": start_of_day,
+                    "$lte": end_of_day,
+                },
+                "is_read": True,
+                "list_user_read": {"$in": [user_id]},
+            }
+        },
+        {"$count": "is_read"},
+        {"$project": {"total": "$is_read"}},
+    ]
+
+    result = {}
+    data = news_client.aggregate(pipeline)
+
+    async for i in data:
+        result = i
+
+    return result
 
 
 """ END EXPERT """
