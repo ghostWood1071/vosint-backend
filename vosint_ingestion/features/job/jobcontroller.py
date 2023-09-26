@@ -7,6 +7,7 @@ from models import MongoRepository
 import requests
 from core.config import settings
 import json
+from datetime import datetime
 
 
 def get_depth(mylist):
@@ -259,6 +260,7 @@ class JobController:
         object_id,
     ):
         object = MongoRepository().get_one("object", {"_id": ObjectId(object_id)})
+
         news_list_id = (
             object.get("news_list") if object.get("news_list") != None else list()
         )
@@ -269,16 +271,20 @@ class JobController:
         if text_search != None and text_search != "":
             filter_spec.update({"$text": {"$search": text_search}})
         if end_date != None and end_date != "":
-            filter_spec.update({"pub_date": {"$lt": end_date}})
+            _end_date = datetime.strptime(end_date, "%d/%m/%Y")
+            filter_spec.update({"pub_date": {"$lte": _end_date}})
         if start_date != None and start_date != "":
+            _start_date = datetime.strptime(start_date, "%d/%m/%Y")
+
             if filter_spec.get("pub_date") == None:
-                filter_spec.update({"pub_date": {"$gt": start_date}})
+                filter_spec.update({"pub_date": {"$gte": _start_date}})
             else:
-                filter_spec["pub_date"].update({"$gt": start_date})
+                filter_spec["pub_date"].update({"$gte": _start_date})
         if sac_thai != None and sac_thai != "":
             filter_spec.update({"data:class_sacthai": sac_thai})
         if language_source != None and language_source != "":
             filter_spec.update({"source_language": language_source})
+
         news, num_record = MongoRepository().get_many_News(
             "News",
             filter_spec,

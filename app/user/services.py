@@ -146,14 +146,3 @@ def user_entity(user) -> dict:
         "interested_list": interested_list,
         "avatar_url": user["avatar_url"] if "avatar_url" in user else None,
     }
-
-
-async def set_status_user(value):
-    try:
-        await client.update_one(
-            {"username": value["id"]},
-            {"$set": {"online": value["online"]}},
-        )
-        return True
-    except:
-        return False

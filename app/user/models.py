@@ -34,6 +34,7 @@ class UserUpdateModel(BaseModel):
     full_name: Optional[str]
     role: Optional[Role]
     avatar_url: Optional[str]
+    online: Optional[bool]
 
 
 class UserLoginModel(BaseModel):

@@ -1,4 +1,6 @@
 from fastapi import APIRouter
+from fastapi_jwt_auth import AuthJWT
+from fastapi.params import Depends
 
 from .service import (
     count_news_country_today,
@@ -7,7 +9,6 @@ from .service import (
     news_hours_today,
     news_seven_nearest,
     top_news_by_topic,
-    top_news_by_country,
     top_user_read,
     total_users,
     hot_events_today,
@@ -15,6 +16,8 @@ from .service import (
     source_news_lowest_hightest,
     users_online,
     top_country_by_entities,
+    total_news_by_time,
+    news_read_by_user,
 )
 
 router = APIRouter()
@@ -82,8 +85,20 @@ async def get_top_user_read(top: int = 5):
 
 # ------- Start expert --------
 @router.get("/get-source-news-lowest-hightest")
-async def get_source_news_lowest_hightest():
-    return await source_news_lowest_hightest()
+async def get_source_news_lowest_hightest(days=1):
+    return await source_news_lowest_hightest(days)
+
+
+@router.get("/get-total-news-by-time")
+async def get_total_news_by_time(days=1):
+    return await total_news_by_time(days)
+
+
+@router.get("/get-news-read-by-user")
+async def get_news_read_by_user(days: int = 7, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()  # Dont need ObjectId
+    return await news_read_by_user(days, user_id)
 
 
 # ------- End expert --------
