@@ -209,11 +209,12 @@ async def update(
     newsletter_id: str, body: NewsLetterUpdateModel, authorize: AuthJWT = Depends()
 ):
     authorize.jwt_required()
-    is_duplicate = await check_duplicate(body.title)
-    if is_duplicate:
-        return JSONResponse(
-            "Chủ đề đã tồn tại", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    # print(body.title)
+    # is_duplicate = await check_duplicate(body.title)
+    # if is_duplicate:
+    #     return JSONResponse(
+    #         "Chủ đề đã tồn tại", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+    #     )
     parsed_newsletter = newsletter_to_object_id(body.dict())
     await update_newsletter(ObjectId(newsletter_id), parsed_newsletter)
     JobService().create_required_keyword(newsletter_id)
