@@ -285,5 +285,4 @@ class JobService:
             order_spec=order_spec,
             pagination_spec=pagination_spec,
         )
-
         return results

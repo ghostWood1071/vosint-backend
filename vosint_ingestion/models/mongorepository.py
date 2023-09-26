@@ -3,6 +3,7 @@ from bson.objectid import ObjectId
 from common.internalerror import *
 from utils import get_time_now_string
 from core.config import settings
+from typing import *
 
 
 class MongoRepository:
@@ -303,7 +304,7 @@ class MongoRepository:
         self,
         collection_name: str,
         filter_spec: dict = {},
-        order_spec: list[tuple] = [],
+        order_spec: List[tuple] = [],
         pagination_spec: dict = {},
     ) -> tuple[list, int]:
         if not collection_name:
@@ -322,55 +323,15 @@ class MongoRepository:
             total_docs = collection.count_documents(filter_spec)
 
             # Apply filter conditions
-            query = collection.find(filter_spec, {"_id": 0, "pipeline_id": 0})
-
+            query = collection.find(
+                filter_spec,
+                projection={"_id": 0, "pipeline_id": 0},
+                skip=pagination_spec.get("skip"),
+                limit=pagination_spec.get("limit"),
+                sort=[("created_at", -1)],
+            )
+            docs = [row for row in query]
             # Apply sort
-            if not order_spec:
-                order_spec = [("modified_at", 1)]
-            else:
-
-                def __map_order(o):
-                    # Split order information to get by and direction
-                    terms = o.split("-")
-                    by = terms[0]
-                    direction = (
-                        -1 if len(terms) > 1 and terms[1] == "desc" else 1
-                    )  # 1: asc; -1: desc
-                    return by, direction
-
-                order_spec = list(map(lambda o: __map_order(o), order_spec))
-            query = query.sort(order_spec)
-
-            # Apply pagination
-            if pagination_spec:
-                if "skip" in pagination_spec:
-                    if not isinstance(pagination_spec["skip"], int):
-                        raise InternalError(
-                            ERROR_NOT_INTEGER,
-                            params={"code": ["SKIP_VALUE"], "msg": ["Skip value"]},
-                        )
-                    if pagination_spec["skip"] < 0:
-                        raise InternalError(
-                            ERROR_NOT_LESS_THAN_0,
-                            params={"code": ["SKIP_VALUE"], "msg": ["Skip value"]},
-                        )
-                    query = query.skip(pagination_spec["skip"])
-
-                if "limit" in pagination_spec:
-                    if not isinstance(pagination_spec["limit"], int):
-                        raise InternalError(
-                            ERROR_NOT_INTEGER,
-                            params={"code": ["LIMIT_VALUE"], "msg": ["Limit value"]},
-                        )
-                    if pagination_spec["limit"] < 0:
-                        raise InternalError(
-                            ERROR_NOT_LESS_THAN_0,
-                            params={"code": ["LIMIT_VALUE"], "msg": ["Limit value"]},
-                        )
-                    query = query.limit(pagination_spec["limit"])
-
-            # Execute query
-            docs = [doc for doc in query]
         finally:
             self.__close()
 
