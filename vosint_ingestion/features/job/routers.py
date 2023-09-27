@@ -1367,9 +1367,17 @@ def get_table_ttxvn(
         query["$and"].append({"Title": {"$regex": str(text_search), "$options": "i"}})
     if crawling != None:
         if crawling == "crawled":
-            query["$and"].append({"content": {"$exists": True}})
+            query["$and"].append({"content": {"$exists": True, "$ne": "", "$ne": None}})
         elif crawling == "not_crawled":
-            query["$and"].append({"content": {"$exists": False}})
+            query["$and"].append(
+                {
+                    "$or": [
+                        {"content": {"$exists": False}},
+                        {"content": {"$ne": None}},
+                        {"content": {"$ne": ""}},
+                    ]
+                }
+            )
     if query["$and"] == []:
         query = {}
     data = job_controller.get_result_job(
