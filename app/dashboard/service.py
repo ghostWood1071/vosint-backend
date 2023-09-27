@@ -260,6 +260,11 @@ async def top_news_by_topic(day_space=7):
         if data_es:
             result.append({"_id": field["title"], "value": len(data_es)})
 
+    if len(result) > 0:
+        result = sorted(result, key=lambda x: x["value"], reverse=True)
+
+    result = result[0:5]
+
     return result
 
 
@@ -579,7 +584,7 @@ async def users_online():
 async def source_news_lowest_hightest(days: int = 1):
     now = datetime.now()
     end_of_day = now
-    start_of_day = end_of_day - timedelta(days=days)
+    start_of_day = end_of_day - timedelta(days=int(days))
 
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
@@ -618,7 +623,7 @@ async def source_news_lowest_hightest(days: int = 1):
 async def total_news_by_time(days: int = 1):
     now = datetime.now()
     end_of_day = now
-    start_of_day = end_of_day - timedelta(days=days)
+    start_of_day = end_of_day - timedelta(days=int(days))
 
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
