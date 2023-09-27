@@ -14,7 +14,7 @@ def get_news_from_newsletter_id__(
     type=None,
     id_nguon_nhom_nguon=None,
     page_number=1,
-    page_size=30,
+    page_size=100,
     start_date: str = None,
     end_date: str = None,
     sac_thai: str = None,
@@ -268,6 +268,7 @@ def get_news_from_newsletter_id__(
             lang=language_source,
             sentiment=sac_thai,
             list_id=list_id,
+            size=page_size,
         )
     elif text_search == None and list_source_name != None:
         pipeline_dtos = my_es.search_main(
@@ -279,6 +280,7 @@ def get_news_from_newsletter_id__(
             sentiment=sac_thai,
             list_id=list_id,
             list_source_name=list_source_name,
+            size=page_size,
         )
     else:
         if list_source_name == None:
@@ -290,6 +292,7 @@ def get_news_from_newsletter_id__(
                 lang=language_source,
                 sentiment=sac_thai,
                 list_id=list_id,
+                size=page_size,
             )
         else:
             pipeline_dtos = my_es.search_main(
@@ -301,6 +304,7 @@ def get_news_from_newsletter_id__(
                 sentiment=sac_thai,
                 list_id=list_id,
                 list_source_name=list_source_name,
+                size=page_size,
             )
         if list_id == None:
             list_id = []
@@ -314,6 +318,7 @@ def get_news_from_newsletter_id__(
             lang=language_source,
             sentiment=sac_thai,
             list_id=list_id,
+            size=page_size,
         )
 
     for i in range(len(pipeline_dtos)):
