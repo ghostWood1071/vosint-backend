@@ -6,6 +6,7 @@ from apscheduler.triggers.cron import CronTrigger
 from common.internalerror import *
 from core.config import settings
 from apscheduler.jobstores.mongodb import MongoDBJobStore
+import utils
 
 
 class Scheduler:
@@ -70,4 +71,11 @@ class Scheduler:
             trigger="interval",
             seconds=interval,
             next_run_time=next_run_time,
+        )
+
+    def add_job_crawl_ttxvn(self):
+        self.__bg_scheduler.add_job(
+            id="crawttxvnnews",
+            func=utils.crawl_ttxvn_func,
+            trigger=CronTrigger.from_crontab("0 * * * *"),
         )

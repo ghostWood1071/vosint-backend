@@ -12,6 +12,7 @@ from fastapi.params import Body, Depends
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
+from datetime import datetime
 
 my_es = My_ElasticSearch()
 from pydantic import BaseModel
@@ -1286,28 +1287,28 @@ def search_news_from_object(
     text_search=None,
     object_id=None,
 ):
-    try:
-        start_date = (
-            start_date.split("/")[2]
-            + "-"
-            + start_date.split("/")[1]
-            + "-"
-            + start_date.split("/")[0]
-            + "T00:00:00Z"
-        )
-    except:
-        pass
-    try:
-        end_date = (
-            end_date.split("/")[2]
-            + "-"
-            + end_date.split("/")[1]
-            + "-"
-            + end_date.split("/")[0]
-            + "T00:00:00Z"
-        )
-    except:
-        pass
+    # try:
+    #     start_date = (
+    #         start_date.split("/")[2]
+    #         + "-"
+    #         + start_date.split("/")[1]
+    #         + "-"
+    #         + start_date.split("/")[0]
+    #         + "T00:00:00Z"
+    #     )
+    # except:
+    #     pass
+    # try:
+    #     end_date = (
+    #         end_date.split("/")[2]
+    #         + "-"
+    #         + end_date.split("/")[1]
+    #         + "-"
+    #         + end_date.split("/")[0]
+    #         + "T00:00:00Z"
+    #     )
+    # except:
+    #     pass
 
     data = job_controller.search_news_by_object(
         page_number,
