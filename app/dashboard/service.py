@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import List
 
 from db.init_db import get_collection_client
+from vosint_ingestion.features.job import get_news_from_newsletter_id__
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
@@ -188,8 +189,9 @@ async def news_seven_nearest(day_space: int = 7):
     return result
 
 
+"""
 async def top_news_by_topic(day_space=7):
-    """Get total of news in seven days by topics (top 5) with key: data:class_linhvuc"""
+    #Get total of news in seven days by topics (top 5) with key: data:class_linhvuc
     now = datetime.now()
     now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -222,6 +224,41 @@ async def top_news_by_topic(day_space=7):
     result = []
     async for document in data:
         result.append(document)
+
+    return result
+"""
+
+
+async def top_news_by_topic(day_space=7):
+    # Get total of news in seven days by topics (top 5) with key: data:class_linhvuc
+    now = datetime.now()
+    now = now.today() - timedelta(days=day_space - 1)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+
+    start_of_day = start_of_day.strftime("%d/%m/%Y")
+    end_of_day = end_of_day.strftime("%d/%m/%Y")
+
+    data_fields = await newsletter_client.find(
+        {"tag": "linh_vuc"}, {"_id": 1, "title": 1}
+    ).to_list(None)
+
+    result = []
+
+    for field in data_fields:
+        data_es = None
+        try:
+            data_es = get_news_from_newsletter_id__(
+                news_letter_id=field["_id"],
+                page_size=10000,
+                start_date=start_of_day,
+                end_date=end_of_day,
+            )
+        except:
+            pass
+
+        if data_es:
+            result.append({"_id": field["title"], "value": len(data_es)})
 
     return result
 
@@ -454,7 +491,7 @@ async def top_user_read(limit=5):
                 "pipeline": [
                     {
                         "$match": {
-                            "$expr": {"$eq": ["$_id", "$$id"]},
+                            "$expr": {"$eq": ["$_id", {"$toObjectId": "$$id"}]},
                         },
                     },
                     {
