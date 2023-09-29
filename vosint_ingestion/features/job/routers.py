@@ -970,46 +970,6 @@ def News_search(
         sentiment=sac_thai,
     )
 
-    # if news_letter_id != '':
-    #     mongo = MongoRepository().get_one(collection_name='newsletter',filter_spec={'_id':news_letter_id})
-    #     ls = []
-    #     kt_rong = 1
-    #     try:
-    #         for new_id in mongo['news_id']:
-    #             ls.append({'_id':new_id})
-    #             kt_rong = 0
-    #         if kt_rong == 0:
-    #             for i in range(len(pipeline_dtos)):
-    #                 if
-
-    #     except:
-    #         pass
-    # elif vital == '1':
-    #     mongo = MongoRepository().get_one(collection_name='users',filter_spec={'_id':user_id})
-    #     ls = []
-    #     kt_rong = 1
-    #     try:
-    #         for new_id in mongo['vital_list']:
-    #             ls.append({'_id':new_id})
-    #             kt_rong = 0
-    #         if kt_rong == 0:
-
-    #     except:
-    #         pass
-
-    # elif bookmarks == '1':
-    #     mongo = MongoRepository().get_one(collection_name='users',filter_spec={'_id':user_id})
-    #     ls = []
-    #     kt_rong = 1
-    #     try:
-    #         for new_id in mongo['news_bookmarks']:
-    #             ls.append({'_id':new_id})
-    #             kt_rong = 0
-    #         if kt_rong == 0:
-
-    #     except:
-    #        pass
-
     return JSONResponse(
         {
             "success": True,
