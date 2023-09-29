@@ -28,7 +28,6 @@ from .services import (
     find_newsletter_by_id,
     find_newsletters_and_filter,
     update_newsletter,
-    check_duplicate,
 )
 from .utils import newsletter_to_json, newsletter_to_object_id
 from vosint_ingestion.features.job.services.jobservice import JobService
@@ -55,11 +54,6 @@ projection = {
 async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    is_duplicate = await check_duplicate(body.title)
-    if is_duplicate:
-        return JSONResponse(
-            "Chủ đề đã tồn tại", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
     newsletter_dict = body.dict()
     newsletter_dict["user_id"] = user_id
     a = await create_newsletter(newsletter_to_object_id(newsletter_dict))
@@ -209,12 +203,6 @@ async def update(
     newsletter_id: str, body: NewsLetterUpdateModel, authorize: AuthJWT = Depends()
 ):
     authorize.jwt_required()
-    # print(body.title)
-    # is_duplicate = await check_duplicate(body.title)
-    # if is_duplicate:
-    #     return JSONResponse(
-    #         "Chủ đề đã tồn tại", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-    #     )
     parsed_newsletter = newsletter_to_object_id(body.dict())
     await update_newsletter(ObjectId(newsletter_id), parsed_newsletter)
     JobService().create_required_keyword(newsletter_id)

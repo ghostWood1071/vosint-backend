@@ -74,8 +74,11 @@ class Scheduler:
         )
 
     def add_job_crawl_ttxvn(self):
-        self.__bg_scheduler.add_job(
-            id="crawttxvnnews",
-            func=utils.crawl_ttxvn_func,
-            trigger=CronTrigger.from_crontab("0 * * * *"),
-        )
+        try:
+            self.__bg_scheduler.add_job(
+                id="crawttxvnnews",
+                func=utils.crawl_ttxvn_func,
+                trigger=CronTrigger.from_crontab("0 * * * *"),
+            )
+        except Exception as e:
+            print("crawl ttxvn existed, no need to crete new one")

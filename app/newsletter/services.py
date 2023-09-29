@@ -68,12 +68,3 @@ async def delete_news_ids_in_newsletter(
     return await client.update_one(
         {"_id": newsletter_id}, {"$pull": {"news_id": {"$in": news_ids}}}
     )
-
-
-async def check_duplicate(name: str):
-    pattern = rf"{name}|{name.upper()}"
-    query = {"title": {"$regex": re.compile(pattern)}}
-    data = [row async for row in client.find(query)]
-    if len(list(data)) > 0:
-        return True
-    return False
