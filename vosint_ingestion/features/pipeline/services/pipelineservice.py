@@ -5,6 +5,7 @@ from scheduler import Scheduler
 from utils import norm_text
 
 from ..models.dtos import PipelineForDetailsDto, PipelineForListDto
+from datetime import datetime, timedelta
 
 
 class PipelineService:
@@ -24,6 +25,71 @@ class PipelineService:
         pipeline_dto = PipelineForDetailsDto(pipeline) if pipeline else None
 
         return pipeline_dto
+
+    def get_pipeline_state(self, date, ids):
+        filter_ids = [str(obj_id) for obj_id in ids]
+        query = [
+            {
+                "$lookup": {
+                    "from": "jobstore",
+                    "localField": "pipeline_id",
+                    "foreignField": "_id",
+                    "as": "pipeline",
+                }
+            },
+            {
+                "$addFields": {
+                    "active": {"$cond": [{"$gt": [{"$size": "$pipeline"}, 0]}, 1, 0]}
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$pipeline_id",
+                    "complete": {
+                        "$sum": {
+                            "$cond": [
+                                {
+                                    "$and": [
+                                        {"$eq": ["$log", "completed"]},
+                                        {
+                                            "$gte": [
+                                                "$created_at",
+                                                "2023/09/20 00:00:00",
+                                            ]
+                                        },
+                                    ]
+                                },
+                                1,
+                                {"$cond": [{"$eq": ["$active", 0]}, -1, 0]},
+                            ]
+                        }
+                    },
+                    "last_success": {
+                        "$max": {
+                            "$cond": [{"$eq": ["$log", "completed"]}, "$created_at", ""]
+                        }
+                    },
+                }
+            },
+            {
+                "$project": {
+                    "_id": 1,
+                    "working": {
+                        "$cond": [
+                            {"$gt": ["$complete", 0]},
+                            1,
+                            {"$cond": [{"$eq": ["$complete", 0]}, 0, -1]},
+                        ]
+                    },
+                    "last_success": 1,
+                }
+            },
+        ]
+        data = self.__mongo_repo.aggregate("his_log", query)
+        mapping = {}
+        for row in data:
+            mapping[row["_id"]] = row
+        return mapping
 
     def get_pipelines(
         self,
@@ -116,6 +182,20 @@ class PipelineService:
             order_spec=order_spec,
             pagination_spec=pagination_spec,
         )
+
+        pipline_ids = [pipeline.get("_id") for pipeline in pipelines]
+        time = datetime.strftime(
+            datetime.now() - timedelta(days=3), "%Y-%m-%d %H:%M:%S"
+        )
+        state_mapping = self.get_pipeline_state(time, pipline_ids)
+        for pipeline in pipelines:
+            state = state_mapping.get(str(pipeline.get("_id")))
+            if state is not None:
+                pipeline["working"] = state.get("working")
+                pipeline["last_success"] = state.get("last_success")
+            else:
+                pipeline["working"] = 0
+                pipeline["last_success"] = ""
 
         return pipelines, total_docs
 
