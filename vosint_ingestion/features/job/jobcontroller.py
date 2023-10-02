@@ -307,3 +307,12 @@ class JobController:
             return req.json().get("translate_text")
         else:
             return ""
+
+    def get_history_statistic_by_id(self, pipeline_id, start_date, end_date, n_days):
+        if start_date is not None and start_date != "":
+            start_date = datetime.strptime(start_date, "%d/%m/%Y")
+        if end_date is not None and end_date != "":
+            end_date = datetime.strptime(end_date, "%d/%m/%Y")
+        return self.__job_service.get_history_statistic_by_id(
+            pipeline_id, start_date, end_date, n_days
+        )

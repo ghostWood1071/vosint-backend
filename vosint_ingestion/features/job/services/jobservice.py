@@ -286,3 +286,50 @@ class JobService:
             pagination_spec=pagination_spec,
         )
         return results
+
+    def get_completed_count_in_day_query(self, date_str):
+        return {
+            # date_str: {
+            "$sum": {
+                "$cond": [
+                    {"$regexMatch": {"input": "$created_at", "regex": date_str}},
+                    1,
+                    0,
+                ]
+            }
+            # }
+        }
+
+    def get_date_array(self, n=7, start_date=None, end_date=None):
+        if start_date is None and end_date is not None:
+            start_date = end_date - datetime.timedelta(days=n - 1)
+        if end_date is None and start_date is not None:
+            end_date = start_date + datetime.timedelta(days=n - 1)
+        if start_date is None and end_date is None:
+            end_date = datetime.datetime.now()
+            start_date = end_date - datetime.timedelta(days=n - 1)
+        results = []
+        for day_nth in range(n):
+            results.append(
+                datetime.datetime.strftime(
+                    start_date + datetime.timedelta(days=day_nth), "%Y/%m/%d"
+                )
+            )
+        return results
+
+    def get_history_statistic_by_id(self, pipeline_id, start_date, end_date, n_days):
+        date_arr = self.get_date_array(n_days, start_date, end_date)
+        pipeline = [
+            {"$match": {"pipeline_id": pipeline_id, "log": {"$regex": "completed"}}},
+            {
+                "$group": {
+                    "_id": "$pipeline_id",
+                }
+            },
+        ]
+        for date in date_arr:
+            pipeline[1].get("$group")[date] = self.get_completed_count_in_day_query(
+                date
+            )
+        data = self.__mongo_repo.aggregate("his_log", pipeline)
+        return data

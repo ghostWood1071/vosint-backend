@@ -57,7 +57,7 @@ class PipelineService:
                                         {
                                             "$gte": [
                                                 "$created_at",
-                                                "2023/09/20 00:00:00",
+                                                date,
                                             ]
                                         },
                                     ]

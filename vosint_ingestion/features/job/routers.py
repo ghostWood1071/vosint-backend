@@ -1368,3 +1368,12 @@ def crawling_ttxvn(job_id: str):
     if req.ok:
         return JSONResponse(req.json())
     return JSONResponse({"succes": "False"})
+
+
+@router.post("/api/get_history_statistic_by_id")
+def get_history_statistic_by_id(
+    pipeline_id: str, n_days: int = 7, start_date: str = None, end_date: str = None
+):
+    return job_controller.get_history_statistic_by_id(
+        pipeline_id, start_date, end_date, n_days
+    )
