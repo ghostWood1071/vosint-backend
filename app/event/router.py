@@ -49,6 +49,7 @@ from typing import *
 router = APIRouter()
 client = get_collection_client("event")
 client3 = get_collection_client("events")
+report_client = get_collection_client("report")
 
 projection = {"_id": True, "data:title": True, "data:url": True}
 projection_rp = {"_id": True, "title": True}
@@ -270,50 +271,93 @@ async def search_base_chu_khach(
 
 
 @router.put("/clone-event/{id_event}")
-async def clone_event(id_event: str, authorize: AuthJWT = Depends()):
+async def clone_event(
+    id_event: str,
+    report_id: str = "",
+    heading_id: str = "",
+    authorize: AuthJWT = Depends(),
+):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    cursor = await client3.find_one({"_id": ObjectId(id_event)})
+
+    if report_id == "" and heading_id == "":
+        cursor = await client3.find_one({"_id": ObjectId(id_event)})
+    else:
+        cursor = await client3.find_one(
+            {"_id": ObjectId(id_event)}
+        ) or await client.find_one({"_id": ObjectId(id_event)})
+
     if cursor:
-        existing_cloned = await client.find_one({"_id": ObjectId(id_event)})
-        if existing_cloned:
-            raise HTTPException(status_code=400, detail="Event already cloned")
-        cursor["event_content"] = json.dumps(
-            {
-                "root": {
-                    "children": [
-                        {
-                            "children": [
-                                {
-                                    "detail": 0,
-                                    "format": 0,
-                                    "mode": "normal",
-                                    "style": "",
-                                    "text": cursor["event_content"],
-                                    "type": "text",
-                                    "version": 1,
-                                }
-                            ],
-                            "direction": "ltr",
-                            "format": "",
-                            "indent": 0,
-                            "type": "paragraph",
-                            "version": 1,
-                        }
-                    ],
-                    "direction": "ltr",
-                    "format": "",
-                    "indent": 0,
-                    "type": "root",
-                    "version": 1,
+        if report_id == "" and heading_id == "":
+            existing_cloned = await client.find_one({"_id": ObjectId(id_event)})
+            if existing_cloned and "system_created" not in existing_cloned:
+                raise HTTPException(status_code=400, detail="Event already cloned")
+
+        if "system_created" not in cursor:
+            cursor["event_content"] = json.dumps(
+                {
+                    "root": {
+                        "children": [
+                            {
+                                "children": [
+                                    {
+                                        "detail": 0,
+                                        "format": 0,
+                                        "mode": "normal",
+                                        "style": "",
+                                        "text": cursor["event_content"],
+                                        "type": "text",
+                                        "version": 1,
+                                    }
+                                ],
+                                "direction": "ltr",
+                                "format": "",
+                                "indent": 0,
+                                "type": "paragraph",
+                                "version": 1,
+                            }
+                        ],
+                        "direction": "ltr",
+                        "format": "",
+                        "indent": 0,
+                        "type": "root",
+                        "version": 1,
+                    }
                 }
-            }
-        )
+            )
+
         cursor["user_id"] = user_id
         for item in cursor["new_list"]:
             if item == "":
                 cursor["new_list"] = []
                 break
+
+        if report_id != "" and heading_id != "":
+            cursor["_id"] = ObjectId()
+            cursor["system_created"] = True
+            current_event = await client.insert_one(cursor)
+
+            current_report = await report_client.find_one({"_id": ObjectId(report_id)})
+            current_heading = {}
+            index = -1
+
+            # print(current_report["headings"])
+            for index, heading in enumerate(current_report["headings"]):
+                if heading["id"] == heading_id:
+                    current_heading = heading
+                    index = index
+                    break
+
+            for i in range(len(current_heading["eventIds"])):
+                if current_heading["eventIds"][i] == id_event:
+                    current_heading["eventIds"][i] = str(current_event.inserted_id)
+                    break
+
+            report_client.update_one(
+                {"_id": ObjectId(report_id)},
+                {"$set": {f"headings.{index}": current_heading}},
+            )
+            return await client.find_one({"_id": ObjectId(current_event.inserted_id)})
 
         await client.insert_one(cursor)
         await client3.update_one(
