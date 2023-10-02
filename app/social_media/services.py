@@ -487,10 +487,214 @@ async def posts_from_priority(
 
 async def statistic_interaction_from_priority(id_social: str):
     pipeline = [
+        {"$match": {"_id": ObjectId(id_social)}},
         {
-            {"$match": {"_id": ObjectId(id_social)}},
-        }
+            "$lookup": {
+                "from": "facebook",
+                "localField": "_id",
+                "foreignField": "id_social",
+                "as": "facebook_list",
+            }
+        },
+        {
+            "$lookup": {
+                "from": "twitter",
+                "localField": "_id",
+                "foreignField": "id_social",
+                "as": "twitter_list",
+            }
+        },
+        {
+            "$lookup": {
+                "from": "tiktok",
+                "localField": "_id",
+                "foreignField": "id_social",
+                "as": "tiktok_list",
+            }
+        },
+        {
+            "$project": {
+                "post_list": {
+                    "$concatArrays": [
+                        "$facebook_list",
+                        "$twitter_list",
+                        "$tiktok_list",
+                    ],
+                },
+            },
+        },
+        {"$unwind": "$post_list"},
+        {
+            "$group": {
+                "_id": {"$substr": ["$post_list.created_at", 0, 10]},
+                "total_like": {"$sum": {"$toInt": "$post_list.like"}},
+                "total_share": {"$sum": {"$toInt": "$post_list.share"}},
+            }
+        },
+        {"$sort": {"_id": -1}},
     ]
 
     data = await client.aggregate(pipeline).to_list(None)
     return data
+
+
+async def total_interaction_priority(id_social: str, start_date: str, end_date: str):
+    filter_spec = {}
+
+    # filter by start_date, end_date, text_search
+    if start_date:
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        end_date = str(end_date).replace("-", "/")
+
+    if start_date != "" and end_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
+
+    elif start_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date}})
+
+    elif end_date != "":
+        filter_spec.update({"created_at": {"$lte": end_date}})
+
+    filter_spec.update({"id_social": ObjectId(id_social)})
+
+    pipeline = [
+        {"$match": {"_id": ObjectId(id_social)}},
+        {
+            "$lookup": {
+                "from": "facebook",
+                "pipeline": [{"$match": filter_spec}],
+                "as": "facebook_list",
+            }
+        },
+        {
+            "$lookup": {
+                "from": "twitter",
+                "pipeline": [{"$match": filter_spec}],
+                "as": "twitter_list",
+            }
+        },
+        {
+            "$lookup": {
+                "from": "tiktok",
+                "pipeline": [{"$match": filter_spec}],
+                "as": "tiktok_list",
+            }
+        },
+        {
+            "$project": {
+                "post_list": {
+                    "$concatArrays": [
+                        "$facebook_list",
+                        "$twitter_list",
+                        "$tiktok_list",
+                    ],
+                },
+            },
+        },
+        {"$unwind": "$post_list"},
+        {
+            "$group": {
+                "_id": "null",
+                "total": {
+                    "$sum": {
+                        "$add": [
+                            {"$ifNull": [{"$toInt": "$post_list.like"}, 0]},
+                            {"$ifNull": [{"$toInt": "$post_list.comments"}, 0]},
+                            {"$ifNull": [{"$toInt": "$post_list.share"}, 0]},
+                        ],
+                    }
+                },
+            }
+        },
+        {"$project": {"_id": 0, "total": 1}},
+    ]
+
+    data = await client.aggregate(pipeline).to_list(None)
+    return data[0] if len(data) > 0 else []
+
+
+async def total_post_priority(id_social: str, start_date: str, end_date: str):
+    filter_spec = {}
+
+    # filter by start_date, end_date, text_search
+    if start_date:
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        end_date = str(end_date).replace("-", "/")
+
+    if start_date != "" and end_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
+
+    elif start_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date}})
+
+    elif end_date != "":
+        filter_spec.update({"created_at": {"$lte": end_date}})
+
+    filter_spec.update({"id_social": ObjectId(id_social)})
+
+    pipeline = [
+        {"$match": {"_id": ObjectId(id_social)}},
+        {
+            "$lookup": {
+                "from": "facebook",
+                "pipeline": [{"$match": filter_spec}],
+                "as": "facebook_list",
+            }
+        },
+        {
+            "$lookup": {
+                "from": "twitter",
+                "pipeline": [{"$match": filter_spec}],
+                "as": "twitter_list",
+            }
+        },
+        {
+            "$lookup": {
+                "from": "tiktok",
+                "pipeline": [{"$match": filter_spec}],
+                "as": "tiktok_list",
+            }
+        },
+        {
+            "$project": {
+                "post_list": {
+                    "$concatArrays": [
+                        "$facebook_list",
+                        "$twitter_list",
+                        "$tiktok_list",
+                    ],
+                },
+            },
+        },
+        {"$addFields": {"total": {"$size": "$post_list"}}},
+        {"$project": {"_id": 0, "post_list": 0}},
+    ]
+
+    data = await client.aggregate(pipeline).to_list(None)
+    return data[0] if len(data) > 0 else []
