@@ -26,6 +26,9 @@ from .services import (
     statistic_interaction,
     active_member,
     posts_from_priority,
+    statistic_interaction_from_priority,
+    total_interaction_priority,
+    total_post_priority,
 )
 from word_exporter import export_facebook_word
 from datetime import datetime
@@ -84,6 +87,20 @@ async def get_posts_from_priority(
 @router.get("/get_statistic_interaction_from_priority")
 async def get_statistic_interaction_from_priority(id_social: str):
     return await statistic_interaction_from_priority(id_social)
+
+
+@router.get("/get_total_interaction_priority")
+async def get_total_interaction_priority(
+    id_social: str, start_date: str = "", end_date: str = ""
+):
+    return await total_interaction_priority(id_social, start_date, end_date)
+
+
+@router.get("/get_total_post_priority")
+async def get_total_post_priority(
+    id_social: str, start_date: str = "", end_date: str = ""
+):
+    return await total_post_priority(id_social, start_date, end_date)
 
 
 @router.post("")

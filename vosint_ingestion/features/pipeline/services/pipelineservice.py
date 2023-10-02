@@ -21,8 +21,11 @@ class PipelineService:
         # Map to dto
         jobs = Scheduler.instance().get_jobs()
         pipeline["actived"] = str(pipeline["_id"]) in jobs
-        pipeline_dto = PipelineForDetailsDto(pipeline) if pipeline else None
 
+        if "source_favicon" not in pipeline:
+            pipeline["source_favicon"] = ""
+
+        pipeline_dto = PipelineForDetailsDto(pipeline) if pipeline else None
         return pipeline_dto
 
     def get_pipelines(
