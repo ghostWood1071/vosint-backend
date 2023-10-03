@@ -61,8 +61,10 @@ async def get_top_news_by_topic(day_space: int = 7):
 
 
 @router.get("/get-top-news-by-country")
-async def get_top_news_by_country(day_space: int = 7, top: int = 5):
-    return await top_country_by_entities(day_space, top)
+async def get_top_news_by_country(
+    day_space: int = 7, top: int = 5, start_date: str = None, end_date: str = None
+):
+    return await top_country_by_entities(day_space, top, start_date, end_date)
 
 
 @router.get("/get-total-users")
@@ -106,8 +108,8 @@ async def get_news_read_by_user(days: int = 7, authorize: AuthJWT = Depends()):
 
 # ------- Start admin --------
 @router.get("/get-status-source-news")
-async def get_status_source_news(day_space: int = 7):
-    return await status_source_news(day_space)
+async def get_status_source_news(day_space: int = 7, start_date=None, end_date=None):
+    return await status_source_news(day_space, start_date, end_date)
 
 
 # ------- End admin --------
