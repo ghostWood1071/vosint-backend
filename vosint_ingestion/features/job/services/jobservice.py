@@ -273,15 +273,24 @@ class JobService:
         )
         return results
 
-    def get_log_history_error_or_getnews(self, id: str, order_spec, pagination_spec):
+    def get_log_history_error_or_getnews(
+        self, id: str, order_spec, pagination_spec, start_date=None, end_date=None
+    ):
+        date_arr = self.get_date_array(7, start_date, end_date)
+        start_date_str = date_arr[0]
+        end_date_str = date_arr[len(date_arr) - 1]
+        query = {
+            "$and": [
+                {"pipeline_id": id},
+                {"$or": [{"actione": "GetNewsInfoAction"}, {"log": "error"}]},
+                {"created_at": {"$gte": f"{start_date_str} 00:00:00"}},
+                {"created_at": {"$lte": f"{end_date_str} 00:00:00"}},
+            ]
+        }
+        print(query)
         results = self.__mongo_repo.get_many_his_log(
             "his_log",
-            {
-                "$and": [
-                    {"pipeline_id": id},
-                    {"$or": [{"actione": "GetNewsInfoAction"}, {"log": "error"}]},
-                ]
-            },
+            query,
             order_spec=order_spec,
             pagination_spec=pagination_spec,
         )
@@ -311,7 +320,7 @@ class JobService:
         if start_date is not None and end_date is not None:
             range_days = end_date - start_date
             if range_days.days is not None and range_days.days != n:
-                n = range_days.days
+                n = range_days.days + 1
 
         results = []
         for day_nth in range(n):

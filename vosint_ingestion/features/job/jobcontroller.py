@@ -165,8 +165,12 @@ class JobController:
         return {"success": True, "total_record": result[1], "result": result[0]}
 
     def get_log_history_error_or_getnews(
-        self, pipeline_id: str, order, page_number, page_size
+        self, pipeline_id: str, order, page_number, page_size, start_date, end_date
     ):
+        if start_date is not None and start_date != "":
+            start_date = datetime.strptime(start_date, "%d/%m/%Y")
+        if end_date is not None and end_date != "":
+            end_date = datetime.strptime(end_date, "%d/%m/%Y")
         # Receives request data
         # order = request.args.get('order')
         # order = request.args.get('order')
@@ -184,7 +188,11 @@ class JobController:
         pagination_spec = {"skip": page_size * (page_number - 1), "limit": page_size}
 
         result = self.__job_service.get_log_history_error_or_getnews(
-            pipeline_id, order_spec=order_spec, pagination_spec=pagination_spec
+            pipeline_id,
+            order_spec=order_spec,
+            pagination_spec=pagination_spec,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         return {"success": True, "total_record": result[1], "result": result[0]}

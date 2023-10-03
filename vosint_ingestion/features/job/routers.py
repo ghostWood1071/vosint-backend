@@ -1227,11 +1227,11 @@ def get_log_history(pipeline_id: str):
 
 @router.get("/api/get_log_history_error_or_getnews/{pipeline_id}")
 def get_log_history_error_or_getnews(
-    pipeline_id: str, order=None, page_number=None, page_size=None
+    pipeline_id: str, order=None, page_number=None, page_size=None, start_date:str=None, end_date:str=None
 ):
     return JSONResponse(
         job_controller.get_log_history_error_or_getnews(
-            pipeline_id, order, page_number, page_size
+            pipeline_id, order, page_number, page_size, start_date, end_date
         )
     )
 
@@ -1370,7 +1370,7 @@ def crawling_ttxvn(job_id: str):
     return JSONResponse({"succes": "False"})
 
 
-@router.post("/api/get_history_statistic_by_id")
+@router.get("/api/get_history_statistic_by_id")
 def get_history_statistic_by_id(
     pipeline_id: str, n_days: int = 7, start_date: str = None, end_date: str = None
 ):
