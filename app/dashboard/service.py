@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import List
 
 from db.init_db import get_collection_client
+from vosint_ingestion.features.pipeline.services import PipelineService
 from vosint_ingestion.features.job import get_news_from_newsletter_id__
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
@@ -16,6 +17,7 @@ users_client = get_collection_client("users")
 events_client = get_collection_client("events")
 event_client = get_collection_client("event")
 his_log_client = get_collection_client("his_log")
+pipelines_client = get_collection_client("pipelines")
 newsletter_client = get_collection_client("newsletter")
 report_client = get_collection_client("report")
 
@@ -306,7 +308,9 @@ async def top_news_by_country(day_space: int = 7, top: int = 5):
     return result
 
 
-async def top_country_by_entities(day_space: int = 7, top: int = 5):
+async def top_country_by_entities(
+    day_space: int = 7, top: int = 5, start_date=None, end_date=None
+):
     """Get countries and total of events in seven days by entities (top 5)"""
     now = datetime.now()
     now = now.today() - timedelta(days=day_space - 1)
@@ -315,6 +319,22 @@ async def top_country_by_entities(day_space: int = 7, top: int = 5):
 
     # start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     # end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    # filter by start_date, end_date, text_search
+    if start_date:
+        start_of_day = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_of_day = end_date.replace(hour=23, minute=59, second=59)
 
     f = open(os.path.join(__location__, "data_static/countries.json"), "r")
 
@@ -694,23 +714,214 @@ async def news_read_by_user(day_space: int = 7, user_id=""):
 """ START ADMIN """
 
 
-async def status_source_news(day_space: int = 7):
+# async def status_source_news(day_space: int = 7):
+#     now = datetime.now()
+#     now = now.today() - timedelta(days=day_space)
+#     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+#     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+
+#     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
+#     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+#     pipelineService = PipelineService()
+
+#     result = {
+#         "normal": 0,
+#         "error": 0,
+#         "unknown": 0,
+#     }
+#     data = pipelineService.get_pipelines(page_size=10000)
+
+#     if data[0]:
+#         for pipeline in data[0]:
+#             if pipeline.enabled and pipeline.actived:
+#                 id: str = pipeline._id
+#                 mini_pipeline = [
+#                     {
+#                         "$match": {
+#                             "created_at": {"$gte": start_of_day, "$lte": end_of_day},
+#                             "pipeline_id": id,
+#                             "log": "completed",
+#                         }
+#                     },
+#                 ]
+
+#                 dataLogs = await his_log_client.aggregate(mini_pipeline).to_list(None)
+
+#                 if len(dataLogs) > 0:
+#                     result["normal"] += 1
+#                 else:
+#                     result["error"] += 1
+#             else:
+#                 result["unknown"] += 1
+
+#     return result
+
+
+async def status_source_news(day_space: int = 7, start_date=None, end_date=None):
     now = datetime.now()
     now = now.today() - timedelta(days=day_space)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
 
+    if start_date:
+        start_of_day = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_of_day = end_date.replace(hour=23, minute=59, second=59)
+
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
     pipeline = [
-        {"$match": {"created_at": {"$gte": start_of_day, "$lte": end_of_day}}},
-        {"$group": {"_id": "$log", "value": {"$sum": 1}}},
+        {
+            "$lookup": {
+                "from": "jobstore",
+                "let": {"id": "$_id"},
+                "pipeline": [
+                    {
+                        "$addFields": {
+                            "id": {
+                                "$convert": {
+                                    "input": "$_id",
+                                    "to": "objectId",
+                                    "onError": "",
+                                    "onNull": "",
+                                },
+                            },
+                        },
+                    },
+                    {
+                        "$match": {
+                            "$expr": {"$eq": ["$id", "$$id"]},
+                        },
+                    },
+                ],
+                "as": "pipeline",
+            },
+        },
+        {
+            "$lookup": {
+                "from": "his_log",
+                "let": {"id": "$_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "created_at": {
+                                "$gte": start_of_day,
+                                "$lte": end_of_day,
+                            },
+                            "$expr": {
+                                "$eq": [
+                                    "$$id",
+                                    {"$toObjectId": "$pipeline_id"},
+                                ],
+                            },
+                        },
+                    },
+                ],
+                "as": "logs",
+            },
+        },
+        {
+            "$addFields": {
+                "active": {
+                    "$cond": [
+                        {
+                            "$gt": [
+                                {
+                                    "$size": "$pipeline",
+                                },
+                                0,
+                            ],
+                            "$gt": [
+                                {
+                                    "$size": "$logs",
+                                },
+                                0,
+                            ],
+                        },
+                        1,
+                        0,
+                    ],
+                },
+            },
+        },
+        {
+            "$group": {
+                "_id": "$_id",
+                "complete": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                "$ne": [
+                                    {
+                                        "$size": {
+                                            "$filter": {
+                                                "input": "$logs",
+                                                "as": "item",
+                                                "cond": {
+                                                    "$eq": [
+                                                        "$$item.log",
+                                                        "completed",
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    },
+                                    0,
+                                ],
+                            },
+                            1,
+                            {
+                                "$cond": [
+                                    {"$eq": ["$active", 0]},
+                                    -1,
+                                    0,
+                                ],
+                            },
+                        ],
+                    },
+                },
+            },
+        },
+        {
+            "$project": {
+                "_id": 1,
+                "working": {
+                    "$cond": [
+                        {"$gt": ["$complete", 0]},
+                        "normal",
+                        {
+                            "$cond": [
+                                {"$eq": ["$complete", 0]},
+                                "error",
+                                "unknown",
+                            ],
+                        },
+                    ],
+                },
+            },
+        },
+        {"$group": {"_id": "$working", "value": {"$sum": 1}}},
     ]
 
-    data = await his_log_client.aggregate(pipeline).to_list(None)
+    result = []
+    data = pipelines_client.aggregate(pipeline)
 
-    return data
+    async for doc in data:
+        result.append(doc)
+
+    return result
 
 
 """ END ADMIN """
