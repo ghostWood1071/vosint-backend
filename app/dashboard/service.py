@@ -588,11 +588,19 @@ async def hot_events_today():
 
 async def users_online():
     """Get users online"""
-    pipeline = [{"$match": {"online": True}}, {"$count": "online"}]
+    pipeline = [
+        {"$match": {"online": True}},
+        {"$count": "online"},
+        {"$project": {"total": "$online"}},
+    ]
 
     data = await users_client.aggregate(pipeline).to_list(None)
 
-    return data
+    result = {}
+    for i in data:
+        result = i
+
+    return result
 
 
 """ END LEADER """
