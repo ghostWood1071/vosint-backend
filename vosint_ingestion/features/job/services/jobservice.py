@@ -302,12 +302,17 @@ class JobService:
 
     def get_date_array(self, n=7, start_date=None, end_date=None):
         if start_date is None and end_date is not None:
-            start_date = end_date - datetime.timedelta(days=n - 1)
+            start_date = end_date - datetime.timedelta(days=n)
         if end_date is None and start_date is not None:
-            end_date = start_date + datetime.timedelta(days=n - 1)
+            end_date = start_date + datetime.timedelta(days=n)
         if start_date is None and end_date is None:
             end_date = datetime.datetime.now()
-            start_date = end_date - datetime.timedelta(days=n - 1)
+            start_date = end_date - datetime.timedelta(days=n)
+        if start_date is not None and end_date is not None:
+            range_days = end_date - start_date
+            if range_days.days is not None and range_days.days != n:
+                n = range_days.days
+
         results = []
         for day_nth in range(n):
             results.append(
