@@ -281,6 +281,7 @@ async def feature_keywords(k: int, start_date: str, end_date: str, name: str):
         },
         {"$sort": {"value": -1}},
         {"$limit": k},
+        {"$match": {"_id": {"$nin": [None, ""]}}},
     ]
 
     collection_client = (
@@ -318,30 +319,65 @@ async def social_personal(id: str):
     return result
 
 
-async def statistic_interaction(name: str):
-    date_current = datetime.now()
-    date_ago = date_current - timedelta(days=7)
+async def statistic_interaction(name: str, start_date: str, end_date: str):
+    # date_current = datetime.now()
+    # date_ago = date_current - timedelta(days=6)
 
-    date_current = date_current.replace(hour=23, minute=59, second=59)
+    # date_current = date_current.replace(hour=23, minute=59, second=59)
 
-    date_current = str(date_current).replace("-", "/")
-    date_ago = str(date_ago).replace("-", "/")
+    # date_current = str(date_current).replace("-", "/")
+    # date_ago = str(date_ago).replace("-", "/")
+    if start_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+
+    if end_date != "":
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        end_date = str(end_date).replace("-", "/")
+
+    print(start_date, end_date)
+    # if start_date != "" or end_date != "":
+    #     pipeline.append(
+    #         {"$match": {"created_at": {"$gte": start_date, "$lte": end_date}}}
+    #     )
+    #     pipeline.append({"$limit": 7})
+
+    filter_spec = {}
+    if start_date != "" or end_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
 
     pipeline = [
-        {"$match": {"created_at": {"$gte": date_ago, "$lte": date_current}}},
+        {"$match": filter_spec},
         {
             "$group": {
                 "_id": {
                     "$substr": ["$created_at", 0, 10],
                 },
                 "total_like": {"$sum": {"$toInt": "$like"}},
+                "total_comment": {"$sum": {"$toInt": "$comments"}},
                 "total_share": {"$sum": {"$toInt": "$share"}},
             }
         },
-        {"$limit": 7},
         {"$sort": {"_id": 1}},
     ]
 
+    if start_date != "" or end_date != "":
+        # pipeline.append(
+        #     {"$match": {"created_at": {"$gte": start_date, "$lte": end_date}}}
+        # )
+        pipeline.append({"$limit": 7})
+
+    print(pipeline)
     collection_client = (
         facebook_client
         if name == "facebook"
@@ -371,6 +407,7 @@ async def active_member(name: str):
                 "as": "user",
             }
         },
+        {"$match": {"_id": {"$nin": [None, ""]}}},
         {"$sort": {"value": -1}},
     ]
 
@@ -466,7 +503,7 @@ async def posts_from_priority(
                             ],
                         },
                         int(skip),
-                        int(50),
+                        int(page_size),
                     ],
                 },
             },
@@ -528,6 +565,7 @@ async def statistic_interaction_from_priority(id_social: str):
             "$group": {
                 "_id": {"$substr": ["$post_list.created_at", 0, 10]},
                 "total_like": {"$sum": {"$toInt": "$post_list.like"}},
+                "total_comment": {"$sum": {"$toInt": "$post_list.comments"}},
                 "total_share": {"$sum": {"$toInt": "$post_list.share"}},
             }
         },
@@ -698,3 +736,49 @@ async def total_post_priority(id_social: str, start_date: str, end_date: str):
 
     data = await client.aggregate(pipeline).to_list(None)
     return data[0] if len(data) > 0 else []
+
+
+async def statistic_sentiment(name: str, start_date: str, end_date: str):
+    if start_date:
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        end_date = str(end_date).replace("-", "/")
+
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"created_at": {"$gte": start_date, "$lte": end_date}},
+                    # {"sentiment": {"$exists": True}},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "$sentiment",
+                "value": {"$sum": 1},
+            }
+        },
+    ]
+
+    collection_client = (
+        facebook_client
+        if name == "facebook"
+        else (twitter_client if name == "twitter" else tiktok_client)
+    )
+
+    data = await collection_client.aggregate(pipeline).to_list(None)
+
+    return data

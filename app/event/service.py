@@ -651,6 +651,7 @@ async def update_event(id: str, data: dict):
             if (
                 item["_id"] != event["_id"]
                 and item["event_name"] == data["event_name"]
+                and (item["system_created"] == event["system_created"])
                 and data["system_created"] != True
             ):
                 raise HTTPException(
@@ -699,6 +700,7 @@ async def update_event(id: str, data: dict):
             if (
                 item["_id"] != event_2["_id"]
                 and item["event_name"] == data["event_name"]
+                and (item["system_created"] == event["system_created"])
                 and data["system_created"] != True
             ):
                 raise HTTPException(

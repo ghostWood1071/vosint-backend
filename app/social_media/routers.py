@@ -29,6 +29,7 @@ from .services import (
     statistic_interaction_from_priority,
     total_interaction_priority,
     total_post_priority,
+    statistic_sentiment,
 )
 from word_exporter import export_facebook_word
 from datetime import datetime
@@ -53,8 +54,10 @@ async def get_feature_keywords(
 
 
 @router.get("/get-statistic-interaction")
-async def get_statistic_interaction(name: str = "facebook"):
-    return await statistic_interaction(name)
+async def get_statistic_interaction(
+    name: str = "facebook", start_date: str = "", end_date: str = ""
+):
+    return await statistic_interaction(name, start_date, end_date)
 
 
 @router.get("/get-active-member")
@@ -101,6 +104,14 @@ async def get_total_post_priority(
     id_social: str, start_date: str = "", end_date: str = ""
 ):
     return await total_post_priority(id_social, start_date, end_date)
+
+
+# statistic
+@router.get("/get_statistic_sentiment")
+async def get_statistic_sentiment(
+    name: str = "facebook", start_date: str = "", end_date: str = ""
+):
+    return await statistic_sentiment(name, start_date, end_date)
 
 
 @router.post("")
@@ -198,6 +209,9 @@ async def get_social_types(
         return JSONResponse(status_code=status.HTTP_200_OK, content={"result": []})
 
     if "interested_list" not in user:
+        client2.update_one(
+            {"_id": ObjectId(user["_id"])}, {"$set": {"interested_list": []}}
+        )
         return JSONResponse(status_code=status.HTTP_200_OK, content={"result": []})
 
     filter = {"_id": {"$in": user["interested_list"]}}

@@ -284,7 +284,7 @@ class JobService:
                 {"pipeline_id": id},
                 {"$or": [{"actione": "GetNewsInfoAction"}, {"log": "error"}]},
                 {"created_at": {"$gte": f"{start_date_str} 00:00:00"}},
-                {"created_at": {"$lte": f"{end_date_str} 00:00:00"}},
+                {"created_at": {"$lte": f"{end_date_str} 23:59:59"}},
             ]
         }
         print(query)
