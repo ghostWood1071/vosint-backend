@@ -23,7 +23,7 @@ from vosint_ingestion.features.job.services.get_news_from_elastic import (
 from core.config import settings
 
 import asyncio
-
+import json
 
 class Translate(BaseModel):
     lang: str
@@ -1356,13 +1356,14 @@ def translate(data: Translate):
 
 
 @router.post("/api/crawling_ttxvn")
-def crawling_ttxvn(job_id: str):
+def crawling_ttxvn(job_ids: List[str]):
     # req = requests.post(settings.PIPELINE_API, params={"job_id": job_id})
     # req = requests.post(
     #     "http://192.168.1.11:3101/Job/api/crawling_ttxvn", params={"job_id": job_id}
     # )
     req = requests.post(
-        f"{settings.PIPELINE_API}/Job/api/crawling_ttxvn", params={"job_id": job_id}
+        f"{settings.PIPELINE_API}/Job/api/crawling_ttxvn",
+        data=json.dumps(job_ids)
     )
 
     if req.ok:
