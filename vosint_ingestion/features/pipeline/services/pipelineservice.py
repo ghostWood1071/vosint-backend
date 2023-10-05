@@ -29,9 +29,9 @@ class PipelineService:
         pipeline_dto = PipelineForDetailsDto(pipeline) if pipeline else None
         return pipeline_dto
 
-    def get_pipeline_state(self, date, ids):
-        filter_ids = [str(obj_id) for obj_id in ids]
+    def get_pipeline_state(self, date):
         query = [
+            {"$match": {"created_at": {"$gte": date}, "log": "completed"}},
             {
                 "$lookup": {
                     "from": "jobstore",
@@ -51,17 +51,7 @@ class PipelineService:
                     "complete": {
                         "$sum": {
                             "$cond": [
-                                {
-                                    "$and": [
-                                        {"$eq": ["$log", "completed"]},
-                                        {
-                                            "$gte": [
-                                                "$created_at",
-                                                date,
-                                            ]
-                                        },
-                                    ]
-                                },
+                                {"$eq": ["$log", "completed"]},
                                 1,
                                 {"$cond": [{"$eq": ["$active", 0]}, -1, 0]},
                             ]
@@ -86,7 +76,8 @@ class PipelineService:
                     },
                     "last_success": 1,
                 }
-            },
+            }
+            # {"$sort": {"last_sucess": -1}},
         ]
         data = self.__mongo_repo.aggregate("his_log", query)
         mapping = {}
@@ -177,20 +168,21 @@ class PipelineService:
         page_number = page_number if page_number else 1
         page_size = page_size if page_size else 20
         pagination_spec = {"skip": page_size * (page_number - 1), "limit": page_size}
-
-        # Query from the database
         pipelines, total_docs = self.__mongo_repo.get_many(
             collection_name=self.__collection_name,
             filter_spec=filter_spec,
             order_spec=order_spec,
             pagination_spec=pagination_spec,
         )
+        # Query from the database
 
-        pipline_ids = [pipeline.get("_id") for pipeline in pipelines]
         time = datetime.strftime(
-            datetime.now() - timedelta(days=3), "%Y-%m-%d %H:%M:%S"
+            datetime.now() - timedelta(days=1), "%Y-%m-%d %H:%M:%S"
         )
-        state_mapping = self.get_pipeline_state(time, pipline_ids)
+        state_mapping = self.get_pipeline_state(time)
+        # pipeline_ids = [ObjectId(pl_id) for pl_id in state_mapping.keys()]
+        # filter_spec["_id"] = {"$in": pipeline_ids}
+
         for pipeline in pipelines:
             state = state_mapping.get(str(pipeline.get("_id")))
             if state is not None:
