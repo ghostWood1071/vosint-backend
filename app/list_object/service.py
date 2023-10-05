@@ -146,7 +146,7 @@ def add_news_to_object(object_id):
         "pub_date": {"$gte": start_date},
     }
     news, _ = MongoRepository().get_many(
-        "News", filter_spec, ["pub_date"], {"skip": 0, "limit": 500}
+        "News", filter_spec, ["pub_date"], {"skip": 0, "limit": 500}, sor_direction=1
     )
     news_ids = [str(_id["_id"]) for _id in news]
     if len(news_ids) > 0:
