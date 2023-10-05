@@ -13,16 +13,26 @@ resource_monitors_client = get_collection_client("resource_monitors")
 
 
 async def insert_resource_monitors(server, resource_monitor):
-    server_query = {"server_ip": server["server_ip"]}
+    server_query = {"server_name": server["server_name"]}
     server_rp = await servers_client.find_one(server_query)
-    if server_rp == None:
-        await servers_client.insert_one(server)
-    await resource_monitors_client.insert_one(resource_monitor)
+
+    if server_rp != None:
+        update_operation = {
+            "$set": {
+                "num_cpu": server["num_cpu"],
+                "total_ram": server["total_ram"],
+                "total_disk": server["total_disk"],
+            }
+        }
+        await servers_client.update_one(server_query, update_operation)
+        await resource_monitors_client.insert_one(resource_monitor)
 
 
 async def get_average_monitor():
     try:
         all_servers = servers_client.find({})
+        normal_heartbeat = 3
+        sleeping_time = 600
 
         total_num_cpu = 0
         total_ram = 0
@@ -32,19 +42,28 @@ async def get_average_monitor():
         total_used_disk = 0
         total_count = 0
 
-        one_hour_ago = (datetime.now() - timedelta(hours=1)).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        from_datetime = (
+            datetime.now() - timedelta(seconds=sleeping_time * (normal_heartbeat + 1))
+        ).strftime("%Y-%m-%d %H:%M:%S")
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         async for server in all_servers:
+            # Kiểm tra server có đang active hay không
+            heartbeat_query = {
+                "timestamp": {"$gte": from_datetime, "$lte": current_time},
+                "server_name": server["server_name"],
+            }
+            heartbeat = await resource_monitors_client.count_documents(heartbeat_query)
+
+            if heartbeat < normal_heartbeat:
+                continue
             last_resource_monitor = None
             total_count += 1
             total_num_cpu += server["num_cpu"]
             total_ram += server["total_ram"]
             total_disk += server["total_disk"]
             query = {
-                "timestamp": {"$gte": one_hour_ago, "$lte": current_time},
-                "server_ip": server["server_ip"],
+                "timestamp": {"$gte": from_datetime, "$lte": current_time},
+                "server_name": server["server_name"],
             }
             sort = [("timestamp", -1)]
 
@@ -59,9 +78,6 @@ async def get_average_monitor():
         cpu_percent = total_used_cpu / total_count
         ram_percent = (total_used_ram / total_ram) * 100
         disk_percent = (total_used_disk / total_disk) * 100
-        print(cpu_percent)
-        print(ram_percent)
-        print(disk_percent)
         data = {
             "cpu_percent": cpu_percent,
             "ram_percent": ram_percent,
@@ -69,44 +85,73 @@ async def get_average_monitor():
         }
         return data
     except Exception:
-        data = {
-            "cpu_percent": cpu_percent,
-            "ram_percent": ram_percent,
-            "disk_percent": disk_percent,
-        }
+        raise
 
 
 async def get_server_details():
     try:
+        sleeping_time = 600
+        normal_heartbeat = 3
+
         all_servers = servers_client.find({})
         total_count = 0
-        one_hour_ago = (datetime.now() - timedelta(hours=1)).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        from_datetime = (
+            datetime.now() - timedelta(seconds=sleeping_time * normal_heartbeat)
+        ).strftime("%Y-%m-%d %H:%M:%S")
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         server_details = []
 
         async for server in all_servers:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # Kiểm tra server có đang active hay không
+            heartbeat_query = {
+                "timestamp": {"$gte": from_datetime, "$lte": current_time},
+                "server_name": server["server_name"],
+            }
+            heartbeat = await resource_monitors_client.count_documents(heartbeat_query)
+
+            if heartbeat < normal_heartbeat:
+                server_detail = {
+                    "server_ip": server["server_ip"],
+                    "server_name": server["server_name"],
+                    "cpu_percent": 0,
+                    "ram_percent": 0,
+                    "disk_percent": 0,
+                    "is_active": False,
+                    "timestamp": timestamp,
+                }
+                server_details.append(server_detail)
+                continue
+
             last_resource_monitor = None
-            is_active = False
+            is_active = True
             cpu_percent = 0
             disk_percent = 0
             ram_percent = 0
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             total_count += 1
 
             query = {
-                "timestamp": {"$gte": one_hour_ago, "$lte": current_time},
-                "server_ip": server["server_ip"],
+                "timestamp": {"$gte": from_datetime, "$lte": current_time},
+                "server_name": server["server_name"],
             }
             sort = [("timestamp", -1)]
+            print(query)
             last_resource_monitor = await resource_monitors_client.find_one(
                 filter=query,
                 sort=sort,
             )
+            server_detail = {
+                "server_ip": server["server_ip"],
+                "server_name": server["server_name"],
+                "cpu_percent": 0,
+                "ram_percent": 0,
+                "disk_percent": 0,
+                "is_active": False,
+                "timestamp": timestamp,
+            }
             if last_resource_monitor != None:
-                is_active = True
                 cpu_percent = last_resource_monitor["cpu"]
                 disk_percent = (
                     float(last_resource_monitor["disk"])
@@ -119,15 +164,16 @@ async def get_server_details():
                     * 100
                 )
                 timestamp = last_resource_monitor["timestamp"]
-            server_detail = {
-                "server_ip": server["server_ip"],
-                "server_name": server["server_name"],
-                "cpu_percent": cpu_percent,
-                "ram_percent": ram_percent,
-                "disk_percent": disk_percent,
-                "is_active": is_active,
-                "timestamp": timestamp,
-            }
+                server_detail = {
+                    "server_ip": server["server_ip"],
+                    "server_name": server["server_name"],
+                    "cpu_percent": cpu_percent,
+                    "ram_percent": ram_percent,
+                    "disk_percent": disk_percent,
+                    "is_active": is_active,
+                    "timestamp": timestamp,
+                }
+
             server_details.append(server_detail)
         data = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
