@@ -291,7 +291,7 @@ def update_news(object_id: str):
         MongoRepository().update_many(
             "object",
             {"_id": ObjectId(object_id)},
-            {"$push": {"news_list": {"$each": insert_list}}},
+            {"$addToSet": {"news_list": {"$each": insert_list}}},
         )
         return JSONResponse({"success": "true"})
     except Exception as e:
