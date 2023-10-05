@@ -6,6 +6,7 @@ from vosint_ingestion.models.mongorepository import MongoRepository
 
 from db.init_db import get_collection_client
 import re
+from datetime import datetime, timedelta
 
 db = get_collection_client("object")
 
@@ -58,7 +59,9 @@ async def find_by_filter_and_paginate(
         query["object_type"] = type
     offset = (skip - 1) * limit if skip > 0 else 0
     list_object = []
-    async for item in db.find(query).sort("_id").skip(offset).limit(limit):
+    async for item in db.find(query, {"news_list": 0}).sort("_id").skip(offset).limit(
+        limit
+    ):
         item = object_to_json(item)
         list_object.append(item)
     return list_object
@@ -131,15 +134,20 @@ def get_keyword_regex(keyword_dict):
 
 def add_news_to_object(object_id):
     object, _ = MongoRepository().get_many("object", {"_id": ObjectId(object_id)})
-
+    end_date = datetime.now().replace(hour=0, minute=0, second=0)
+    start_date = end_date - timedelta(days=14)
     parttern = get_keyword_regex(object[0].get("keywords"))
     filter_spec = {
         "$or": [
             {"data:title": {"$regex": parttern, "$options": "i"}},
             {"data:content": {"$regex": parttern, "$options": "i"}},
-        ]
+        ],
+        "pub_date": {"$lte": end_date},
+        "pub_date": {"$gte": start_date},
     }
-    news, _ = MongoRepository().get_many("News", filter_spec)
+    news, _ = MongoRepository().get_many(
+        "News", filter_spec, ["pub_date"], {"skip": 0, "limit": 500}
+    )
     news_ids = [str(_id["_id"]) for _id in news]
     if len(news_ids) > 0:
         MongoRepository().update_many(

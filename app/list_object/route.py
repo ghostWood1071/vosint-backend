@@ -269,6 +269,8 @@ async def get_news_by_object_id(
 @router.put("/{id}")
 async def update_one(id, data: UpdateObject = Body(...)):
     data = {k: v for k, v in data.dict().items() if v is not None}
+    a = {}
+
     updated_object = await update_object(id, data)
     update_news(id)
     if updated_object:
