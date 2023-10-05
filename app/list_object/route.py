@@ -270,7 +270,7 @@ async def get_news_by_object_id(
 async def update_one(id, data: UpdateObject = Body(...)):
     data = {k: v for k, v in data.dict().items() if v is not None}
     updated_object = await update_object(id, data)
-    update_news(id, my_es)
+    update_news(id)
     if updated_object:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
