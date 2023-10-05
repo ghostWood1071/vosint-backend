@@ -12,6 +12,7 @@ import json
 import os
 
 dashboard_client = get_collection_client("dashboard")
+err_source_statistic_client = get_collection_client("err_source_statistic")
 object_client = get_collection_client("object")
 news_client = get_collection_client("News")
 users_client = get_collection_client("users")
@@ -561,6 +562,8 @@ async def hot_events_today():
     end_of_day = start_of_day + timedelta(days=1, seconds=-1)
 
     pipeline = [
+        {"$addFields": {"is_event": True}},
+        {"$unionWith": {"coll": "events"}},
         {
             "$match": {
                 "date_created": {
@@ -569,12 +572,35 @@ async def hot_events_today():
                 },
             }
         },
+        {"$unwind": {"path": "$new_list"}},
+        {
+            "$lookup": {
+                "from": "News",
+                "let": {"id": {"$toObjectId": "$new_list"}},
+                "pipeline": [
+                    {"$match": {"$expr": {"$eq": ["$_id", "$$id"]}}},
+                ],
+                "as": "new_list",
+            }
+        },
+        {"$unwind": "$new_list"},
+        {
+            "$group": {
+                "_id": "$_id",
+                "new_list": {"$push": "$new_list"},
+                "event_name": {"$first": "$event_name"},
+                "sentiment": {"$first": "$sentiment"},
+                "date_created": {"$first": "$date_created"},
+            }
+        },
         {
             "$project": {
                 "new_list_length": {"$size": "$new_list"},
                 "event_name": 1,
                 "sentiment": 1,
                 "date_created": 1,
+                "is_event": 1,
+                "new_list": 1,
             }
         },
         {"$sort": {"new_list_length": -1}},
@@ -767,70 +793,11 @@ async def news_read_by_user(day_space: int = 7, user_id=""):
 #     return result
 
 
-async def status_source_news(day_space: int = 7, start_date=None, end_date=None):
-    now = datetime.now()
-    now = now.today() - timedelta(days=day_space)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
-
-    if start_date:
-        start_of_day = datetime(
-            int(start_date.split("/")[2]),
-            int(start_date.split("/")[1]),
-            int(start_date.split("/")[0]),
-        )
-
-    if end_date:
-        end_date = datetime(
-            int(end_date.split("/")[2]),
-            int(end_date.split("/")[1]),
-            int(end_date.split("/")[0]),
-        )
-        end_of_day = end_date.replace(hour=23, minute=59, second=59)
-
-    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
-    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
-
-    list_hist = await his_log_client.aggregate(
-        [
-            {
-                "$match": {
-                    "created_at": {"$gte": start_of_day, "$lte": end_of_day},
-                }
-            }
-        ]
-    ).to_list(None)
-
-    list_pipelines = await pipelines_client.aggregate([]).to_list(None)
-
-    result = {
-        "normal": 0,
-        "error": 0,
-        "unknown": 0,
-    }
-
-    if list_pipelines:
-        for pipeline in list_pipelines:
-            if pipeline["enabled"]:
-                id = pipeline["_id"]
-
-                is_completed = False
-                is_unknown = True
-                for his in list_hist:
-                    if ObjectId(his["pipeline_id"]) == id:
-                        is_unknown = False
-                        if his["log"] == "completed":
-                            is_completed = True
-                            result["normal"] += 1
-                            break
-
-                if not is_completed and not is_unknown:
-                    result["error"] += 1
-                elif is_unknown:
-                    result["unknown"] += 1
-
-            else:
-                result["unknown"] += 1
+async def status_source_news():
+    result = {}
+    data = await err_source_statistic_client.find().to_list(None)
+    if data:
+        result = data[0]
 
     return result
 
