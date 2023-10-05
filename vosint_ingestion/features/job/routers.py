@@ -23,6 +23,7 @@ from vosint_ingestion.features.job.services.get_news_from_elastic import (
 from core.config import settings
 
 import asyncio
+import json
 
 
 class Translate(BaseModel):
@@ -79,7 +80,7 @@ def get_news_from_ttxvn(
             + end_date.split("/")[1]
             + "-"
             + end_date.split("/")[0]
-            + "T00:00:00Z"
+            + "T23:59:59Z"
         )
     except:
         pass
@@ -1117,7 +1118,6 @@ def get_result_job(
     if str(query) == "{'$and': []}":
         query = {}
 
-    print(query)
     # order="data: gtitle"
     return JSONResponse(
         job_controller.get_result_job(
@@ -1227,11 +1227,17 @@ def get_log_history(pipeline_id: str):
 
 @router.get("/api/get_log_history_error_or_getnews/{pipeline_id}")
 def get_log_history_error_or_getnews(
-    pipeline_id: str, order=None, page_number=None, page_size=None
+    pipeline_id: str,
+    order=None,
+    page_number=None,
+    page_size=None,
+    start_date: str = None,
+    end_date: str = None,
 ):
+    job_controller_v2 = JobController()
     return JSONResponse(
-        job_controller.get_log_history_error_or_getnews(
-            pipeline_id, order, page_number, page_size
+        job_controller_v2.get_log_history_error_or_getnews(
+            pipeline_id, order, page_number, page_size, start_date, end_date
         )
     )
 
@@ -1356,15 +1362,24 @@ def translate(data: Translate):
 
 
 @router.post("/api/crawling_ttxvn")
-def crawling_ttxvn(job_id: str):
+def crawling_ttxvn(job_ids: List[str]):
     # req = requests.post(settings.PIPELINE_API, params={"job_id": job_id})
     # req = requests.post(
     #     "http://192.168.1.11:3101/Job/api/crawling_ttxvn", params={"job_id": job_id}
     # )
     req = requests.post(
-        f"{settings.PIPELINE_API}/Job/api/crawling_ttxvn", params={"job_id": job_id}
+        f"{settings.PIPELINE_API}/Job/api/crawling_ttxvn", data=json.dumps(job_ids)
     )
 
     if req.ok:
         return JSONResponse(req.json())
     return JSONResponse({"succes": "False"})
+
+
+@router.get("/api/get_history_statistic_by_id")
+def get_history_statistic_by_id(
+    pipeline_id: str, n_days: int = 7, start_date: str = None, end_date: str = None
+):
+    return job_controller.get_history_statistic_by_id(
+        pipeline_id, start_date, end_date, n_days
+    )

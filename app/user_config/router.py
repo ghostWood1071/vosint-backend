@@ -10,18 +10,17 @@ client = get_collection_client("user_config")
 
 router = APIRouter()
 
+
 @router.get("")
 async def get_all():
     users = await get_all_user()
     if users:
         return users
-    obj = {
-        "username": "",
-        "password": ""
-    }
+    obj = {"username": "", "password": ""}
     client.insert_one(obj)
     users = await get_all_user()
     return users
+
 
 @router.put("/{id}")
 async def update(id: str, data: UserConfig = Body(...)):
@@ -31,4 +30,3 @@ async def update(id: str, data: UserConfig = Body(...)):
         status_code=status.HTTP_200_OK,
         content="Successful update",
     )
-    

@@ -7,6 +7,9 @@ class PipelineForListDto(BaseDto):
         self.name = record["name"]
         self.enabled = record["enabled"]
         self.actived = record["actived"]
+        self.schema = record["schema"]
+        self.working = record["working"]
+        self.last_success = record["last_success"]
 
     def to_dict(self) -> dict:
         return {
@@ -14,4 +17,7 @@ class PipelineForListDto(BaseDto):
             "name": self.name,
             "enabled": self.enabled,
             "actived": self.actived,
+            "schema": self.schema,
+            "working": self.working,
+            "last_success": self.last_success,
         }

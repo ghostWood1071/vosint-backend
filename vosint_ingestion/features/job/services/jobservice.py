@@ -273,16 +273,77 @@ class JobService:
         )
         return results
 
-    def get_log_history_error_or_getnews(self, id: str, order_spec, pagination_spec):
+    def get_log_history_error_or_getnews(
+        self, id: str, order_spec, pagination_spec, start_date=None, end_date=None
+    ):
+        date_arr = self.get_date_array(7, start_date, end_date)
+        start_date_str = date_arr[0]
+        end_date_str = date_arr[len(date_arr) - 1]
+        query = {
+            "$and": [
+                {"pipeline_id": id},
+                {"$or": [{"actione": "GetNewsInfoAction"}, {"log": "error"}]},
+                {"created_at": {"$gte": f"{start_date_str} 00:00:00"}},
+                {"created_at": {"$lte": f"{end_date_str} 23:59:59"}},
+            ]
+        }
+        print(query)
         results = self.__mongo_repo.get_many_his_log(
             "his_log",
-            {
-                "$and": [
-                    {"pipeline_id": id},
-                    {"$or": [{"actione": "GetNewsInfoAction"}, {"log": "error"}]},
-                ]
-            },
+            query,
             order_spec=order_spec,
             pagination_spec=pagination_spec,
         )
         return results
+
+    def get_completed_count_in_day_query(self, date_str):
+        return {
+            # date_str: {
+            "$sum": {
+                "$cond": [
+                    {"$regexMatch": {"input": "$created_at", "regex": date_str}},
+                    1,
+                    0,
+                ]
+            }
+            # }
+        }
+
+    def get_date_array(self, n=7, start_date=None, end_date=None):
+        if start_date is None and end_date is not None:
+            start_date = end_date - datetime.timedelta(days=n)
+        if end_date is None and start_date is not None:
+            end_date = start_date + datetime.timedelta(days=n)
+        if start_date is None and end_date is None:
+            end_date = datetime.datetime.now()
+            start_date = end_date - datetime.timedelta(days=n)
+        if start_date is not None and end_date is not None:
+            range_days = end_date - start_date
+            if range_days.days is not None and range_days.days != n:
+                n = range_days.days + 1
+
+        results = []
+        for day_nth in range(n):
+            results.append(
+                datetime.datetime.strftime(
+                    start_date + datetime.timedelta(days=day_nth), "%Y/%m/%d"
+                )
+            )
+        return results
+
+    def get_history_statistic_by_id(self, pipeline_id, start_date, end_date, n_days):
+        date_arr = self.get_date_array(n_days, start_date, end_date)
+        pipeline = [
+            {"$match": {"pipeline_id": pipeline_id, "log": {"$regex": "completed"}}},
+            {
+                "$group": {
+                    "_id": "$pipeline_id",
+                }
+            },
+        ]
+        for date in date_arr:
+            pipeline[1].get("$group")[date] = self.get_completed_count_in_day_query(
+                date
+            )
+        data = self.__mongo_repo.aggregate("his_log", pipeline)
+        return data

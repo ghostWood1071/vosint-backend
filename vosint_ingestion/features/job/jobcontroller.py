@@ -165,8 +165,12 @@ class JobController:
         return {"success": True, "total_record": result[1], "result": result[0]}
 
     def get_log_history_error_or_getnews(
-        self, pipeline_id: str, order, page_number, page_size
+        self, pipeline_id: str, order, page_number, page_size, start_date, end_date
     ):
+        if start_date is not None and start_date != "":
+            start_date = datetime.strptime(start_date, "%d/%m/%Y")
+        if end_date is not None and end_date != "":
+            end_date = datetime.strptime(end_date, "%d/%m/%Y")
         # Receives request data
         # order = request.args.get('order')
         # order = request.args.get('order')
@@ -184,7 +188,11 @@ class JobController:
         pagination_spec = {"skip": page_size * (page_number - 1), "limit": page_size}
 
         result = self.__job_service.get_log_history_error_or_getnews(
-            pipeline_id, order_spec=order_spec, pagination_spec=pagination_spec
+            pipeline_id,
+            order_spec=order_spec,
+            pagination_spec=pagination_spec,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         return {"success": True, "total_record": result[1], "result": result[0]}
@@ -259,15 +267,7 @@ class JobController:
         text_search,
         object_id,
     ):
-        object = MongoRepository().get_one("object", {"_id": ObjectId(object_id)})
-
-        news_list_id = (
-            object.get("news_list") if object.get("news_list") != None else list()
-        )
-        news_object_ids = [ObjectId(news_id) for news_id in news_list_id]
-        filter_spec = {
-            "_id": {"$in": list(news_object_ids)},
-        }
+        filter_spec = {}
         if text_search != None and text_search != "":
             filter_spec.update({"$text": {"$search": text_search}})
         if end_date != None and end_date != "":
@@ -275,22 +275,52 @@ class JobController:
             filter_spec.update({"pub_date": {"$lte": _end_date}})
         if start_date != None and start_date != "":
             _start_date = datetime.strptime(start_date, "%d/%m/%Y")
-
             if filter_spec.get("pub_date") == None:
                 filter_spec.update({"pub_date": {"$gte": _start_date}})
             else:
                 filter_spec["pub_date"].update({"$gte": _start_date})
+
         if sac_thai != None and sac_thai != "":
             filter_spec.update({"data:class_sacthai": sac_thai})
         if language_source != None and language_source != "":
             filter_spec.update({"source_language": language_source})
 
-        news, num_record = MongoRepository().get_many_News(
-            "News",
-            filter_spec,
-            ["pub_date"],
-            {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)},
-        )
+        if filter_spec != {}:
+            match_condition = {"$match": filter_spec}
+        else:
+            match_condition = None
+
+        pipeline = [
+            {"$addFields": {"id": {"$toString": "$_id"}}},
+            {
+                "$lookup": {
+                    "from": "object",
+                    "localField": "id",
+                    "foreignField": "news_list",
+                    "as": "object",
+                }
+            },
+            {
+                "$match": {
+                    "object": {"$ne": []},
+                    "object": {"$elemMatch": {"_id": ObjectId(object_id)}},
+                }
+            },
+            {"$project": {"object": 0, "id": 0}},
+            {"$skip": int(page_size) * (int(page_number) - 1)},
+            {"$limit": int(page_size)},
+        ]
+
+        if match_condition != None:
+            pipeline.insert(0, match_condition)
+        print(pipeline)
+        # news, num_record = MongoRepository().get_many_News(
+        #     "News",
+        #     filter_spec,
+        #     ["pub_date"],
+        #     {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)},
+        # )
+        news = MongoRepository().aggregate("News", pipeline)
         for row_new in news:
             row_new["_id"] = str(row_new["_id"])
             row_new["pub_date"] = str(row_new["pub_date"])
@@ -307,3 +337,12 @@ class JobController:
             return req.json().get("translate_text")
         else:
             return ""
+
+    def get_history_statistic_by_id(self, pipeline_id, start_date, end_date, n_days):
+        if start_date is not None and start_date != "":
+            start_date = datetime.strptime(start_date, "%d/%m/%Y")
+        if end_date is not None and end_date != "":
+            end_date = datetime.strptime(end_date, "%d/%m/%Y")
+        return self.__job_service.get_history_statistic_by_id(
+            pipeline_id, start_date, end_date, n_days
+        )

@@ -323,6 +323,8 @@ async def search_event(
     if system_created == False:
         if user_id:
             query["user_id"] = user_id
+
+        query["system_created"] = {"$ne": True}
         async for item in client.find(query).sort("date_created", -1).skip(
             offset
         ).limit(limit):
@@ -405,6 +407,8 @@ async def search_result(name, id_new, start_date, end_date, user_id, system_crea
 
         if user_id:
             conditions.append({"user_id": user_id})
+
+        conditions.append({"system_created": {"$ne": True}})
 
         if conditions:
             query["$and"] = conditions
@@ -644,7 +648,12 @@ async def update_event(id: str, data: dict):
             )
 
         for item in list_event_1:
-            if item["_id"] != event["_id"] and item["event_name"] == data["event_name"]:
+            if (
+                item["_id"] != event["_id"]
+                and item["event_name"] == data["event_name"]
+                and (item["system_created"] == event["system_created"])
+                and data["system_created"] != True
+            ):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT, detail="event is duplicated"
                 )
@@ -691,6 +700,8 @@ async def update_event(id: str, data: dict):
             if (
                 item["_id"] != event_2["_id"]
                 and item["event_name"] == data["event_name"]
+                and (item["system_created"] == event["system_created"])
+                and data["system_created"] != True
             ):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT, detail="event is duplicated"
