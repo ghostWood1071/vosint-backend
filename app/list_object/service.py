@@ -128,11 +128,11 @@ def update_news(object_id: str, my_es):
         search_text = " | ".join(key_arr)
         data = my_es.search_main("vosint", query=search_text, size=1000)
         insert_list = [row.get("_id") for row in data]
-        # MongoRepository().update_many(
-        #     "object",
-        #     {"_id": ObjectId(object_id)},
-        #     {"$addToSet": {"news_list": {"$each": insert_list}}},
-        # )
+        MongoRepository().update_many(
+            "object",
+            {"_id": ObjectId(object_id)},
+            {"$addToSet": {"news_list": {"$each": insert_list}}},
+        )
         return True
     except Exception as e:
         print(e)
