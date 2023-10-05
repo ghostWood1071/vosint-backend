@@ -25,6 +25,7 @@ from core.config import settings
 import asyncio
 import json
 
+
 class Translate(BaseModel):
     lang: str
     content: str
@@ -1117,7 +1118,6 @@ def get_result_job(
     if str(query) == "{'$and': []}":
         query = {}
 
-    print(query)
     # order="data: gtitle"
     return JSONResponse(
         job_controller.get_result_job(
@@ -1227,10 +1227,16 @@ def get_log_history(pipeline_id: str):
 
 @router.get("/api/get_log_history_error_or_getnews/{pipeline_id}")
 def get_log_history_error_or_getnews(
-    pipeline_id: str, order=None, page_number=None, page_size=None, start_date:str=None, end_date:str=None
+    pipeline_id: str,
+    order=None,
+    page_number=None,
+    page_size=None,
+    start_date: str = None,
+    end_date: str = None,
 ):
+    job_controller_v2 = JobController()
     return JSONResponse(
-        job_controller.get_log_history_error_or_getnews(
+        job_controller_v2.get_log_history_error_or_getnews(
             pipeline_id, order, page_number, page_size, start_date, end_date
         )
     )
@@ -1362,8 +1368,7 @@ def crawling_ttxvn(job_ids: List[str]):
     #     "http://192.168.1.11:3101/Job/api/crawling_ttxvn", params={"job_id": job_id}
     # )
     req = requests.post(
-        f"{settings.PIPELINE_API}/Job/api/crawling_ttxvn",
-        data=json.dumps(job_ids)
+        f"{settings.PIPELINE_API}/Job/api/crawling_ttxvn", data=json.dumps(job_ids)
     )
 
     if req.ok:
