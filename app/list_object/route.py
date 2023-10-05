@@ -274,6 +274,32 @@ async def update_one(id, data: UpdateObject = Body(...)):
     return status.HTTP_403_FORBIDDEN
 
 
+@router.post("/update-news")
+def update_news(object_id: str):
+    try:
+        object = MongoRepository().get_one("object", {"_id": object_id})
+        if object is None:
+            return JSONResponse({"success": "false"})
+        key_str = ""
+        for key in object.get("keywords").keys():
+            key_str += object.get("keywords").get(key) + ","
+        key_arr = [key.strip() for key in key_str.split(",")]
+        key_arr = list(filter(lambda x: x != "", key_arr))
+        search_text = " | ".join(key_arr)
+        data = my_es.search_main("vosint", query=search_text, size=1000)
+        insert_list = [row.get("_id") for row in data]
+        MongoRepository().update_many(
+            "object",
+            {"_id": ObjectId(object_id)},
+            {"$push": {"news_list": {"$each": insert_list}}},
+        )
+        return JSONResponse({"success": "true"})
+    except Exception as e:
+        print(e)
+        return JSONResponse({"success": "false"})
+    return data
+
+
 @router.delete("/{id}")
 async def delete_one(id):
     deleted_object = await delete_object(id)

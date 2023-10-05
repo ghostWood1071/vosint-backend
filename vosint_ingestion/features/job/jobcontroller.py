@@ -267,15 +267,7 @@ class JobController:
         text_search,
         object_id,
     ):
-        object = MongoRepository().get_one("object", {"_id": ObjectId(object_id)})
-
-        news_list_id = (
-            object.get("news_list") if object.get("news_list") != None else list()
-        )
-        news_object_ids = [ObjectId(news_id) for news_id in news_list_id]
-        filter_spec = {
-            "_id": {"$in": list(news_object_ids)},
-        }
+        filter_spec = {}
         if text_search != None and text_search != "":
             filter_spec.update({"$text": {"$search": text_search}})
         if end_date != None and end_date != "":
@@ -283,22 +275,52 @@ class JobController:
             filter_spec.update({"pub_date": {"$lte": _end_date}})
         if start_date != None and start_date != "":
             _start_date = datetime.strptime(start_date, "%d/%m/%Y")
-
             if filter_spec.get("pub_date") == None:
                 filter_spec.update({"pub_date": {"$gte": _start_date}})
             else:
                 filter_spec["pub_date"].update({"$gte": _start_date})
+
         if sac_thai != None and sac_thai != "":
             filter_spec.update({"data:class_sacthai": sac_thai})
         if language_source != None and language_source != "":
             filter_spec.update({"source_language": language_source})
 
-        news, num_record = MongoRepository().get_many_News(
-            "News",
-            filter_spec,
-            ["pub_date"],
-            {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)},
-        )
+        if filter_spec != {}:
+            match_condition = {"$match": filter_spec}
+        else:
+            match_condition = None
+
+        pipeline = [
+            {"$addFields": {"id": {"$toString": "$_id"}}},
+            {
+                "$lookup": {
+                    "from": "object",
+                    "localField": "id",
+                    "foreignField": "news_list",
+                    "as": "object",
+                }
+            },
+            {
+                "$match": {
+                    "object": {"$ne": []},
+                    "object": {"$elemMatch": {"_id": ObjectId(object_id)}},
+                }
+            },
+            {"$project": {"object": 0, "id": 0}},
+            {"$skip": int(page_size) * (int(page_number) - 1)},
+            {"$limit": int(page_size)},
+        ]
+
+        if match_condition != None:
+            pipeline.insert(0, match_condition)
+        print(pipeline)
+        # news, num_record = MongoRepository().get_many_News(
+        #     "News",
+        #     filter_spec,
+        #     ["pub_date"],
+        #     {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)},
+        # )
+        news = MongoRepository().aggregate("News", pipeline)
         for row_new in news:
             row_new["_id"] = str(row_new["_id"])
             row_new["pub_date"] = str(row_new["pub_date"])
