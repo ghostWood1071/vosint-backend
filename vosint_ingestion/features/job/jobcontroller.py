@@ -269,7 +269,12 @@ class JobController:
     ):
         filter_spec = {}
         if text_search != None and text_search != "":
-            filter_spec.update({"$text": {"$search": text_search}})
+            filter_spec.update(
+                {"data:content": {"$regex": rf"\b{text_search}\b", "$options": "i"}}
+            )
+            filter_spec.update(
+                {"data:title": {"$regex": rf"\b{text_search}\b", "$options": "i"}}
+            )
         if end_date != None and end_date != "":
             _end_date = datetime.strptime(end_date, "%d/%m/%Y")
             filter_spec.update({"pub_date": {"$lte": _end_date}})
@@ -285,46 +290,44 @@ class JobController:
         if language_source != None and language_source != "":
             filter_spec.update({"source_language": language_source})
 
-        if filter_spec != {}:
-            match_condition = {"$match": filter_spec}
-        else:
-            match_condition = None
-
-        pipeline = [
-            {"$addFields": {"id": {"$toString": "$_id"}}},
+        news_ids_pipe_line = [
+            {"$match": {"_id": ObjectId(object_id)}},
+            {"$addFields": {"arrayLength": {"$size": "$news_list"}}},
             {
-                "$lookup": {
-                    "from": "object",
-                    "localField": "id",
-                    "foreignField": "news_list",
-                    "as": "object",
+                "$project": {
+                    "arrayLength": 1,
+                    "sub_set": {
+                        "$slice": [
+                            "$news_list",
+                            {
+                                "$subtract": [
+                                    "$arrayLength",
+                                    int(page_size) * int(page_number),
+                                ]
+                            },
+                            int(page_size),
+                        ]
+                    },
                 }
             },
-            {
-                "$match": {
-                    "object": {"$ne": []},
-                    "object": {"$elemMatch": {"_id": ObjectId(object_id)}},
-                }
-            },
-            {"$project": {"object": 0, "id": 0}},
-            {"$skip": int(page_size) * (int(page_number) - 1)},
-            {"$limit": int(page_size)},
         ]
+        try:
+            objects = MongoRepository().aggregate("object", news_ids_pipe_line)
+            if len(objects) == 0:
+                return {"result": [], "total_record": 0}
+            news_ids = [ObjectId(news_id) for news_id in objects[0].get("sub_set")]
+            total = int(objects[0].get("arrayLength"))
+            filter_spec["_id"] = {"$in": news_ids}
+            news, _ = MongoRepository().get_many_News("News", filter_spec, ["pub_date"])
 
-        if match_condition != None:
-            pipeline.insert(0, match_condition)
-        print(pipeline)
-        # news, num_record = MongoRepository().get_many_News(
-        #     "News",
-        #     filter_spec,
-        #     ["pub_date"],
-        #     {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)},
-        # )
-        news = MongoRepository().aggregate("News", pipeline)
-        for row_new in news:
-            row_new["_id"] = str(row_new["_id"])
-            row_new["pub_date"] = str(row_new["pub_date"])
-        return {"result": news, "total_record": len(news)}
+            for row_new in news:
+                row_new["_id"] = str(row_new["_id"])
+                row_new["pub_date"] = str(row_new["pub_date"])
+        except Exception as e:
+            print(e)
+            news = []
+            total = 0
+        return {"result": news, "total_record": total}
 
     def translate(self, lang, content):
         lang_dict = {"en": "english", "ru": "russian", "cn": "chinese"}

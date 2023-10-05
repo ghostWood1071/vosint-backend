@@ -66,6 +66,7 @@ class MongoRepository:
         filter_spec: dict = {},
         order_spec: list[tuple] = [],
         pagination_spec: dict = {},
+        sor_direction=-1,
     ) -> tuple[list, int]:
         if not collection_name:
             raise InternalError(
@@ -94,9 +95,7 @@ class MongoRepository:
                     # Split order information to get by and direction
                     terms = o.split("-")
                     by = terms[0]
-                    direction = (
-                        -1  # if len(terms) > 1 and terms[1] == "desc" else 1
-                    )  # 1: asc; -1: desc
+                    direction = sor_direction  # if len(terms) > 1 and terms[1] == "desc" else 1  # 1: asc; -1: desc
                     return by, direction
 
                 order_spec = list(map(lambda o: __map_order(o), order_spec))
