@@ -133,9 +133,6 @@ def add_news_to_object(object_id):
     object, _ = MongoRepository().get_many("object", {"_id": ObjectId(object_id)})
 
     parttern = get_keyword_regex(object[0].get("keywords"))
-    # "data:title": {"$regex": parttern, "$options": "i"}
-    # "data:content": {"$regex": parttern, "$options": "i"},
-
     filter_spec = {
         "$or": [
             {"data:title": {"$regex": parttern, "$options": "i"}},
