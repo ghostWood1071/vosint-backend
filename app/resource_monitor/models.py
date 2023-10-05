@@ -15,7 +15,7 @@ class Server(BaseModel):
 
 class ResourceMonitor(BaseModel):
     id: str = Field(default_factory=ObjectId, alias="_id")
-    server_ip: str = Field(...)
+    server_name: str = Field(...)
     timestamp: str = Field(...)
     cpu: str = Field(...)
     ram: str = Field(...)
