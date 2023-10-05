@@ -835,4 +835,82 @@ async def status_source_news(day_space: int = 7, start_date=None, end_date=None)
     return result
 
 
+async def status_error_source_news(
+    day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
+):
+    now = datetime.now()
+    now = now.today() - timedelta(days=day_space)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+
+    if start_date:
+        start_of_day = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_of_day = end_date.replace(hour=23, minute=59, second=59)
+
+    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    list_hist = await his_log_client.aggregate(
+        [
+            {
+                "$match": {
+                    "created_at": {"$gte": start_of_day, "$lte": end_of_day},
+                }
+            }
+        ]
+    ).to_list(None)
+
+    list_pipelines = await pipelines_client.aggregate([]).to_list(None)
+
+    result = {
+        "normal": 0,
+        "error": 0,
+        "unknown": 0,
+    }
+    pipeline_err = {}
+    if list_pipelines:
+        for pipeline in list_pipelines:
+            if pipeline["enabled"]:
+                id = pipeline["_id"]
+
+                is_completed = False
+                is_unknown = True
+                for his in list_hist:
+                    if ObjectId(his["pipeline_id"]) == id:
+                        is_unknown = False
+                        if his["log"] == "completed":
+                            is_completed = True
+                            result["normal"] += 1
+                            break
+
+                if not is_completed and not is_unknown:
+                    result["error"] += 1
+                    pipeline_err[id] = 1
+                elif is_unknown:
+                    result["unknown"] += 1
+
+            else:
+                result["unknown"] += 1
+
+            pipeline_filter = [pl_id for pl_id in pipeline_err.keys()]
+            offset = (page_index - 1) * page_index if page_index > 0 else 0
+            err_pipeline_list = []
+            async for item in pipelines_client.find(
+                {"_id": {"$in": pipeline_filter}}
+            ).skip(offset).limit(page_size):
+                err_pipeline_list.append(item)
+    return err_pipeline_list
+
+
 """ END ADMIN """

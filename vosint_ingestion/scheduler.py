@@ -7,6 +7,7 @@ from common.internalerror import *
 from core.config import settings
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 import utils
+import statistic_schedule
 
 
 class Scheduler:
@@ -82,3 +83,13 @@ class Scheduler:
             )
         except Exception as e:
             print("crawl ttxvn existed, no need to crete new one")
+
+    def add_job_update_error_source(self):
+        try:
+            self.__bg_scheduler.add_job(
+                id="dashboard_error_source",
+                func=statistic_schedule.status_source_news,
+                trigger=CronTrigger.from_crontab("* * * * *"),
+            )
+        except Exception as e:
+            print("dashboard_error_source existed, no need to crete new one")

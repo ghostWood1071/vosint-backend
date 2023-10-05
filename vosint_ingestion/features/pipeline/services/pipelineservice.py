@@ -31,7 +31,7 @@ class PipelineService:
 
     def get_pipeline_state(self, date):
         query = [
-            {"$match": {"created_at": {"$gte": date}, "log": "completed"}},
+            {"$match": {"created_at": {"$gte": date}}},
             {
                 "$lookup": {
                     "from": "jobstore",
@@ -49,17 +49,12 @@ class PipelineService:
                 "$group": {
                     "_id": "$pipeline_id",
                     "complete": {
-                        "$sum": {
+                        "$max": {
                             "$cond": [
                                 {"$eq": ["$log", "completed"]},
                                 1,
                                 {"$cond": [{"$eq": ["$active", 0]}, -1, 0]},
                             ]
-                        }
-                    },
-                    "last_success": {
-                        "$max": {
-                            "$cond": [{"$eq": ["$log", "completed"]}, "$created_at", ""]
                         }
                     },
                 }
@@ -76,7 +71,8 @@ class PipelineService:
                     },
                     "last_success": 1,
                 }
-            }
+            },
+            {"$match"}
             # {"$sort": {"last_sucess": -1}},
         ]
         data = self.__mongo_repo.aggregate("his_log", query)
@@ -176,21 +172,21 @@ class PipelineService:
         )
         # Query from the database
 
-        time = datetime.strftime(
-            datetime.now() - timedelta(days=1), "%Y-%m-%d %H:%M:%S"
-        )
-        state_mapping = self.get_pipeline_state(time)
-        # pipeline_ids = [ObjectId(pl_id) for pl_id in state_mapping.keys()]
-        # filter_spec["_id"] = {"$in": pipeline_ids}
+        # time = datetime.strftime(
+        #     datetime.now() - timedelta(days=1), "%Y-%m-%d %H:%M:%S"
+        # )
+        # state_mapping = self.get_pipeline_state(time)
+        # # pipeline_ids = [ObjectId(pl_id) for pl_id in state_mapping.keys()]
+        # # filter_spec["_id"] = {"$in": pipeline_ids}
 
-        for pipeline in pipelines:
-            state = state_mapping.get(str(pipeline.get("_id")))
-            if state is not None:
-                pipeline["working"] = state.get("working")
-                pipeline["last_success"] = state.get("last_success")
-            else:
-                pipeline["working"] = 0
-                pipeline["last_success"] = ""
+        # for pipeline in pipelines:
+        #     state = state_mapping.get(str(pipeline.get("_id")))
+        #     if state is not None:
+        #         pipeline["working"] = state.get("working")
+        #         pipeline["last_success"] = state.get("last_success")
+        #     else:
+        #         pipeline["working"] = 0
+        #         pipeline["last_success"] = ""
 
         return pipelines, total_docs
 
