@@ -307,6 +307,7 @@ class JobController:
                 }
             },
             {"$project": {"object": 0, "id": 0}},
+            {"$sort": {"pub_date": -1}},
             {"$skip": int(page_size) * (int(page_number) - 1)},
             {"$limit": int(page_size)},
         ]
