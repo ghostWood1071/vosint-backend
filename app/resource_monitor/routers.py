@@ -8,7 +8,6 @@ from app.resource_monitor.models import Server, ResourceMonitor, ResourceMonitor
 
 from app.resource_monitor.services import (
     insert_resource_monitors,
-    get_a_server as get_server,
     get_average_monitor as get_avg_monitor_service,
 )
 from app.resource_monitor import services
@@ -48,19 +47,23 @@ async def create_insert_resource_monitor(body: ResourceMonitorCreate):
     return {"message": "update successfully!"}
 
 
-@router.get("/get-server")
-async def get_a_server():
-    server = await get_server()
-    return server
-
-
 @router.get("/get-average-monitor")
 async def get_average_monitor():
-    data = await get_avg_monitor_service()
-    return data
+    try:
+        data = await get_avg_monitor_service()
+        return data
+    except Exception:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=None
+        )
 
 
 @router.get("/get-server-details")
 async def get_server_details():
-    data = await services.get_server_details()
-    return data
+    try:
+        data = await services.get_server_details()
+        return data
+    except Exception:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=None
+        )
