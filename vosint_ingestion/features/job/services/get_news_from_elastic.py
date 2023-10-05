@@ -29,6 +29,8 @@ def get_news_from_newsletter_id__(
     # list_id = None
     query = None
     index_name = "vosint"
+
+    # date-------------------------------------------
     try:
         start_date = (
             start_date.split("/")[2]
@@ -40,6 +42,7 @@ def get_news_from_newsletter_id__(
         )
     except:
         pass
+
     try:
         end_date = (
             end_date.split("/")[2]
@@ -51,12 +54,15 @@ def get_news_from_newsletter_id__(
         )
     except:
         pass
+
+    # language----------------------------------------------------------
     if language_source:
         language_source_ = language_source.split(",")
         language_source = []
         for i in language_source_:
             language_source.append(i)
 
+    # tin quan trọng -------------------------------------------------
     if vital == "1":
         mongo = MongoRepository().get_one(
             collection_name="users", filter_spec={"_id": user_id}
@@ -71,6 +77,7 @@ def get_news_from_newsletter_id__(
             return []
         list_id = ls
 
+    # tin đánh dấu ---------------------------------------------------
     elif bookmarks == "1":
         mongo = MongoRepository().get_one(
             collection_name="users", filter_spec={"_id": user_id}
@@ -86,11 +93,13 @@ def get_news_from_newsletter_id__(
             return []
         list_id = ls
 
+    # get newsletter --------------------------------------------------
     if news_letter_id != "" and news_letter_id != None:
         a = MongoRepository().get_one(
             collection_name="newsletter", filter_spec={"_id": news_letter_id}
         )
 
+    # nếu là giỏ tin
     if news_letter_id != "" and a["tag"] == "gio_tin":
         ls = []
         kt_rong = 1
@@ -103,6 +112,7 @@ def get_news_from_newsletter_id__(
             return []
         list_id = ls
 
+    # nếu không là giỏ tin
     if news_letter_id != "" and a["tag"] != "gio_tin":
         if a["is_sample"]:
             query = ""
@@ -152,7 +162,7 @@ def get_news_from_newsletter_id__(
             query_cn = ""
             first_flat = 1
             try:
-                for i in a["keyword_vn"]["required_keyword"]:
+                for i in a["keyword_cn"]["required_keyword"]:
                     if first_flat == 1:
                         first_flat = 0
                         query_cn += "("
