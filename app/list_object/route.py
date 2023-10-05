@@ -22,6 +22,7 @@ from app.list_object.service import (
     get_all_object,
     search_by_filter_and_paginate,
     update_object,
+    update_news,
 )
 from app.news.services import (
     count_news,
@@ -269,13 +270,14 @@ async def get_news_by_object_id(
 async def update_one(id, data: UpdateObject = Body(...)):
     data = {k: v for k, v in data.dict().items() if v is not None}
     updated_object = await update_object(id, data)
+    update_news(id)
     if updated_object:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
 
 
 @router.post("/update-news")
-def update_news(object_id: str):
+def update_news2(object_id: str):
     try:
         object = MongoRepository().get_one("object", {"_id": object_id})
         if object is None:

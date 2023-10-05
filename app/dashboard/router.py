@@ -18,6 +18,7 @@ from .service import (
     top_country_by_entities,
     total_news_by_time,
     news_read_by_user,
+    status_error_source_news,
 )
 
 router = APIRouter()
@@ -108,8 +109,17 @@ async def get_news_read_by_user(days: int = 7, authorize: AuthJWT = Depends()):
 
 # ------- Start admin --------
 @router.get("/get-status-source-news")
-async def get_status_source_news(day_space: int = 7, start_date=None, end_date=None):
-    return await status_source_news(day_space, start_date, end_date)
+async def get_status_source_news():
+    return await status_source_news()
+
+
+@router.get("/get-pipeline-error")
+async def get_pipeline_error(
+    day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
+):
+    return await status_error_source_news(
+        day_space, start_date, end_date, int(page_index), int(page_size)
+    )
 
 
 # ------- End admin --------

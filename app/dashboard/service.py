@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List
+from bson import ObjectId
 
 from db.init_db import get_collection_client
 from vosint_ingestion.features.pipeline.services import PipelineService
@@ -11,6 +12,7 @@ import json
 import os
 
 dashboard_client = get_collection_client("dashboard")
+err_source_statistic_client = get_collection_client("err_source_statistic")
 object_client = get_collection_client("object")
 news_client = get_collection_client("News")
 users_client = get_collection_client("users")
@@ -560,6 +562,8 @@ async def hot_events_today():
     end_of_day = start_of_day + timedelta(days=1, seconds=-1)
 
     pipeline = [
+        {"$addFields": {"is_event": True}},
+        {"$unionWith": {"coll": "events"}},
         {
             "$match": {
                 "date_created": {
@@ -568,12 +572,35 @@ async def hot_events_today():
                 },
             }
         },
+        {"$unwind": {"path": "$new_list"}},
+        {
+            "$lookup": {
+                "from": "News",
+                "let": {"id": {"$toObjectId": "$new_list"}},
+                "pipeline": [
+                    {"$match": {"$expr": {"$eq": ["$_id", "$$id"]}}},
+                ],
+                "as": "new_list",
+            }
+        },
+        {"$unwind": "$new_list"},
+        {
+            "$group": {
+                "_id": "$_id",
+                "new_list": {"$push": "$new_list"},
+                "event_name": {"$first": "$event_name"},
+                "sentiment": {"$first": "$sentiment"},
+                "date_created": {"$first": "$date_created"},
+            }
+        },
         {
             "$project": {
                 "new_list_length": {"$size": "$new_list"},
                 "event_name": 1,
                 "sentiment": 1,
                 "date_created": 1,
+                "is_event": 1,
+                "new_list": 1,
             }
         },
         {"$sort": {"new_list_length": -1}},
@@ -722,7 +749,7 @@ async def news_read_by_user(day_space: int = 7, user_id=""):
 """ START ADMIN """
 
 
-# async def status_source_news(day_space: int = 7):
+# async def status_source_news(day_space: int = 7, start_date=None, end_date=None):
 #     now = datetime.now()
 #     now = now.today() - timedelta(days=day_space)
 #     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -766,7 +793,18 @@ async def news_read_by_user(day_space: int = 7, user_id=""):
 #     return result
 
 
-async def status_source_news(day_space: int = 7, start_date=None, end_date=None):
+async def status_source_news():
+    result = {}
+    data = await err_source_statistic_client.find().to_list(None)
+    if data:
+        result = data[0]
+
+    return result
+
+
+async def status_error_source_news(
+    day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
+):
     now = datetime.now()
     now = now.today() - timedelta(days=day_space)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -790,146 +828,56 @@ async def status_source_news(day_space: int = 7, start_date=None, end_date=None)
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
-    pipeline = [
-        {
-            "$lookup": {
-                "from": "jobstore",
-                "let": {"id": "$_id"},
-                "pipeline": [
-                    {
-                        "$addFields": {
-                            "id": {
-                                "$convert": {
-                                    "input": "$_id",
-                                    "to": "objectId",
-                                    "onError": "",
-                                    "onNull": "",
-                                },
-                            },
-                        },
-                    },
-                    {
-                        "$match": {
-                            "$expr": {"$eq": ["$id", "$$id"]},
-                        },
-                    },
-                ],
-                "as": "pipeline",
-            },
-        },
-        {
-            "$lookup": {
-                "from": "his_log",
-                "let": {"id": "$_id"},
-                "pipeline": [
-                    {
-                        "$match": {
-                            "created_at": {
-                                "$gte": start_of_day,
-                                "$lte": end_of_day,
-                            },
-                            "$expr": {
-                                "$eq": [
-                                    "$$id",
-                                    {"$toObjectId": "$pipeline_id"},
-                                ],
-                            },
-                        },
-                    },
-                ],
-                "as": "logs",
-            },
-        },
-        {
-            "$addFields": {
-                "active": {
-                    "$cond": [
-                        {
-                            "$gt": [
-                                {
-                                    "$size": "$pipeline",
-                                },
-                                0,
-                            ],
-                            "$gt": [
-                                {
-                                    "$size": "$logs",
-                                },
-                                0,
-                            ],
-                        },
-                        1,
-                        0,
-                    ],
-                },
-            },
-        },
-        {
-            "$group": {
-                "_id": "$_id",
-                "complete": {
-                    "$sum": {
-                        "$cond": [
-                            {
-                                "$ne": [
-                                    {
-                                        "$size": {
-                                            "$filter": {
-                                                "input": "$logs",
-                                                "as": "item",
-                                                "cond": {
-                                                    "$eq": [
-                                                        "$$item.log",
-                                                        "completed",
-                                                    ],
-                                                },
-                                            },
-                                        },
-                                    },
-                                    0,
-                                ],
-                            },
-                            1,
-                            {
-                                "$cond": [
-                                    {"$eq": ["$active", 0]},
-                                    -1,
-                                    0,
-                                ],
-                            },
-                        ],
-                    },
-                },
-            },
-        },
-        {
-            "$project": {
-                "_id": 1,
-                "working": {
-                    "$cond": [
-                        {"$gt": ["$complete", 0]},
-                        "normal",
-                        {
-                            "$cond": [
-                                {"$eq": ["$complete", 0]},
-                                "error",
-                                "unknown",
-                            ],
-                        },
-                    ],
-                },
-            },
-        },
-        {"$group": {"_id": "$working", "value": {"$sum": 1}}},
-    ]
+    list_hist = await his_log_client.aggregate(
+        [
+            {
+                "$match": {
+                    "created_at": {"$gte": start_of_day, "$lte": end_of_day},
+                }
+            }
+        ]
+    ).to_list(None)
 
-    result = []
-    data = pipelines_client.aggregate(pipeline)
+    list_pipelines = await pipelines_client.aggregate([]).to_list(None)
 
-    async for doc in data:
-        result.append(doc)
+    result = {
+        "normal": 0,
+        "error": 0,
+        "unknown": 0,
+    }
+    pipeline_err = {}
+    if list_pipelines:
+        for pipeline in list_pipelines:
+            if pipeline["enabled"]:
+                id = pipeline["_id"]
 
-    return result
+                is_completed = False
+                is_unknown = True
+                for his in list_hist:
+                    if ObjectId(his["pipeline_id"]) == id:
+                        is_unknown = False
+                        if his["log"] == "completed":
+                            is_completed = True
+                            result["normal"] += 1
+                            break
+
+                if not is_completed and not is_unknown:
+                    result["error"] += 1
+                    pipeline_err[id] = 1
+                elif is_unknown:
+                    result["unknown"] += 1
+
+            else:
+                result["unknown"] += 1
+
+            pipeline_filter = [pl_id for pl_id in pipeline_err.keys()]
+            offset = (page_index - 1) * page_index if page_index > 0 else 0
+            err_pipeline_list = []
+            async for item in pipelines_client.find(
+                {"_id": {"$in": pipeline_filter}}
+            ).skip(offset).limit(page_size):
+                err_pipeline_list.append(item)
+    return {"total": len(pipeline_filter), "data": err_pipeline_list}
 
 
 """ END ADMIN """

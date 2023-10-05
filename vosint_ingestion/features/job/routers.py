@@ -1101,18 +1101,36 @@ def get_result_job(
                         {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
                     )
         elif text_search != "":
-            tmp = my_es.search_main(index_name="vosint", query=text_search)
-            # print(text_search)
-            # print(tmp)
-            list_link = []
-            for k in tmp:
-                list_link.append({"data:url": k["_source"]["data:url"]})
-            if len(list_link) != 0:
-                query["$and"].append({"$or": list_link.copy()})
-            else:
-                query["$and"].append(
-                    {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
-                )
+            # tmp = my_es.search_main(index_name="vosint", query=text_search)
+            # # print(text_search)
+            # # print(tmp)
+            # list_link = []
+            # for k in tmp:
+            #     list_link.append({"data:url": k["_source"]["data:url"]})
+            # if len(list_link) != 0:
+            #     query["$and"].append({"$or": list_link.copy()})
+            # else:
+            #     query["$and"].append(
+            #         {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
+            #     )
+            query["$and"].append(
+                {
+                    "$or": [
+                        {
+                            "data:content": {
+                                "$regex": rf"\b{text_search}\b",
+                                "$options": "i",
+                            }
+                        },
+                        {
+                            "data:title": {
+                                "$regex": rf"\b{text_search}\b",
+                                "$options": "i",
+                            }
+                        },
+                    ]
+                },
+            )
     except:
         query = {}
     if str(query) == "{'$and': []}":

@@ -247,6 +247,7 @@ class JobService:
         return pipeline_dtos
 
     def get_result_job(self, News, order_spec, pagination_spec, filter):
+        print(filter)
         results = self.__mongo_repo.get_many_News(
             News,
             order_spec=order_spec,

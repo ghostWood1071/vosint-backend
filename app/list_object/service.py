@@ -2,8 +2,10 @@ import pydantic
 from bson import ObjectId, regex
 from fastapi import HTTPException, status
 from unidecode import unidecode
+from vosint_ingestion.models.mongorepository import MongoRepository
 
 from db.init_db import get_collection_client
+import re
 
 db = get_collection_client("object")
 
@@ -112,3 +114,61 @@ async def delete_object(id: str):
     if object_deleted:
         await db.delete_one({"_id": ObjectId(id)})
         return status.HTTP_200_OK
+
+
+def get_keyword_regex(keyword_dict):
+    pattern = ""
+    for key in list(keyword_dict.keys()):
+        pattern = pattern + keyword_dict.get(key) + ","
+    keyword_arr = [keyword.strip() for keyword in pattern.split(",")]
+    keyword_arr = [
+        rf"\b{keyword.strip()}\b"
+        for keyword in list(filter(lambda x: x != "", keyword_arr))
+    ]
+    pattern = "|".join(keyword_arr)
+    return pattern
+
+
+def add_news_to_object(object_id):
+    object, _ = MongoRepository().get_many("object", {"_id": ObjectId(object_id)})
+
+    parttern = get_keyword_regex(object[0].get("keywords"))
+    filter_spec = {
+        "$or": [
+            {"data:title": {"$regex": parttern, "$options": "i"}},
+            {"data:content": {"$regex": parttern, "$options": "i"}},
+        ]
+    }
+    news, _ = MongoRepository().get_many("News", filter_spec)
+    news_ids = [str(_id["_id"]) for _id in news]
+    if len(news_ids) > 0:
+        MongoRepository().update_many(
+            "object",
+            {"_id": {"$in": [ObjectId(object_id)]}},
+            {"$set": {"news_list": news_ids}},
+        )
+
+
+def update_news(object_id: str):
+    try:
+        # object = MongoRepository().get_one("object", {"_id": object_id})
+        # if object is None:
+        #     return False
+        # key_str = ""
+        # for key in object.get("keywords").keys():
+        #     key_str += object.get("keywords").get(key) + ","
+        # key_arr = [key.strip() for key in key_str.split(",")]
+        # key_arr = list(filter(lambda x: x != "", key_arr))
+        # search_text = " | ".join(key_arr)
+        # data = my_es.search_main("vosint", query=search_text, size=1000)
+        # insert_list = [row.get("_id") for row in data]
+        # MongoRepository().update_many(
+        #     "object",
+        #     {"_id": ObjectId(object_id)},
+        #     {"$set": {"news_list": insert_list}},
+        # )
+        add_news_to_object(object_id)
+        return True
+    except Exception as e:
+        print(e)
+        return False
