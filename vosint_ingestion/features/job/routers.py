@@ -80,7 +80,7 @@ def get_news_from_ttxvn(
             + end_date.split("/")[1]
             + "-"
             + end_date.split("/")[0]
-            + "T00:00:00Z"
+            + "T23:59:59Z"
         )
     except:
         pass
