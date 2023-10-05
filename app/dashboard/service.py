@@ -910,7 +910,7 @@ async def status_error_source_news(
                 {"_id": {"$in": pipeline_filter}}
             ).skip(offset).limit(page_size):
                 err_pipeline_list.append(item)
-    return err_pipeline_list
+    return {"total": len(pipeline_filter), "data": err_pipeline_list}
 
 
 """ END ADMIN """
