@@ -74,7 +74,13 @@ async def get_average_monitor():
                 total_used_cpu += float(last_resource_monitor["cpu"])
                 total_used_ram += float(last_resource_monitor["ram"])
                 total_used_disk += float(last_resource_monitor["disk"])
-
+        if total_count == 0:
+            return {
+                "cpu_percent": 0,
+                "ram_percent": 0,
+                "disk_percent": 0,
+                "timestamp": current_time,
+            }
         cpu_percent = total_used_cpu / total_count
         ram_percent = (total_used_ram / total_ram) * 100
         disk_percent = (total_used_disk / total_disk) * 100
@@ -82,6 +88,7 @@ async def get_average_monitor():
             "cpu_percent": cpu_percent,
             "ram_percent": ram_percent,
             "disk_percent": disk_percent,
+            "timestamp": current_time,
         }
         return data
     except Exception:
