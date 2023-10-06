@@ -21,7 +21,7 @@ from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_newsletter_id__,
 )
 from core.config import settings
-
+from datetime import timedelta
 import asyncio
 import json
 
@@ -322,7 +322,12 @@ def get_event_from_newsletter_list_id(
     result = []
 
     # news_letter_list_id = news_letter_list_id.split(',')
-
+    if start_date == None and end_date == None:
+        end_date = datetime.now().strftime("%Y-%m-%d") + "T00:00:00Z"
+        start_date = (datetime.now() - timedelta(days=30)).strftime(
+            "%Y-%m-%d"
+        ) + "T00:00:00Z"
+        # start_date = f"{start_date_tmp.day}-{start_date_tmp.month}-{start_date_tmp.year}T00:00:00Z"
     # xử lý newletter parent
     list_id_find_child = []
     tree = find_child(
@@ -521,7 +526,25 @@ def get_event_from_newsletter_list_id(
             for i in a:
                 list_id.append(str(i["_id"]))
 
-            a, _ = MongoRepository().get_many_d(collection_name="events")
+            events_filter = {}
+            if end_date != None and start_date == None:
+                events_filter["created_at"] = {"$lte": end_date}
+            if start_date != None and end_date == None:
+                events_filter["created_at"] = {"$gte": start_date}
+
+            if start_date != None and end_date != None:
+                events_filter["$and"] = [
+                    {"created_at": {"$gte": start_date}},
+                    {"created_at": {"$lte": end_date}},
+                ]
+
+            event_paginate = {"skip": 0, "limit": 1000}
+
+            a, _ = MongoRepository().get_many_d(
+                collection_name="events",
+                filter_spec=events_filter,
+                pagination_spec=event_paginate,
+            )
 
             sk = []
             for i in a:
@@ -567,7 +590,8 @@ def get_event_from_newsletter_list_id(
                 result.append({news_letter_id: sk[: int(event_number)]})
             else:
                 result.append({news_letter_id: sk})
-        except:
+        except Exception as e:
+            print(e)
             pass
     # return result[(int(page_number)-1)*int(page_size):(int(page_number))*int(page_size)]
     return JSONResponse(
