@@ -16,7 +16,13 @@ async def get_all():
     users = await get_all_user()
     if users:
         return users
-    obj = {"username": "", "password": ""}
+    obj = {
+        "username": "",
+        "password": "",
+        "tag": "using",
+        "list_proxy": [],
+        "cookies": [],
+    }
     client.insert_one(obj)
     users = await get_all_user()
     return users
