@@ -318,9 +318,8 @@ async def top_country_by_entities(
     now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
-
-    # start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
-    # end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    # end_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    # start_of_day = end_of_day - timedelta(days=1000 + 1, seconds=-1)
 
     # filter by start_date, end_date, text_search
     if start_date:
@@ -338,15 +337,13 @@ async def top_country_by_entities(
         )
         end_of_day = end_date.replace(hour=23, minute=59, second=59)
 
+    # Get all countries
     f = open(os.path.join(__location__, "data_static/countries.json"), "r")
-
     dataJ = json.loads(f.read())
-
     countries = []
     if dataJ:
         for i in dataJ:
             countries.append(i["name"])
-
     f.close()
 
     pipeline = [
@@ -381,14 +378,43 @@ async def top_country_by_entities(
         {"$group": {"_id": "$list_entities", "value": {"$sum": 1}}},
         {"$project": {"country": "$_id", "value": 1}},
         {"$sort": {"value": -1}},
-        {"$limit": top},
+        # {"$limit": top},
     ]
 
-    data = events_client.aggregate(pipeline)
+    data = await events_client.aggregate(pipeline).to_list(None)
+
+    # Get countries to filter
+    f = open(os.path.join(__location__, "data_static/countries-formatted.json"), "r")
+    dataJ = json.loads(f.read())
+    f.close()
+
+    result = {}
+
+    for item in data:
+        not_name = True  # Check item in #name
+        for country in dataJ:
+            key = country["key"]  # Unique key
+            name = country["name"]  # List of name countries
+
+            if item["country"].lower() in name:
+                not_name = False
+                if key in result:
+                    result[key] += item["value"]
+                else:
+                    result[key] = item["value"]
+                break
+        if not_name:
+            result[item["country"]] = item["value"]
+
+    # Sort the dictionary by values in ascending order
+    sorted_data = dict(sorted(result.items(), key=lambda item: item[1], reverse=True))
 
     result = []
-    async for document in data:
-        result.append(document)
+    # Display the sorted dictionary
+    for country, value in sorted_data.items():
+        result.append({"_id": country, "country": country, "value": value})
+
+    result = result[0:top]
 
     return result
 
@@ -560,6 +586,8 @@ async def hot_events_today():
     now = datetime.now()
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = start_of_day + timedelta(days=1, seconds=-1)
+    # end_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    # start_of_day = end_of_day - timedelta(days=1000, seconds=-1)
 
     pipeline = [
         {"$addFields": {"is_event": True}},
@@ -590,17 +618,18 @@ async def hot_events_today():
                 "new_list": {"$push": "$new_list"},
                 "event_name": {"$first": "$event_name"},
                 "sentiment": {"$first": "$sentiment"},
+                "is_event": {"$first": "$is_event"},
                 "date_created": {"$first": "$date_created"},
             }
         },
         {
             "$project": {
                 "new_list_length": {"$size": "$new_list"},
+                "source_url": {"$arrayElemAt": ["$new_list.data:url", 0]},
                 "event_name": 1,
                 "sentiment": 1,
                 "date_created": 1,
                 "is_event": 1,
-                "new_list": 1,
             }
         },
         {"$sort": {"new_list_length": -1}},
