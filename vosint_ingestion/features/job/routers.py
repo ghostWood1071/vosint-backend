@@ -24,6 +24,7 @@ from core.config import settings
 from datetime import timedelta
 import asyncio
 import json
+import re
 
 
 class Translate(BaseModel):
@@ -140,6 +141,7 @@ async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
         bookmarks=bookmarks,
         is_get_read_state=True,
     )
+
     return JSONResponse(
         {
             "success": True,
@@ -194,8 +196,8 @@ def stop_job(pipeline_id: str):
 
 
 @router.post("/api/stop_all_jobs")
-def stop_all_jobs(pipeline_ids):
-    return JSONResponse(job_controller.stop_all_jobs(pipeline_ids))
+def stop_all_jobs():
+    return JSONResponse(job_controller.stop_all_jobs(None))
 
 
 @router.get("/api/get_news_from_id_source")
@@ -1112,13 +1114,17 @@ def get_result_job(
                     "$or": [
                         {
                             "data:content": {
-                                "$regex": rf"\b{text_search}\b",
+                                # "$regex": rf"\b{text_search}\b",
+                                # "$options": "i",
+                                "$regex": text_search,
                                 "$options": "i",
                             }
                         },
                         {
                             "data:title": {
-                                "$regex": rf"\b{text_search}\b",
+                                # "$regex": rf"\b{text_search}\b",
+                                # "$options": "i",
+                                "$regex": text_search,
                                 "$options": "i",
                             }
                         },

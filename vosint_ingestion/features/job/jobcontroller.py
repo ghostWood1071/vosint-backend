@@ -250,7 +250,26 @@ class JobController:
             bookmarks=bookmarks,
         )
         ids = [x["id"] for x in result_elt]
-        timelines, _ = MongoRepository().get_many("events", {"new_list": {"$in": ids}})
+
+        filter_spec = {}
+        filter_spec.update({"new_list": {"$in": ids}})
+
+        if elt.endDate != None and elt.endDate != "":
+            _end_date = datetime.strptime(elt.endDate, "%d/%m/%Y")
+            filter_spec.update({"date_created": {"$lte": _end_date}})
+        if elt.startDate != None and elt.startDate != "":
+            _start_date = datetime.strptime(elt.startDate, "%d/%m/%Y")
+
+            if filter_spec.get("date_created") == None:
+                filter_spec.update({"date_created": {"$gte": _start_date}})
+            else:
+                filter_spec["date_created"].update({"$gte": _start_date})
+
+        timelines, _ = MongoRepository().get_many(
+            "events",
+            filter_spec,
+            ["date_created"],
+        )
         for timeline in timelines:
             timeline["_id"] = str(timeline["_id"])
             timeline["date_created"] = str(timeline["date_created"])
@@ -270,11 +289,29 @@ class JobController:
         filter_spec = {}
         if text_search != None and text_search != "":
             filter_spec.update(
-                {"data:content": {"$regex": rf"\b{text_search}\b", "$options": "i"}}
+                {
+                    "$or": [
+                        {
+                            "data:content": {
+                                "$regex": text_search,
+                                "$options": "i",
+                            }
+                        },
+                        {
+                            "data:title": {
+                                "$regex": text_search,
+                                "$options": "i",
+                            }
+                        },
+                    ]
+                },
             )
-            filter_spec.update(
-                {"data:title": {"$regex": rf"\b{text_search}\b", "$options": "i"}}
-            )
+            # filter_spec.update(
+            #     {"data:content": {"$regex": rf"\b{text_search}\b", "$options": "i"}}
+            # )
+            # filter_spec.update(
+            #     {"data:title": {"$regex": rf"\b{text_search}\b", "$options": "i"}}
+            # )
         if end_date != None and end_date != "":
             _end_date = datetime.strptime(end_date, "%d/%m/%Y")
             filter_spec.update({"pub_date": {"$lte": _end_date}})
@@ -318,6 +355,7 @@ class JobController:
             news_ids = [ObjectId(news_id) for news_id in objects[0].get("sub_set")]
             total = int(objects[0].get("arrayLength"))
             filter_spec["_id"] = {"$in": news_ids}
+
             news, _ = MongoRepository().get_many_News("News", filter_spec, ["pub_date"])
 
             for row_new in news:
