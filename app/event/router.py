@@ -489,28 +489,28 @@ def unread_events(
 def get_international_graph(
     object_ids: List[str], start_date: str = "", end_date: str = ""
 ):
-    try:
-        start_date = (
-            start_date.split("/")[2]
-            + "-"
-            + start_date.split("/")[1]
-            + "-"
-            + start_date.split("/")[0]
-            + "T00:00:00Z"
-        )
-    except:
-        pass
-    try:
-        end_date = (
-            end_date.split("/")[2]
-            + "-"
-            + end_date.split("/")[1]
-            + "-"
-            + end_date.split("/")[0]
-            + "T00:00:00Z"
-        )
-    except:
-        pass
+    # try:
+    #     start_date = (
+    #         start_date.split("/")[2]
+    #         + "-"
+    #         + start_date.split("/")[1]
+    #         + "-"
+    #         + start_date.split("/")[0]
+    #         + "T00:00:00Z"
+    #     )
+    # except:
+    #     pass
+    # try:
+    #     end_date = (
+    #         end_date.split("/")[2]
+    #         + "-"
+    #         + end_date.split("/")[1]
+    #         + "-"
+    #         + end_date.split("/")[0]
+    #         + "T00:00:00Z"
+    #     )
+    # except:
+    #     pass
     data = get_graph_data(object_ids, start_date, end_date)
     return JSONResponse(data, 200)
 
@@ -519,27 +519,27 @@ def get_international_graph(
 def get_events_by_edge(
     objects: Dict[str, Any], start_date: str = "", end_date: str = ""
 ):
-    try:
-        start_date = (
-            start_date.split("/")[2]
-            + "-"
-            + start_date.split("/")[1]
-            + "-"
-            + start_date.split("/")[0]
-            + "T00:00:00Z"
-        )
-    except:
-        pass
-    try:
-        end_date = (
-            end_date.split("/")[2]
-            + "-"
-            + end_date.split("/")[1]
-            + "-"
-            + end_date.split("/")[0]
-            + "T00:00:00Z"
-        )
-    except:
-        pass
+    # try:
+    #     start_date = (
+    #         start_date.split("/")[2]
+    #         + "-"
+    #         + start_date.split("/")[1]
+    #         + "-"
+    #         + start_date.split("/")[0]
+    #         + "T00:00:00Z"
+    #     )
+    # except:
+    #     pass
+    # try:
+    #     end_date = (
+    #         end_date.split("/")[2]
+    #         + "-"
+    #         + end_date.split("/")[1]
+    #         + "-"
+    #         + end_date.split("/")[0]
+    #         + "T00:00:00Z"
+    #     )
+    # except:
+    #     pass
     data = get_events_data_by_edge(objects, start_date, end_date)
     return JSONResponse(data, 200)

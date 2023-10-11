@@ -66,7 +66,7 @@ async def get_active_member(name: str = "facebook"):
 
 
 # priority
-@router.get("/get_posts_from_priority")
+@router.get("/get-posts-from-priority")
 async def get_posts_from_priority(
     id_social,
     text_search="",
@@ -87,12 +87,14 @@ async def get_posts_from_priority(
     )
 
 
-@router.get("/get_statistic_interaction_from_priority")
-async def get_statistic_interaction_from_priority(id_social: str):
-    return await statistic_interaction_from_priority(id_social)
+@router.get("/get-statistic-interaction-from-priority")
+async def get_statistic_interaction_from_priority(
+    id_social: str, start_date: str = "", end_date: str = ""
+):
+    return await statistic_interaction_from_priority(id_social, start_date, end_date)
 
 
-@router.get("/get_total_interaction_priority")
+@router.get("/get-total-interaction-priority")
 async def get_total_interaction_priority(
     id_social: str, start_date: str = "", end_date: str = ""
 ):
@@ -107,7 +109,7 @@ async def get_total_post_priority(
 
 
 # statistic
-@router.get("/get_statistic_sentiment")
+@router.get("/get-statistic-sentiment")
 async def get_statistic_sentiment(
     name: str = "facebook", start_date: str = "", end_date: str = ""
 ):

@@ -143,7 +143,16 @@ class PipelineService:
 
         def _map_active(pipeline, job_ids):
             return PipelineForDetailsDto(
-                {**pipeline, "actived": str(pipeline["_id"]) in job_ids}
+                {
+                    **pipeline,
+                    "actived": str(pipeline["_id"]) in job_ids,
+                    "source_favicon": str(pipeline["source_favicon"])
+                    if (
+                        "source_favicon" in pipeline
+                        and pipeline["source_favicon"] != ""
+                    )
+                    else "",
+                }
             )
 
         pipeline_dtos = list(map(lambda p: _map_active(p, jobs), pipelines))
