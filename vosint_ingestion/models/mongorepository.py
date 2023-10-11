@@ -477,3 +477,34 @@ class MongoRepository:
         finally:
             self.__close()
         return data
+
+    def find(
+        self,
+        collection_name: str,
+        filter_spec: Dict[str, Any] = {},
+        projection: Dict[str, Any] = None,
+        pagination: Dict[str, Any] = None,
+        order: List[Dict[str, Any]] = None,
+    ):
+        if not collection_name:
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
+        try:
+            self.__connect()
+            collection = self.__db[collection_name]
+            if projection:
+                cur = collection.find(filter=filter_spec, projection=projection)
+            else:
+                cur = collection.find(filter=filter_spec)
+            if order:
+                cur.sort(order)
+            if pagination:
+                cur = cur.skip(pagination.get("skip")).limit(pagination.get("limit"))
+            result = []
+            for row in cur:
+                result.append(row)
+        finally:
+            self.__close()
+        return result

@@ -267,36 +267,18 @@ def create_required_keyword(newsletter_id: str):
 
 def find_child(_id, list_id_find_child):
     list_id_find_child.append(str(_id))
-
-    a, _ = MongoRepository().get_many_d(
+    child_subjects, child_count = MongoRepository().get_many_d(
         collection_name="newsletter", filter_spec={"parent_id": _id}
     )
-    tmp = []
-    if _ == 0:
+    if child_count == 0:
         return str(_id)
-    else:
-        tmp = []
-        for i in a:
-            tmp.append(
-                find_child(
-                    _id=ObjectId(i["_id"]), list_id_find_child=list_id_find_child
-                )
-            )
+    tmp = []
+    for child in child_subjects:
+        tmp.append(find_child(ObjectId(child["_id"]), list_id_find_child))
     return {str(_id): tmp}
 
 
-@router.get("/api/get_event_from_newsletter_list_id")
-def get_event_from_newsletter_list_id(
-    page_number=1,
-    page_size=30,
-    start_date: str = None,
-    end_date: str = None,
-    sac_thai: str = None,
-    language_source: str = None,
-    news_letter_id: str = "",
-    authorize: AuthJWT = Depends(),
-    event_number=None,
-):
+def process_date(start_date, end_date):
     try:
         start_date = (
             start_date.split("/")[2]
@@ -315,26 +297,23 @@ def get_event_from_newsletter_list_id(
             + end_date.split("/")[1]
             + "-"
             + end_date.split("/")[0]
-            + "T00:00:00Z"
+            + "T23:59:59Z"
         )
     except:
         pass
-    result = []
 
     # news_letter_list_id = news_letter_list_id.split(',')
     if start_date == None and end_date == None:
-        end_date = datetime.now().strftime("%Y-%m-%d") + "T00:00:00Z"
+        end_date = datetime.now().strftime("%Y-%m-%d") + "T23:59:59Z"
         start_date = (datetime.now() - timedelta(days=30)).strftime(
             "%Y-%m-%d"
         ) + "T00:00:00Z"
-        # start_date = f"{start_date_tmp.day}-{start_date_tmp.month}-{start_date_tmp.year}T00:00:00Z"
-    # xử lý newletter parent
-    list_id_find_child = []
-    tree = find_child(
-        _id=ObjectId(news_letter_id), list_id_find_child=list_id_find_child
-    )
-    infor_tree = []
-    for news_letter_id in list_id_find_child:
+    return start_date, end_date
+
+
+def get_children_info(child_id_list):
+    info_tree = []
+    for news_letter_id in child_id_list:
         a = MongoRepository().get_one(
             collection_name="newsletter",
             filter_spec={"_id": news_letter_id},
@@ -345,166 +324,143 @@ def get_event_from_newsletter_list_id(
             a["parent_id"] = str(a["parent_id"])
         except:
             pass
-        infor_tree.append(a)
+        info_tree.append(a)
+    return info_tree
+
+
+def build_keyword_query(query, keywords):
+    query = ""
+    first_flat = 1
+    try:
+        for keyword in keywords:
+            if first_flat == 1:
+                first_flat = 0
+                query += "("
+            else:
+                query += "| ("
+            keyword_arr = keyword.split(",")
+
+            for keyword in keyword_arr:
+                query += "+" + '"' + keyword + '"'
+            query += ")"
+    except:
+        pass
+    return query
+
+
+def build_language_keyword_query(query, lang, keywords):
+    query = ""
+    first_flat = 1
+    try:
+        for keyword in keywords[lang]["required_keyword"]:
+            if first_flat == 1:
+                first_flat = 0
+                query += "("
+            else:
+                query += "| ("
+            keyword_arr = [key.strip() for key in keyword.split(",")]
+
+            for keyword in keyword_arr:
+                if keyword != "":
+                    query += "+" + '"' + keyword + '"'
+            query += ")"
+    except:
+        pass
+    try:
+        exclude_arr = keywords[lang]["exclusion_keyword"].split(",")
+        for key_exclude in exclude_arr:
+            if key_exclude != "":
+                query += "-" + '"' + key_exclude + '"'
+    except:
+        pass
+    return query
+
+
+def summarize_query_keyword(keywords, first_lang):
+    query = ""
+    for keyword in keywords:
+        if keyword != "":
+            if first_lang == 1:
+                first_lang = 0
+                query += "(" + keyword + ")"
+    return query
+
+
+@router.get("/api/get_event_from_newsletter_list_id")
+def get_event_from_newsletter_list_id(
+    page_number=1,
+    page_size=30,
+    start_date: str = None,
+    end_date: str = None,
+    sac_thai: str = None,
+    language_source: str = None,
+    news_letter_id: str = "",
+    authorize: AuthJWT = Depends(),
+    event_number=None,
+):
+    start_date, end_date = process_date(start_date, end_date)
+    result = []
+    # start_date = f"{start_date_tmp.day}-{start_date_tmp.month}-{start_date_tmp.year}T00:00:00Z"
+    # xử lý newletter parent
+    child_id_list = []
+    tree = find_child(ObjectId(news_letter_id), child_id_list)
+    infor_tree = []
+    for news_letter_id in child_id_list:
+        child_newsletter = MongoRepository().get_one(
+            collection_name="newsletter",
+            filter_spec={"_id": news_letter_id},
+            # filter_other={"_id": 1, "title": 1, "parent_id": 1},
+        )
+        child_newsletter["_id"] = str(child_newsletter["_id"])
+        if child_newsletter.get("parent_id"):
+            child_newsletter["parent_id"] = str(child_newsletter["parent_id"])
+
+        if child_newsletter.get("user_id"):
+            child_newsletter["user_id"] = str(child_newsletter["user_id"])
+        infor_tree.append(child_newsletter)
 
         try:
             if news_letter_id != "" and news_letter_id != None:
-                a = MongoRepository().get_one(
-                    collection_name="newsletter", filter_spec={"_id": news_letter_id}
-                )
-
-                if news_letter_id != "" and a["tag"] == "gio_tin":
-                    ls = []
-                    kt_rong = 1
-                    try:
-                        for new_id in a["news_id"]:
-                            ls.append(str(new_id))
-                    except:
-                        pass
+                if news_letter_id != "" and child_newsletter["tag"] == "gio_tin":
+                    list_id = []
+                    if child_newsletter.get("news_id") != None:
+                        ls = [
+                            str(news_id) for news_id in child_newsletter.get("news_id")
+                        ]
                     if ls == []:
                         return []
-                    list_id = ls
 
-                if news_letter_id != "" and a["tag"] != "gio_tin":
-                    if a["is_sample"]:
+                if news_letter_id != "" and child_newsletter["tag"] != "gio_tin":
+                    if child_newsletter["is_sample"]:
                         query = ""
-                        first_flat = 1
-                        try:
-                            for i in a["required_keyword_extract"]:
-                                if first_flat == 1:
-                                    first_flat = 0
-                                    query += "("
-                                else:
-                                    query += "| ("
-                                j = i.split(",")
-
-                                for k in j:
-                                    query += "+" + '"' + k + '"'
-                                query += ")"
-                        except:
-                            pass
+                        query = build_keyword_query(
+                            query, child_newsletter.get("required_keyword_extract")
+                        )
                     else:
                         first_lang = 1
                         query = ""
                         ### vi
-                        query_vi = ""
-                        first_flat = 1
-                        try:
-                            for i in a["keyword_vi"]["required_keyword"]:
-                                if first_flat == 1:
-                                    first_flat = 0
-                                    query_vi += "("
-                                else:
-                                    query_vi += "| ("
-                                j = i.split(",")
-
-                                for k in j:
-                                    query_vi += "+" + '"' + k + '"'
-                                query_vi += ")"
-                        except:
-                            pass
-                        try:
-                            j = a["keyword_vi"]["exclusion_keyword"].split(",")
-                            for k in j:
-                                query_vi += "-" + '"' + k + '"'
-                        except:
-                            pass
-
+                        query_vi = build_language_keyword_query(
+                            "", "keyword_vi", child_newsletter
+                        )
                         ### cn
-                        query_cn = ""
-                        first_flat = 1
-                        try:
-                            for i in a["keyword_vn"]["required_keyword"]:
-                                if first_flat == 1:
-                                    first_flat = 0
-                                    query_cn += "("
-                                else:
-                                    query_cn += "| ("
-                                j = i.split(",")
-
-                                for k in j:
-                                    query_cn += "+" + '"' + k + '"'
-                                query_cn += ")"
-                        except:
-                            pass
-                        try:
-                            j = a["keyword_cn"]["exclusion_keyword"].split(",")
-                            for k in j:
-                                query_cn += "-" + '"' + k + '"'
-                        except:
-                            pass
-
+                        query_cn = build_language_keyword_query(
+                            "", "keyword_cn", child_newsletter
+                        )
                         ### cn
-                        query_ru = ""
-                        first_flat = 1
-                        try:
-                            for i in a["keyword_ru"]["required_keyword"]:
-                                if first_flat == 1:
-                                    first_flat = 0
-                                    query_ru += "("
-                                else:
-                                    query_ru += "| ("
-                                j = i.split(",")
+                        query_ru = build_language_keyword_query(
+                            "", "keyword_ru", child_newsletter
+                        )
+                        ### en
+                        query_en = build_language_keyword_query(
+                            "", "keyword_en", child_newsletter
+                        )
 
-                                for k in j:
-                                    query_ru += "+" + '"' + k + '"'
-                                query_ru += ")"
-                        except:
-                            pass
-                        try:
-                            j = a["keyword_ru"]["exclusion_keyword"].split(",")
-                            for k in j:
-                                query_ru += "-" + '"' + k + '"'
-                        except:
-                            pass
-
-                        ### cn
-                        query_en = ""
-                        first_flat = 1
-                        try:
-                            for i in a["keyword_en"]["required_keyword"]:
-                                if first_flat == 1:
-                                    first_flat = 0
-                                    query_en += "("
-                                else:
-                                    query_en += "| ("
-                                j = i.split(",")
-
-                                for k in j:
-                                    query_en += "+" + '"' + k + '"'
-                                query_en += ")"
-                        except:
-                            pass
-                        try:
-                            j = a["keyword_en"]["exclusion_keyword"].split(",")
-                            for k in j:
-                                query_en += "-" + '"' + k + '"'
-                        except:
-                            pass
-
-                        if query_vi != "":
-                            if first_lang == 1:
-                                first_lang = 0
-                                query += "(" + query_vi + ")"
-                        if query_en != "":
-                            if first_lang == 1:
-                                first_lang = 0
-                                query += "(" + query_en + ")"
-                            else:
-                                query += "| (" + query_en + ")"
-                        if query_ru != "":
-                            if first_lang == 1:
-                                first_lang = 0
-                                query += "(" + query_ru + ")"
-                            else:
-                                query += "| (" + query_ru + ")"
-                        if query_cn != "":
-                            if first_lang == 1:
-                                first_lang = 0
-                                query += "(" + query_cn + ")"
-                            else:
-                                query += "| (" + query_cn + ")"
-
+                        query = summarize_query_keyword(
+                            [query_vi, query_cn, query_ru, query_en], first_lang
+                        )
+            if query == "":
+                continue
             pipeline_dtos = my_es.search_main(
                 index_name="vosint",
                 query=query,
@@ -513,18 +469,7 @@ def get_event_from_newsletter_list_id(
                 lang=language_source,
                 sentiment=sac_thai,
             )
-            list_link = []
-            for i in pipeline_dtos:
-                list_link.append({"data:url": i["_source"]["data:url"]})
-
-            a, _ = MongoRepository().get_many_d(
-                collection_name="News",
-                filter_spec={"$or": list_link.copy()},
-                filter_other={"_id": 1},
-            )
-            list_id = []
-            for i in a:
-                list_id.append(str(i["_id"]))
+            list_id = [i["_source"]["id"] for i in pipeline_dtos]
 
             events_filter = {}
             if end_date != None and start_date == None:
@@ -537,59 +482,84 @@ def get_event_from_newsletter_list_id(
                     {"created_at": {"$gte": start_date}},
                     {"created_at": {"$lte": end_date}},
                 ]
+            events_filter["new_list"] = {"$elemMatch": {"$in": list_id}}
 
             event_paginate = {"skip": 0, "limit": 1000}
 
-            a, _ = MongoRepository().get_many_d(
+            events, _ = MongoRepository().get_many_d(
                 collection_name="events",
                 filter_spec=events_filter,
                 pagination_spec=event_paginate,
+                # order_spec=[("date_created", "desc")],
             )
 
-            sk = []
-            for i in a:
-                try:
-                    i["date_created"] = str(i["date_created"])
-                except:
-                    pass
-                kt = 0
-                # print(i['new_list'])
-                # print(list_id)
-                try:
-                    for j in i["new_list"]:
-                        # print(j)
-                        if kt == 1:
-                            continue
-                        if j in list_id:
-                            i["_id"] = str(i["_id"])
-                            # result.append({news_letter_id:i})
-                            new_list = []
-                            for _ in i["new_list"]:
-                                a_ = MongoRepository().get_one(
-                                    collection_name="News",
-                                    filter_spec={"_id": _},
-                                    filter_other={"data:title": 1, "data:url": 1},
-                                )
-                                try:
-                                    a_["_id"] = str(a_["_id"])
-                                    # a_['pub_date'] = str(a_['pub_date'])
-                                except:
-                                    pass
-                                new_list.append(a_)
-                            i["new_list"] = new_list
-                            sk.append(i)
-                            kt = 1
-                        if kt == 1:
-                            continue
-                    # if kt == 1:
-                    #    continue
+            # sk = []
+            relevent_news_ids = []  # [event for event in events]
+            for event in events:
+                if event.get("new_list"):
+                    tmp = [
+                        ObjectId(news_id) for news_id in event.get("new_list").copy()
+                    ]
+                    relevent_news_ids.extend(tmp)
 
-                except:
-                    pass
-            if event_number != None:
-                result.append({news_letter_id: sk[: int(event_number)]})
-            else:
-                result.append({news_letter_id: sk})
+            news_relevents = MongoRepository().find(
+                "News",
+                filter_spec={"_id": {"$in": relevent_news_ids}},
+                projection={"data:title": 1, "data:url": 1, "_id": 1},
+            )
+
+            news_dict = {
+                str(news["_id"]): {
+                    "data:title": news["data:title"],
+                    "data:url": news["data:url"],
+                }
+                for news in news_relevents
+            }
+
+            for event in events:
+                event["date_created"] = str(event.get("date_created"))
+                event["_id"] = str(event.get("_id"))
+                if event.get("new_list"):
+                    tmp = []
+                    for news_id in event.get("new_list"):
+                        tmp.append(news_dict.get(news_id))
+                    event["news_list"] = tmp.copy()
+
+            # for event in events:
+            #     if event.get("date_created"):
+            #         event["date_created"] = str(event["date_created"])
+
+            #     kt = 0
+            #     try:
+            #         for news_id in event["new_list"]:
+            #             # print(j)
+            #             if kt == 1:
+            #                 continue
+            #             if news_id in list_id:
+            #                 event["_id"] = str(event["_id"])
+            #                 # result.append({news_letter_id:i})
+            #                 # new_list = []
+            #                 # for source_news_id in event["new_list"]:
+            #                 #     news = MongoRepository().get_one(
+            #                 #         collection_name="News",
+            #                 #         filter_spec={"_id": source_news_id},
+            #                 #         filter_other={"data:title": 1, "data:url": 1},
+            #                 #     )
+            #                 #     if news.get("_id"):
+            #                 #         news["_id"] = str(news["_id"])
+            #                 #     new_list.append(news)
+            #                 # event["new_list"] = new_list
+            #                 sk.append(event)
+            #                 kt = 1
+            #             if kt == 1:
+            #                 continue
+            #     except:
+            #         pass
+            # if event_number != None:
+            #     result.append({news_letter_id: sk[: int(event_number)]})
+            # else:
+            #     result.append({news_letter_id: sk})
+            result.append({news_letter_id: events.copy()})
         except Exception as e:
             print(e)
             pass
