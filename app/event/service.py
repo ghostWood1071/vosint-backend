@@ -1178,17 +1178,23 @@ def get_graph_data(object_ids, start_date, end_date):
         },
     ]
     if start_date != None and start_date != "":
-        pipeline[0]["$match"]["$and"].append({"date_created": {"$gte": ""}})
+        # pipeline[0]["$match"]["$and"].append({"date_created": {"$gte": ""}})
+        _start_date = datetime.strptime(start_date, "%d/%m/%Y")
+        pipeline[0]["$match"]["$and"].append({"date_created": {"$gte": _start_date}})
 
     if end_date != None and end_date != "":
-        pipeline[0]["$match"]["$and"].append({"date_created": {"$lte": ""}})
+        # pipeline[0]["$match"]["$and"].append({"date_created": {"$lte": ""}})
+        _end_date = datetime.strptime(end_date, "%d/%m/%Y")
+        pipeline[0]["$match"]["$and"].append({"date_created": {"$lte": _end_date}})
 
     data = MongoRepository().aggregate("events", pipeline)
+
     result = {"nodes": [], "edges": []}
     for object_name in object_names:
         result["nodes"].append(
             {"id": object_name, "img": object_image_dict[object_name]}
         )
+
     for row in data:
         count_sentiment = (
             int(row["normal"]) + int(row["negative"]) + int(row["positive"])
@@ -1225,9 +1231,12 @@ def get_events_data_by_edge(objects, start_date, end_date):
         ]
     }
     if start_date != None and start_date != "":
-        query["$and"].append({"date_created": {"$gt": start_date}})
+        _start_date = datetime.strptime(start_date, "%d/%m/%Y")
+        query["$and"].append({"date_created": {"$gte": _start_date}})
+
     if end_date != None and end_date != "":
-        query["$and"].append({"date_created": {"$lt": end_date}})
+        _end_date = datetime.strptime(end_date, "%d/%m/%Y")
+        query["$and"].append({"date_created": {"$lte": _end_date}})
     data, _ = MongoRepository().get_many("events", query)
     for row in data:
         row["_id"] = str(row["_id"])

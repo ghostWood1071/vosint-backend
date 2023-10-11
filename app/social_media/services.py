@@ -345,7 +345,6 @@ async def statistic_interaction(name: str, start_date: str, end_date: str):
         end_date = end_date.replace(hour=23, minute=59, second=59)
         end_date = str(end_date).replace("-", "/")
 
-    print(start_date, end_date)
     # if start_date != "" or end_date != "":
     #     pipeline.append(
     #         {"$match": {"created_at": {"$gte": start_date, "$lte": end_date}}}
@@ -377,7 +376,6 @@ async def statistic_interaction(name: str, start_date: str, end_date: str):
         # )
         pipeline.append({"$limit": 7})
 
-    print(pipeline)
     collection_client = (
         facebook_client
         if name == "facebook"
@@ -522,30 +520,60 @@ async def posts_from_priority(
     return result
 
 
-async def statistic_interaction_from_priority(id_social: str):
+async def statistic_interaction_from_priority(
+    id_social: str, start_date: str, end_date: str
+):
+    if start_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+
+    if end_date != "":
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        end_date = str(end_date).replace("-", "/")
+
+    if start_date == "" and end_date == "":
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=6)
+
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+
+        end_date = str(end_date).replace("-", "/")
+        start_date = str(start_date).replace("-", "/")
+
+    filter_spec = {}
+    if start_date != "" or end_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
+
     pipeline = [
         {"$match": {"_id": ObjectId(id_social)}},
         {
             "$lookup": {
                 "from": "facebook",
-                "localField": "_id",
-                "foreignField": "id_social",
+                "pipeline": [{"$match": filter_spec}],
                 "as": "facebook_list",
             }
         },
         {
             "$lookup": {
                 "from": "twitter",
-                "localField": "_id",
-                "foreignField": "id_social",
+                "pipeline": [{"$match": filter_spec}],
                 "as": "twitter_list",
             }
         },
         {
             "$lookup": {
                 "from": "tiktok",
-                "localField": "_id",
-                "foreignField": "id_social",
+                "pipeline": [{"$match": filter_spec}],
                 "as": "tiktok_list",
             }
         },
@@ -739,7 +767,7 @@ async def total_post_priority(id_social: str, start_date: str, end_date: str):
 
 
 async def statistic_sentiment(name: str, start_date: str, end_date: str):
-    if start_date:
+    if start_date != "":
         start_date = datetime(
             int(start_date.split("/")[2]),
             int(start_date.split("/")[1]),
@@ -747,7 +775,7 @@ async def statistic_sentiment(name: str, start_date: str, end_date: str):
         )
         start_date = str(start_date).replace("-", "/")
 
-    if end_date:
+    if end_date != "":
         end_date = datetime(
             int(end_date.split("/")[2]),
             int(end_date.split("/")[1]),
@@ -756,12 +784,21 @@ async def statistic_sentiment(name: str, start_date: str, end_date: str):
         end_date = end_date.replace(hour=23, minute=59, second=59)
         end_date = str(end_date).replace("-", "/")
 
+    if start_date == "" and end_date == "":
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=6)
+
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+
+        end_date = str(end_date).replace("-", "/")
+        start_date = str(start_date).replace("-", "/")
+
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"created_at": {"$gte": start_date, "$lte": end_date}},
-                    # {"sentiment": {"$exists": True}},
+                    {"sentiment": {"$exists": True}},
                 ]
             }
         },
@@ -771,6 +808,7 @@ async def statistic_sentiment(name: str, start_date: str, end_date: str):
                 "value": {"$sum": 1},
             }
         },
+        # {"$match": {"_id": {"$nin": [None, ""]}}},
     ]
 
     collection_client = (
