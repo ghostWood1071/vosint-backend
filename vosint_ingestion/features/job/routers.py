@@ -463,6 +463,7 @@ def get_event_from_newsletter_list_id(
                         )
             if query == "":
                 continue
+            plt_size = event_number * 2 if event_number else 100
             pipeline_dtos = my_es.search_main(
                 index_name="vosint",
                 query=query,
@@ -470,6 +471,7 @@ def get_event_from_newsletter_list_id(
                 lte=end_date,
                 lang=language_source,
                 sentiment=sac_thai,
+                size=plt_size,
             )
             list_id = [i["_source"]["id"] for i in pipeline_dtos]
 
@@ -486,13 +488,15 @@ def get_event_from_newsletter_list_id(
                 ]
             events_filter["new_list"] = {"$elemMatch": {"$in": list_id}}
 
-            event_paginate = {"skip": 0, "limit": 1000}
-
+            if event_number:
+                event_paginate = {"skip": 0, "limit": int(event_number)}
+            else:
+                event_number = {"skip": 0, "limit": 5}
             events, _ = MongoRepository().get_many_d(
                 collection_name="events",
                 filter_spec=events_filter,
                 pagination_spec=event_paginate,
-                # order_spec=[("date_created", "desc")],
+                order_spec=["date_created-desc"],
             )
 
             # sk = []
@@ -525,42 +529,7 @@ def get_event_from_newsletter_list_id(
                     tmp = []
                     for news_id in event.get("new_list"):
                         tmp.append(news_dict.get(news_id))
-                    event["news_list"] = tmp.copy()
-
-            # for event in events:
-            #     if event.get("date_created"):
-            #         event["date_created"] = str(event["date_created"])
-
-            #     kt = 0
-            #     try:
-            #         for news_id in event["new_list"]:
-            #             # print(j)
-            #             if kt == 1:
-            #                 continue
-            #             if news_id in list_id:
-            #                 event["_id"] = str(event["_id"])
-            #                 # result.append({news_letter_id:i})
-            #                 # new_list = []
-            #                 # for source_news_id in event["new_list"]:
-            #                 #     news = MongoRepository().get_one(
-            #                 #         collection_name="News",
-            #                 #         filter_spec={"_id": source_news_id},
-            #                 #         filter_other={"data:title": 1, "data:url": 1},
-            #                 #     )
-            #                 #     if news.get("_id"):
-            #                 #         news["_id"] = str(news["_id"])
-            #                 #     new_list.append(news)
-            #                 # event["new_list"] = new_list
-            #                 sk.append(event)
-            #                 kt = 1
-            #             if kt == 1:
-            #                 continue
-            #     except:
-            #         pass
-            # if event_number != None:
-            #     result.append({news_letter_id: sk[: int(event_number)]})
-            # else:
-            #     result.append({news_letter_id: sk})
+                    event["new_list"] = tmp.copy()
             result.append({news_letter_id: events.copy()})
         except Exception as e:
             print(e)
