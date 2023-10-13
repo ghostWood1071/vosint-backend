@@ -90,17 +90,15 @@ class JobService:
         # Split pipeline_ids from string to list of strings
         pipeline_ids = pipeline_ids.split(",") if pipeline_ids else None
 
-        enabled_pipeline_dtos = self.__pipeline_service.get_pipelines_for_run(
-            pipeline_ids
-        )
+        enabled_pipeline_dtos = self.__pipeline_service.get_pipelines_off(pipeline_ids)
 
         for pipeline_dto in enabled_pipeline_dtos:
             try:
                 Scheduler.instance().add_job(
-                    pipeline_dto._id,
+                    pipeline_dto["_id"],
                     start_job,
-                    pipeline_dto.cron_expr,
-                    args=[pipeline_dto._id],
+                    pipeline_dto["cron"],
+                    args=[pipeline_dto["_id"]],
                 )
             except InternalError as error:
                 Logger.instance().error(str(error))
@@ -112,13 +110,11 @@ class JobService:
         # Split pipeline_ids from string to list of strings
         pipeline_ids = pipeline_ids.split(",") if pipeline_ids else None
 
-        enabled_pipeline_dtos = self.__pipeline_service.get_pipelines_for_run(
-            pipeline_ids
-        )
+        enabled_pipeline_dtos = self.__pipeline_service.get_pipelines_on(pipeline_ids)
 
         for pipeline_dto in enabled_pipeline_dtos:
             try:
-                Scheduler.instance().remove_job(pipeline_dto._id)
+                Scheduler.instance().remove_job(pipeline_dto.get("_id"))
             except InternalError as error:
                 Logger.instance().error(str(error))
 
