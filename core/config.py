@@ -56,7 +56,7 @@ class Settings:
         return data.items()
 
     def load_env(self):
-        config = Config(script_directory + "/.env")
+        config = Config("/.env")
         for env_name in list(self.__annotations__.keys()):
             type_obj = self.__annotations__[env_name]
             value = config.get(env_name, None)
