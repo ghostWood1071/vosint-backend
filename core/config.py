@@ -3,6 +3,7 @@ from typing import List
 from pydantic import AnyHttpUrl, BaseSettings
 import os
 import json
+from decouple import Config
 
 
 # class Settings(BaseSettings):
@@ -54,7 +55,22 @@ class Settings:
         data = {k: self.__getattribute__(k) for k in self.__annotations__.keys()}
         return data.items()
 
+    def load_env(self):
+        config = Config(script_directory + "/.env")
+        for env_name in list(self.__annotations__.keys()):
+            type_obj = self.__annotations__[env_name]
+            value = config.get(env_name, None)
+            if not value:
+                continue
+            if type_obj != List[str]:
+                env_val = type_obj(value)
+            else:
+                env_val = str(value)
+            self.__setattr__(env_name, env_val)
+
     def __init__(self):
+        # loaded = dotenv.load_dotenv()
+        self.load_env()
         setting_dict = self.dict()
         for env_name in list(self.__annotations__.keys()):
             type_obj = self.__annotations__[env_name]
