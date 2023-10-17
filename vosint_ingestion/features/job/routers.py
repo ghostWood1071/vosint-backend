@@ -1106,11 +1106,44 @@ def get_result_job(
         query = {}
 
     # order="data: gtitle"
-    return JSONResponse(
-        job_controller.get_result_job(
-            "News", order, page_number, page_size, filter=query
-        )
+    result = job_controller.get_result_job(
+        "News", order, page_number, page_size, filter=query
     )
+
+    list_fields = [
+        "data:html",
+        "keywords",
+        "source_publishing_country",
+        "source_source_type",
+        "data:url",
+        "data:class_linhvuc",
+        "data:class_chude",
+        "created",
+        "created_at",
+        "id_social",
+        "modified_at",
+    ]
+
+    limit_string = 270
+
+    for record in result["result"]:
+        try:
+            record["data:content"] = record["data:content"][0:limit_string]
+            record["data:content_translate"] = record["data:content_translate"][
+                0:limit_string
+            ]
+        except:
+            pass
+        for key in list_fields:
+            record.pop(key, None)
+
+    return result
+
+    # return JSONResponse(
+    #     job_controller.get_result_job(
+    #         "News", order, page_number, page_size, filter=query
+    #     )
+    # )
 
 
 @router.get("/api/get_table")

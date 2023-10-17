@@ -73,7 +73,6 @@ async def get_news_detail(id: str, authorize: AuthJWT = Depends()):
     user = await find_user_by_id(ObjectId(user_id))
     news = await find_news_by_id(
         ObjectId(id),
-        projection,
     )
 
     if news["_id"] in user["vital_list"]:

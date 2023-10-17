@@ -328,20 +328,20 @@ async def search_event(
         async for item in client.find(query).sort("date_created", -1).skip(
             offset
         ).limit(limit):
-            ll = []
+            # ll = []
             ls_rp = []
-            for Item in item["new_list"]:
-                id_new = {"_id": ObjectId(Item)}
-                async for new in client2.find(id_new, projection):
-                    gg = json(new)
-                    ll.append(gg)
+            # for Item in item["new_list"]:
+            #     id_new = {"_id": ObjectId(Item)}
+            #     async for new in client2.find(id_new, projection):
+            #         gg = json(new)
+            #         ll.append(gg)
             if "list_report" in item:
                 for Item2 in item["list_report"]:
                     id_report = {"_id": ObjectId(Item2)}
                     async for rp in report_client.find(id_report, projection_rp):
                         reports = json(rp)
                         ls_rp.append(reports)
-            item["new_list"] = ll
+            # item["new_list"] = ll
             item["list_report"] = ls_rp
             item["date_created"] = str(item["date_created"])
             item["total_new"] = len(item["new_list"])
@@ -352,20 +352,20 @@ async def search_event(
         async for item3 in client3.find(query).sort("date_created", -1).skip(
             offset
         ).limit(limit):
-            ll = []
+            # ll = []
             ls_rp = []
-            for Item in item3["new_list"]:
-                id_new = {"_id": ObjectId(Item)}
-                async for new in client2.find(id_new, projection):
-                    gg = json(new)
-                    ll.append(gg)
+            # for Item in item3["new_list"]:
+            #     id_new = {"_id": ObjectId(Item)}
+            #     async for new in client2.find(id_new, projection):
+            #         gg = json(new)
+            #         ll.append(gg)
             if "list_report" in item3:
                 for Item2 in item3["list_report"]:
                     id_report = {"_id": ObjectId(Item2)}
                     async for rp in report_client.find(id_report, projection_rp):
                         reports = json(rp)
                         ls_rp.append(reports)
-            item3["new_list"] = ll
+            # item3["new_list"] = ll
             item3["list_report"] = ls_rp
 
             item3["_id"] = str(item3["_id"])
@@ -375,6 +375,27 @@ async def search_event(
                     [{"$addFields": {"list_user_clone": []}}]
                 ).to_list(length=None)
             list_event.append(item3)
+
+    list_fields = [
+        "chu_the",
+        "created_at",
+        "khach_the",
+        "list_linh_vuc",
+        "list_report",
+        "location",
+        "modified_at",
+        "new_list",
+    ]
+
+    limit_string = 270
+
+    for record in list_event:
+        try:
+            record["event_content"] = record["event_content"][0:limit_string]
+        except:
+            pass
+        for key in list_fields:
+            record.pop(key, None)
 
     return list_event
 
