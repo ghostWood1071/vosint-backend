@@ -80,14 +80,13 @@ class Settings:
         # loaded = dotenv.load_dotenv()
         self.load_env()
         setting_dict = self.dict()
-        print(setting_dict)
-        # for env_name in list(self.__annotations__.keys()):
-        #     type_obj = self.__annotations__[env_name]
-        #     if type_obj != List[str]:
-        #         env_val = type_obj(os.environ.get(env_name, setting_dict.get(env_name)))
-        #     else:
-        #         env_val = os.environ.get(env_name, str(setting_dict.get(env_name)))
-        #     self.__setattr__(env_name, env_val)
+        for env_name in list(self.__annotations__.keys()):
+            type_obj = self.__annotations__[env_name]
+            if type_obj != List[str]:
+                env_val = type_obj(os.environ.get(env_name, setting_dict.get(env_name)))
+            else:
+                env_val = os.environ.get(env_name, str(setting_dict.get(env_name)))
+            self.__setattr__(env_name, env_val)
 
 
 settings = Settings()
