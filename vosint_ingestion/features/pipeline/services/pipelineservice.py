@@ -146,16 +146,58 @@ class PipelineService:
                 {
                     **pipeline,
                     "actived": str(pipeline["_id"]) in job_ids,
-                    "source_favicon": str(pipeline["source_favicon"])
-                    if (
-                        "source_favicon" in pipeline
-                        and pipeline["source_favicon"] != ""
-                    )
-                    else "",
+                    "source_favicon": str(pipeline.get("source_favicon"))
+                    # if (
+                    #     "source_favicon" in pipeline
+                    #     and pipeline["source_favicon"] != ""
+                    # )
+                    # else "",
                 }
             )
 
         pipeline_dtos = list(map(lambda p: _map_active(p, jobs), pipelines))
+
+        return pipeline_dtos
+
+    def get_pipelines_off(self, ids: list[str] = None):
+        # Create filter conditions
+        filter_spec = {"enabled": True}
+
+        if ids:
+            ids = list(map(lambda p_id: ObjectId(p_id), ids))
+            filter_spec["_id"] = {"$in": ids}
+
+        raw_pipelines = MongoRepository().find(
+            "pipelines", filter_spec, {"_id": 1, "cron_expr": 1}
+        )
+        pipelines = [
+            {"_id": str(pipeline.get("_id")), "cron": pipeline.get("cron_expr")}
+            for pipeline in raw_pipelines
+        ]
+
+        # Map to dtos
+        # Map actived from jobs to pipelines
+        job_ids = [job_id for job_id in Scheduler.instance().get_jobs()]
+
+        pipeline_dtos = list(filter(lambda x: x.get("_id") not in job_ids, pipelines))
+
+        return pipeline_dtos
+
+    def get_pipelines_on(self, ids: list[str] = None):
+        filter_spec = {"enabled": True}
+
+        if ids:
+            ids = list(map(lambda p_id: ObjectId(p_id), ids))
+            filter_spec["_id"] = {"$in": ids}
+
+        raw_pipelines = MongoRepository().find("pipelines", filter_spec, {"_id": 1})
+        pipelines = [{"_id": str(pipeline.get("_id"))} for pipeline in raw_pipelines]
+
+        # Map to dtos
+        # Map actived from jobs to pipelines
+        job_ids = [job_id for job_id in Scheduler.instance().get_jobs()]
+
+        pipeline_dtos = list(filter(lambda x: x.get("_id") in job_ids, pipelines))
 
         return pipeline_dtos
 

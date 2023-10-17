@@ -26,6 +26,9 @@ async def insert_resource_monitors(server, resource_monitor):
         }
         await servers_client.update_one(server_query, update_operation)
         await resource_monitors_client.insert_one(resource_monitor)
+    else:
+        await servers_client.insert_one(server)
+        await resource_monitors_client.insert_one(resource_monitor)
 
 
 async def get_average_monitor():
