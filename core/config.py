@@ -3,7 +3,11 @@ from typing import List
 from pydantic import AnyHttpUrl, BaseSettings
 import os
 import json
-from decouple import Config
+from decouple import Config, RepositoryEnv
+import sys
+
+script_path = os.path.abspath(sys.argv[0])
+script_directory = os.path.dirname(script_path)
 
 
 # class Settings(BaseSettings):
@@ -42,11 +46,12 @@ class Settings:
 
     TRANSLATE_API: str = ""
 
-    # class Config:
-    #     env_file = ".env"
-    #     env_file_encoding = "utf-8"
-    #     secrets_dir = "./secrets"
-    #     case_sensitive = True
+    def read_secret(self):
+        with open(f"{script_directory}/secrets/PUBLIC_KEY", mode="r") as file:
+            self.PUBLIC_KEY = file.read()
+        with open(f"{script_directory}/secrets/PRIVATE_KEY", mode="r") as file:
+            self.PRIVATE_KEY = file.read()
+
     def dict(self):
         data = {k: self.__getattribute__(k) for k in self.__annotations__.keys()}
         return data
@@ -56,8 +61,11 @@ class Settings:
         return data.items()
 
     def load_env(self):
-        config = Config("/.env")
+        config = Config(RepositoryEnv(f"{script_directory}/.env"))
+        self.read_secret()
         for env_name in list(self.__annotations__.keys()):
+            if env_name == "PUBLIC_KEY" or env_name == "PRIVATE_KEY":
+                continue
             type_obj = self.__annotations__[env_name]
             value = config.get(env_name, None)
             if not value:
@@ -72,13 +80,14 @@ class Settings:
         # loaded = dotenv.load_dotenv()
         self.load_env()
         setting_dict = self.dict()
-        for env_name in list(self.__annotations__.keys()):
-            type_obj = self.__annotations__[env_name]
-            if type_obj != List[str]:
-                env_val = type_obj(os.environ.get(env_name, setting_dict.get(env_name)))
-            else:
-                env_val = os.environ.get(env_name, str(setting_dict.get(env_name)))
-            self.__setattr__(env_name, env_val)
+        print(setting_dict)
+        # for env_name in list(self.__annotations__.keys()):
+        #     type_obj = self.__annotations__[env_name]
+        #     if type_obj != List[str]:
+        #         env_val = type_obj(os.environ.get(env_name, setting_dict.get(env_name)))
+        #     else:
+        #         env_val = os.environ.get(env_name, str(setting_dict.get(env_name)))
+        #     self.__setattr__(env_name, env_val)
 
 
 settings = Settings()
