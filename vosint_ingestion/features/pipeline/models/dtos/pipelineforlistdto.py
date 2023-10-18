@@ -8,6 +8,7 @@ class PipelineForListDto(BaseDto):
         self.enabled = record["enabled"]
         self.actived = record["actived"]
         self.schema = record["schema"]
+        self.cron_expr = record["cron_expr"]
         # self.working = record["working"]
         # self.last_success = record["last_success"]
 
@@ -18,6 +19,7 @@ class PipelineForListDto(BaseDto):
             "enabled": self.enabled,
             "actived": self.actived,
             "schema": self.schema,
+            "cron_expr": self.cron_expr,
             # "working": self.working,
             # "last_success": self.last_success,
         }

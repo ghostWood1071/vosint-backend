@@ -11,6 +11,7 @@ class PipelineForDetailsDto(BaseDto):
         self.enabled = record["enabled"]
         self.actived = record["actived"]
         self.source_favicon = record["source_favicon"]
+        self.driver = record["driver"]
 
     def to_dict(self) -> dict:
         return {
@@ -22,4 +23,5 @@ class PipelineForDetailsDto(BaseDto):
             "enabled": self.enabled,
             "actived": self.actived,
             "source_favicon": self.source_favicon,
+            "driver": self.driver,
         }

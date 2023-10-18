@@ -1085,16 +1085,18 @@ def get_result_job(
                             "data:content": {
                                 # "$regex": rf"\b{text_search}\b",
                                 # "$options": "i",
-                                "$regex": text_search,
-                                "$options": "i",
+                                # "$regex": text_search,
+                                "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
+                                "$options": "iu",
                             }
                         },
                         {
                             "data:title": {
                                 # "$regex": rf"\b{text_search}\b",
                                 # "$options": "i",
-                                "$regex": text_search,
-                                "$options": "i",
+                                # "$regex": text_search,
+                                "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
+                                "$options": "iu",
                             }
                         },
                     ]

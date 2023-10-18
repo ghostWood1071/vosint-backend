@@ -17,10 +17,11 @@ from .services import (
     remove_news_from_object,
     add_news_to_object,
     get_timeline,
+    statistics_sentiments,
 )
 from .utils import news_to_json
 from fastapi import Response
-
+import re
 from word_exporter import export_news_to_words
 
 router = APIRouter()
@@ -189,3 +190,163 @@ def get_timeline_data(
     )
     # return data
     return JSONResponse({"count": data["total_records"], "results": data["data"]}, 200)
+
+
+@router.get("/get-statistics-sentiments")
+async def get_statistics_sentiments(
+    text_search="",
+    start_date: str = "",
+    end_date: str = "",
+    sac_thai: str = "",
+    language_source: str = "",
+    news_letter_id: str = "",
+    authorize: AuthJWT = Depends(),
+    vital: str = "",
+    bookmarks: str = "",
+):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    # print(user_id)
+    try:
+        query = {}
+        query["$and"] = []
+
+        if start_date != "" and end_date != "":
+            start_date = datetime(
+                int(start_date.split("/")[2]),
+                int(start_date.split("/")[1]),
+                int(start_date.split("/")[0]),
+            )
+            end_date = datetime(
+                int(end_date.split("/")[2]),
+                int(end_date.split("/")[1]),
+                int(end_date.split("/")[0]),
+            )
+
+            query["$and"].append({"pub_date": {"$gte": start_date, "$lte": end_date}})
+
+        elif start_date != "":
+            start_date = datetime(
+                int(start_date.split("/")[2]),
+                int(start_date.split("/")[1]),
+                int(start_date.split("/")[0]),
+            )
+            query["$and"].append({"pub_date": {"$gte": start_date}})
+        elif end_date != "":
+            end_date = datetime(
+                int(end_date.split("/")[2]),
+                int(end_date.split("/")[1]),
+                int(end_date.split("/")[0]),
+            )
+            query["$and"].append({"pub_date": {"$lte": end_date}})
+
+        if sac_thai != "" and sac_thai != "all":
+            query["$and"].append({"data:class_sacthai": sac_thai})
+
+        if language_source != "":
+            language_source_ = language_source.split(",")
+            language_source = []
+            for i in language_source_:
+                language_source.append(i)
+            ls = []
+            for i in language_source:
+                ls.append({"source_language": i})
+
+            query["$and"].append({"$or": ls.copy()})
+
+        if news_letter_id != "":
+            mongo = MongoRepository().get_one(
+                collection_name="newsletter", filter_spec={"_id": news_letter_id}
+            )
+            ls = []
+            kt_rong = 1
+            try:
+                for new_id in mongo["news_id"]:
+                    ls.append({"_id": new_id})
+                    kt_rong = 0
+                if kt_rong == 0:
+                    query["$and"].append({"$or": ls.copy()})
+            except:
+                if kt_rong == 1:
+                    query["$and"].append(
+                        {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
+                    )
+        elif vital == "1":
+            mongo = MongoRepository().get_one(
+                collection_name="users", filter_spec={"_id": user_id}
+            )
+            ls = []
+            kt_rong = 1
+            try:
+                for new_id in mongo["vital_list"]:
+                    ls.append({"_id": new_id})
+                    kt_rong = 0
+                if kt_rong == 0:
+                    query["$and"].append({"$or": ls.copy()})
+            except:
+                if kt_rong == 1:
+                    query["$and"].append(
+                        {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
+                    )
+
+        elif bookmarks == "1":
+            mongo = MongoRepository().get_one(
+                collection_name="users", filter_spec={"_id": user_id}
+            )
+            ls = []
+            kt_rong = 1
+            try:
+                for new_id in mongo["news_bookmarks"]:
+                    ls.append({"_id": new_id})
+                    kt_rong = 0
+                if kt_rong == 0:
+                    query["$and"].append({"$or": ls.copy()})
+            except:
+                if kt_rong == 1:
+                    query["$and"].append(
+                        {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
+                    )
+        elif text_search != "":
+            # tmp = my_es.search_main(index_name="vosint", query=text_search)
+            # # print(text_search)
+            # # print(tmp)
+            # list_link = []
+            # for k in tmp:
+            #     list_link.append({"data:url": k["_source"]["data:url"]})
+            # if len(list_link) != 0:
+            #     query["$and"].append({"$or": list_link.copy()})
+            # else:
+            #     query["$and"].append(
+            #         {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
+            #     )
+            query["$and"].append(
+                {
+                    "$or": [
+                        {
+                            "data:content": {
+                                # "$regex": rf"\b{text_search}\b",
+                                # "$options": "i",
+                                # "$regex": text_search,
+                                "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
+                                "$options": "iu",
+                            }
+                        },
+                        {
+                            "data:title": {
+                                # "$regex": rf"\b{text_search}\b",
+                                # "$options": "i",
+                                # "$regex": text_search,
+                                "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
+                                "$options": "iu",
+                            }
+                        },
+                    ]
+                },
+            )
+
+    except:
+        query = {}
+    if str(query) == "{'$and': []}":
+        query = {}
+    # order="data: gtitle"
+    return await statistics_sentiments(query)

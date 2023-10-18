@@ -125,7 +125,9 @@ def get_keyword_regex(keyword_dict):
         pattern = pattern + keyword_dict.get(key) + ","
     keyword_arr = [keyword.strip() for keyword in pattern.split(",")]
     keyword_arr = [
-        rf"\b{keyword.strip()}\b"
+        # rf"\b{keyword.strip()}\b"
+        # rf"(?<!\pL\pN){re.escape(keyword.strip())}(?!\\pL\\pN)"
+        rf"(?<![\p{{L}}\p{{N}}]){re.escape(keyword.strip())}(?![\p{{L}}\p{{N}}])"
         for keyword in list(filter(lambda x: x != "", keyword_arr))
     ]
     pattern = "|".join(keyword_arr)
@@ -135,19 +137,24 @@ def get_keyword_regex(keyword_dict):
 def add_news_to_object(object_id):
     object, _ = MongoRepository().get_many("object", {"_id": ObjectId(object_id)})
     end_date = datetime.now().replace(hour=0, minute=0, second=0)
-    start_date = end_date - timedelta(days=14)
-    parttern = get_keyword_regex(object[0].get("keywords"))
+    start_date = end_date - timedelta(days=30)
+    pattern = get_keyword_regex(object[0].get("keywords"))
+
     filter_spec = {
         "$or": [
-            {"data:title": {"$regex": parttern, "$options": "i"}},
-            {"data:content": {"$regex": parttern, "$options": "i"}},
+            # {"data:title": {"$regex": pattern, "$options": "i"}},
+            # {"data:content": {"$regex": pattern, "$options": "i"}},
+            {"data:title": {"$regex": pattern, "$options": "iu"}},
+            {"data:content": {"$regex": pattern, "$options": "iu"}},
         ],
-        "pub_date": {"$lte": end_date},
-        "pub_date": {"$gte": start_date},
+        "pub_date": {"$gte": start_date, "$lte": end_date},
+        # "pub_date": {"$lte": end_date},
     }
+
     news, _ = MongoRepository().get_many(
         "News", filter_spec, ["pub_date"], {"skip": 0, "limit": 500}, sor_direction=1
     )
+
     news_ids = [str(_id["_id"]) for _id in news]
     if len(news_ids) > 0:
         MongoRepository().update_many(

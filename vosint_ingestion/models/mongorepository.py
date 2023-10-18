@@ -244,6 +244,69 @@ class MongoRepository:
             # Get total documents
             total_docs = collection.count_documents(filter_spec)
 
+            # Get total sentiments
+            check_array = filter_spec.get("$and") or []
+            # Remove the object with the specified field
+            removed_object = None
+            updated_conditions = []
+            field_count = (
+                "data:class_sacthai" if (collection_name == "News") else "sentiment"
+            )
+            for condition in check_array:
+                if field_count in condition:
+                    removed_object = condition
+                else:
+                    updated_conditions.append(condition)
+
+            total_positive = collection.count_documents(
+                {
+                    **filter_spec,
+                    **{"$and": [*updated_conditions, {field_count: "9999"}]},
+                }
+                if any(
+                    field_count in obj and obj[field_count] != "1"
+                    for obj in check_array
+                )
+                else {
+                    **filter_spec,
+                    **{"$and": [*updated_conditions, {field_count: "1"}]},
+                }
+            )
+            total_negative = collection.count_documents(
+                {
+                    **filter_spec,
+                    **{"$and": [*updated_conditions, {field_count: "9999"}]},
+                }
+                if any(
+                    field_count in obj and obj[field_count] != "2"
+                    for obj in check_array
+                )
+                else {
+                    **filter_spec,
+                    **{"$and": [*updated_conditions, {field_count: "2"}]},
+                }
+            )
+            total_normal = collection.count_documents(
+                {
+                    **filter_spec,
+                    **{"$and": [*updated_conditions, {field_count: "9999"}]},
+                }
+                if any(
+                    field_count in obj and obj[field_count] != "0"
+                    for obj in check_array
+                )
+                else {
+                    **filter_spec,
+                    **{"$and": [*updated_conditions, {field_count: "0"}]},
+                }
+            )
+
+            total_sentiments = {
+                "total_positive": total_positive,
+                "total_negative": total_negative,
+                "total_normal": total_normal,
+            }
+
             # Apply filter conditions
             query = collection.find(filter_spec, {})
 
@@ -297,7 +360,7 @@ class MongoRepository:
         finally:
             self.__close()
 
-        return docs, total_docs
+        return docs, total_docs, total_sentiments
 
     def get_many_his_log(
         self,
