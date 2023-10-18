@@ -61,9 +61,9 @@ async def get_average_monitor():
                 continue
             last_resource_monitor = None
             total_count += 1
-            total_num_cpu += server["num_cpu"]
-            total_ram += server["total_ram"]
-            total_disk += server["total_disk"]
+            total_num_cpu += float(server["num_cpu"])
+            total_ram += float(server["total_ram"])
+            total_disk += float(server["total_disk"])
             query = {
                 "timestamp": {"$gte": from_datetime, "$lte": current_time},
                 "server_name": server["server_name"],
