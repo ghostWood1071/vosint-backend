@@ -7,9 +7,9 @@ from pydantic import BaseModel, Field
 class Server(BaseModel):
     server_ip: str = Field(...)
     server_name: str = Field(...)
-    num_cpu: int = Field(...)
-    total_ram: int = Field(...)
-    total_disk: int = Field(...)
+    num_cpu: str = Field(...)
+    total_ram: str = Field(...)
+    total_disk: str = Field(...)
     is_active: bool = Field(...)
 
 
@@ -25,9 +25,9 @@ class ResourceMonitor(BaseModel):
 class ResourceMonitorCreate(BaseModel):
     server_ip: str = Field(...)
     server_name: str = Field(...)
-    num_cpu: int = Field(...)
-    total_ram: int = Field(...)
-    total_disk: int = Field(...)
+    num_cpu: str = Field(...)
+    total_ram: str = Field(...)
+    total_disk: str = Field(...)
     is_active: bool = Field(...)
 
     id: str = Field(default_factory=ObjectId, alias="_id")

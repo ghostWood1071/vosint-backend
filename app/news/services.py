@@ -57,9 +57,10 @@ async def count_news(filter_news):
     return await client.count_documents(filter_news)
 
 
-async def find_news_by_id(news_id: ObjectId, projection):
-    projection["pub_date"] = str(projection["pub_date"])
-    return await client.find_one({"_id": news_id}, projection)
+async def find_news_by_id(news_id: ObjectId):
+    # projection["pub_date"] = str(projection["pub_date"])
+    # return await client.find_one({"_id": news_id}, projection)
+    return await client.find_one({"_id": news_id})
 
 
 async def read_by_id(news_ids: List[str], user_id: str):
@@ -299,3 +300,70 @@ def get_timeline(
         if row.get("new_list") != None and type(row.get("new_list")) == str:
             row["new_list"] = [row["new_list"]]
     return {"data": data, "total_records": total_records}
+
+
+async def statistics_sentiments(filter_spec):
+    # Get total documents
+    total_docs = await client.count_documents(filter_spec)
+
+    # Get total sentiments
+    check_array = filter_spec.get("$and") or []
+    # Remove the object with the specified field
+    removed_object = None
+    updated_conditions = []
+    for condition in check_array:
+        if "data:class_sacthai" in condition:
+            removed_object = condition
+        else:
+            updated_conditions.append(condition)
+
+    total_positive = await client.count_documents(
+        {
+            **filter_spec,
+            **{"$and": [*updated_conditions, {"data:class_sacthai": "9999"}]},
+        }
+        if any(
+            "data:class_sacthai" in obj and obj["data:class_sacthai"] != "1"
+            for obj in check_array
+        )
+        else {
+            **filter_spec,
+            **{"$and": [*updated_conditions, {"data:class_sacthai": "1"}]},
+        }
+    )
+    total_negative = await client.count_documents(
+        {
+            **filter_spec,
+            **{"$and": [*updated_conditions, {"data:class_sacthai": "9999"}]},
+        }
+        if any(
+            "data:class_sacthai" in obj and obj["data:class_sacthai"] != "2"
+            for obj in check_array
+        )
+        else {
+            **filter_spec,
+            **{"$and": [*updated_conditions, {"data:class_sacthai": "2"}]},
+        }
+    )
+    total_normal = await client.count_documents(
+        {
+            **filter_spec,
+            **{"$and": [*updated_conditions, {"data:class_sacthai": "9999"}]},
+        }
+        if any(
+            "data:class_sacthai" in obj and obj["data:class_sacthai"] != "0"
+            for obj in check_array
+        )
+        else {
+            **filter_spec,
+            **{"$and": [*updated_conditions, {"data:class_sacthai": "0"}]},
+        }
+    )
+
+    total_sentiments = {
+        "total_positive": total_positive,
+        "total_negative": total_negative,
+        "total_normal": total_normal,
+    }
+
+    return {"total_records": total_docs, "total_sentiments": total_sentiments}

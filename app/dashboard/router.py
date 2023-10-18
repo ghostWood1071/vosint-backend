@@ -19,6 +19,8 @@ from .service import (
     total_news_by_time,
     news_read_by_user,
     status_error_source_news,
+    status_completed_source_news,
+    status_unknown_source_news,
 )
 
 router = APIRouter()
@@ -118,6 +120,24 @@ async def get_pipeline_error(
     day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
 ):
     return await status_error_source_news(
+        day_space, start_date, end_date, int(page_index), int(page_size)
+    )
+
+
+@router.get("/get-pipeline-completed")
+async def get_pipeline_completed(
+    day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
+):
+    return await status_completed_source_news(
+        day_space, start_date, end_date, int(page_index), int(page_size)
+    )
+
+
+@router.get("/get-pipeline-unknown")
+async def get_pipeline_unknown(
+    day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
+):
+    return await status_unknown_source_news(
         day_space, start_date, end_date, int(page_index), int(page_size)
     )
 

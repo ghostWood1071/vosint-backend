@@ -57,6 +57,7 @@ async def create_insert_resource_monitor(body: ResourceMonitorCreate):
 async def get_average_monitor():
     try:
         data = await get_avg_monitor_service()
+        print(data)
         return data
     except Exception:
         return JSONResponse(

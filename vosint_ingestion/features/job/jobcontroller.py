@@ -109,7 +109,11 @@ class JobController:
         page_size = page_size if page_size else 20
         pagination_spec = {"skip": page_size * (page_number - 1), "limit": page_size}
 
-        pipeline_dtos, total_records = self.__job_service.get_result_job(
+        (
+            pipeline_dtos,
+            total_records,
+            total_sentiments,
+        ) = self.__job_service.get_result_job(
             News, order_spec=order_spec, pagination_spec=pagination_spec, filter=filter
         )
 
@@ -124,7 +128,12 @@ class JobController:
                 i["id_social"] = str(i.get("id_social"))
             except:
                 pass
-        return {"success": True, "total_record": total_records, "result": pipeline_dtos}
+        return {
+            "success": True,
+            "total_record": total_records,
+            "total_sentiments": total_sentiments,
+            "result": pipeline_dtos,
+        }
 
     def run_one_foreach(self, pipeline_id: str):
         result = self.__job_service.run_one_foreach(pipeline_id)
@@ -293,14 +302,18 @@ class JobController:
                     "$or": [
                         {
                             "data:content": {
-                                "$regex": text_search,
-                                "$options": "i",
+                                # "$regex": text_search,
+                                # "$options": "i",
+                                "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
+                                "$options": "iu",
                             }
                         },
                         {
                             "data:title": {
-                                "$regex": text_search,
-                                "$options": "i",
+                                # "$regex": text_search,
+                                # "$options": "i",
+                                "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
+                                "$options": "iu",
                             }
                         },
                     ]
@@ -327,6 +340,7 @@ class JobController:
         if language_source != None and language_source != "":
             filter_spec.update({"source_language": language_source})
 
+        skip = int(page_size) * (int(page_number) - 1)
         news_ids_pipe_line = [
             {"$match": {"_id": ObjectId(object_id)}},
             {"$addFields": {"arrayLength": {"$size": "$news_list"}}},
@@ -336,12 +350,13 @@ class JobController:
                     "sub_set": {
                         "$slice": [
                             "$news_list",
-                            {
-                                "$subtract": [
-                                    "$arrayLength",
-                                    int(page_size) * int(page_number),
-                                ]
-                            },
+                            # {
+                            #     "$subtract": [
+                            #         "$arrayLength",
+                            #         int(page_size) * int(page_number),
+                            #     ]
+                            # },
+                            int(skip),
                             int(page_size),
                         ]
                     },
@@ -350,13 +365,16 @@ class JobController:
         ]
         try:
             objects = MongoRepository().aggregate("object", news_ids_pipe_line)
+
             if len(objects) == 0:
                 return {"result": [], "total_record": 0}
             news_ids = [ObjectId(news_id) for news_id in objects[0].get("sub_set")]
             total = int(objects[0].get("arrayLength"))
             filter_spec["_id"] = {"$in": news_ids}
 
-            news, _ = MongoRepository().get_many_News("News", filter_spec, ["pub_date"])
+            news, _, _ = MongoRepository().get_many_News(
+                "News", filter_spec, ["pub_date"]
+            )
 
             for row_new in news:
                 row_new["_id"] = str(row_new["_id"])
