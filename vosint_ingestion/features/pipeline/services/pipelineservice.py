@@ -22,6 +22,7 @@ class PipelineService:
         # Map to dto
         jobs = Scheduler.instance().get_jobs()
         pipeline["actived"] = str(pipeline["_id"]) in jobs
+        pipeline["driver"] = pipeline.get("driver")
 
         if "source_favicon" not in pipeline:
             pipeline["source_favicon"] = ""
@@ -331,6 +332,8 @@ class PipelineService:
             norm_pipeline["enabled"] = pipeline["enabled"]
         if "source_favicon" in pipeline:
             norm_pipeline["source_favicon"] = pipeline["source_favicon"]
+        if "driver" in pipeline:
+            norm_pipeline["driver"] = pipeline["driver"]
 
         return norm_pipeline
 
