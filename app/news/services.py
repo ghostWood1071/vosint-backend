@@ -57,9 +57,10 @@ async def count_news(filter_news):
     return await client.count_documents(filter_news)
 
 
-async def find_news_by_id(news_id: ObjectId, projection):
-    projection["pub_date"] = str(projection["pub_date"])
-    return await client.find_one({"_id": news_id}, projection)
+async def find_news_by_id(news_id: ObjectId):
+    # projection["pub_date"] = str(projection["pub_date"])
+    # return await client.find_one({"_id": news_id}, projection)
+    return await client.find_one({"_id": news_id})
 
 
 async def read_by_id(news_ids: List[str], user_id: str):
