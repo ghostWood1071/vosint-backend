@@ -13,7 +13,7 @@ services:
             - KEYWORD_EXTRACTION_API=http://vosint-extraction:1510/api/extraction
             - TRANSLATE_API=http://vosint-translate:1510/api/translate
         ports:
-            - 6102:6102
+            - 3688:6102
         deploy:
             restart_policy:
                 condition: on-failure
