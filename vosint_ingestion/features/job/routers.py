@@ -1082,7 +1082,7 @@ def get_result_job(
                 {
                     "$or": [
                         {
-                            "data:content": {
+                            "data:title": {
                                 # "$regex": rf"\b{text_search}\b",
                                 # "$options": "i",
                                 # "$regex": text_search,
@@ -1091,7 +1091,7 @@ def get_result_job(
                             }
                         },
                         {
-                            "data:title": {
+                            "data:content": {
                                 # "$regex": rf"\b{text_search}\b",
                                 # "$options": "i",
                                 # "$regex": text_search,
