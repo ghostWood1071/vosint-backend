@@ -371,7 +371,7 @@ class My_ElasticSearch:
         text_search=None,
         ids=None,
     ):
-        print(ids)
+        # print(ids)
         """Tìm kiếm document theo query
         Args:
             index_name (str): Tên index
@@ -387,19 +387,19 @@ class My_ElasticSearch:
         _query_string = self.query_process(query)
         # print(_query_string)
         _fields = ["data:title^2", "data:content", "keywords"]
-        if gte is None:
+        if gte is None or gte == "":
             _gte = "1990-03-28T00:00:00Z"
         else:
             _gte = gte
-        if lte is None:
+        if lte is None or lte == "":
             _lte = "2090-03-28T00:00:00Z"
         else:
             _lte = lte
-        if sentiment is None:
+        if sentiment is None or sentiment == "":
             _sentiment = "*"
         else:
             _sentiment = sentiment
-        if lang is None:
+        if lang is None or lang == "":
             # print("Lang is none")
             _lang = "*"
         else:
@@ -432,6 +432,7 @@ class My_ElasticSearch:
             },
             "sort": [{"pub_date": {"order": "desc"}}],
             "size": size,
+            "track_total_hits": True,
         }
         if list_source_name != None:
             _id_query_source_name = " OR ".join(list_source_name)
@@ -455,6 +456,19 @@ class My_ElasticSearch:
         print(json.dumps(simple_filter))
 
         searched = self.es.search(index=index_name, body=simple_filter)
+        # searched_count = self.es.search(
+        #     index=index_name,
+        #     body={
+        #         "query": {
+        #             "match_all": {},
+        #         },
+        #         "size": 0,
+        #         "track_total_hits": True,
+        #     },  # Match all documents
+        # )
+        # print("total", searched["hits"]["total"]["value"])
+        # print("total", searched["hits"]["total"])
+
         result = []
         hits = searched["hits"]["hits"]
         if hits:
@@ -469,6 +483,89 @@ class My_ElasticSearch:
             return result
         else:
             return result[:k]
+
+    def count_search_main(
+        self,
+        index_name,
+        query="*",
+        k=None,
+        sentiment=None,
+        lang=None,
+        gte=None,
+        lte=None,
+        list_source_name=None,
+        size=100,
+        list_id=None,
+        text_search=None,
+        ids=None,
+    ):
+        # print(ids)
+        """Tìm kiếm document theo query
+        Args:
+            index_name (str): Tên index
+            query (str): "Nga" + "Việt Nam" - "Trung Quốc"
+            k (int, optional): Số lượng tối đa đầu ra. Defaults to None.
+            fields (list[str], optional): Các trường tìm kiếm. Defaults to None.
+            gte (str, optional), lte (str, optional): Khoảng thời gian tìm kiếm
+        Returns:
+            Log : list[doc] | None
+        """
+        if query is None or query == "":
+            query = "*"
+        _query_string = self.query_process(query)
+        # print(_query_string)
+        _fields = ["data:title^2", "data:content", "keywords"]
+        if gte is None or gte == "":
+            _gte = "1990-03-28T00:00:00Z"
+        else:
+            _gte = gte
+        if lte is None or lte == "":
+            _lte = "2090-03-28T00:00:00Z"
+        else:
+            _lte = lte
+        if sentiment is None or sentiment == "":
+            _sentiment = "*"
+        else:
+            _sentiment = sentiment
+        if lang is None or lang == "":
+            # print("Lang is none")
+            _lang = "*"
+        else:
+            _lang = lang
+        ### request template
+        # print(type(_lang))
+        _lang_query = " OR ".join(_lang)
+        # print(_sentiment)
+        # print(_lang_query)
+        simple_filter = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {"query_string": {"query": _query_string, "fields": _fields}},
+                        {
+                            "query_string": {
+                                "query": _lang_query,
+                                "default_field": "source_language",
+                            }
+                        },
+                        {
+                            "query_string": {
+                                "query": _sentiment,
+                                "default_field": "data:class_sacthai",
+                            }
+                        },
+                    ],
+                    "filter": {"range": {"pub_date": {"gte": _gte, "lte": _lte}}},
+                }
+            },
+            "sort": [{"pub_date": {"order": "desc"}}],
+            "size": size,
+            "track_total_hits": True,
+        }
+
+        searched = self.es.search(index=index_name, body=simple_filter)
+        # print("total", searched["hits"]["total"]["value"])
+        return searched["hits"]["total"]["value"]
 
     def search_main_ttxvn(
         self,
