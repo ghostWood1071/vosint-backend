@@ -432,7 +432,12 @@ async def posts_from_priority(
 
     # filter by text_search
     if text_search != "":
-        filter_spec.update({"$text": {"$search": text_search}})
+        filter_spec.update({
+            "$or": [
+                {"header": {"$regex": text_search, "$options": "i"}},
+                {"content": {"$regex": text_search, "$options": "i"}},
+            ]
+        })
 
     # filter by start_date, end_date, text_search
     if start_date:

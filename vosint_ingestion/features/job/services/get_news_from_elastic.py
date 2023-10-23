@@ -29,6 +29,7 @@ def get_news_from_newsletter_id__(
     # list_id = None
     query = None
     index_name = "vosint"
+    # index_name = "vosint_news_search"
 
     # date-------------------------------------------
     try:

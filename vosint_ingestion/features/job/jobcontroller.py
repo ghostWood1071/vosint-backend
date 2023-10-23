@@ -112,7 +112,6 @@ class JobController:
         (
             pipeline_dtos,
             total_records,
-            total_sentiments,
         ) = self.__job_service.get_result_job(
             News, order_spec=order_spec, pagination_spec=pagination_spec, filter=filter
         )
@@ -131,7 +130,6 @@ class JobController:
         return {
             "success": True,
             "total_record": total_records,
-            "total_sentiments": total_sentiments,
             "result": pipeline_dtos,
         }
 
@@ -372,9 +370,7 @@ class JobController:
             total = int(objects[0].get("arrayLength"))
             filter_spec["_id"] = {"$in": news_ids}
 
-            news, _, _ = MongoRepository().get_many_News(
-                "News", filter_spec, ["pub_date"]
-            )
+            news, _ = MongoRepository().get_many_News("News", filter_spec, ["pub_date"])
 
             for row_new in news:
                 row_new["_id"] = str(row_new["_id"])
