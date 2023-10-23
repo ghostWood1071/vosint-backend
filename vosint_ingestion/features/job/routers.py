@@ -117,7 +117,7 @@ def get_news_from_ttxvn(
 async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    print("aa", elt.search_Query)
+    # print("aa", elt.search_Query)
     vital = ""
     bookmarks = ""
     if elt.groupType == "vital":
@@ -159,7 +159,7 @@ async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
 def view_time_line(elt: elt, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    print("aa", elt.search_Query)
+    # print("aa", elt.search_Query)
     vital = ""
     bookmarks = ""
     if elt.groupType == "vital":
@@ -971,37 +971,76 @@ def get_result_job(
         query["$and"] = []
 
         if start_date != "" and end_date != "":
-            start_date = datetime(
-                int(start_date.split("/")[2]),
-                int(start_date.split("/")[1]),
-                int(start_date.split("/")[0]),
-            )
-            end_date = datetime(
-                int(end_date.split("/")[2]),
-                int(end_date.split("/")[1]),
-                int(end_date.split("/")[0]),
-            )
+            if text_search != "":
+                start_date = (
+                    start_date.split("/")[2]
+                    + "-"
+                    + start_date.split("/")[1]
+                    + "-"
+                    + start_date.split("/")[0]
+                    + "T00:00:00Z"
+                )
+                end_date = (
+                    end_date.split("/")[2]
+                    + "-"
+                    + end_date.split("/")[1]
+                    + "-"
+                    + end_date.split("/")[0]
+                    + "T00:00:00Z"
+                )
 
-            query["$and"].append({"pub_date": {"$gte": start_date, "$lte": end_date}})
+            if text_search == None or text_search == "":
+                start_date = datetime(
+                    int(start_date.split("/")[2]),
+                    int(start_date.split("/")[1]),
+                    int(start_date.split("/")[0]),
+                )
+                end_date = datetime(
+                    int(end_date.split("/")[2]),
+                    int(end_date.split("/")[1]),
+                    int(end_date.split("/")[0]),
+                )
 
+                query["$and"].append(
+                    {"pub_date": {"$gte": start_date, "$lte": end_date}}
+                )
         elif start_date != "":
-            start_date = datetime(
-                int(start_date.split("/")[2]),
-                int(start_date.split("/")[1]),
-                int(start_date.split("/")[0]),
-            )
-            query["$and"].append({"pub_date": {"$gte": start_date}})
-        elif end_date != "":
-            end_date = datetime(
-                int(end_date.split("/")[2]),
-                int(end_date.split("/")[1]),
-                int(end_date.split("/")[0]),
-            )
-            query["$and"].append({"pub_date": {"$lte": end_date}})
+            if text_search != "":
+                start_date = (
+                    start_date.split("/")[2]
+                    + "-"
+                    + start_date.split("/")[1]
+                    + "-"
+                    + start_date.split("/")[0]
+                    + "T00:00:00Z"
+                )
 
+            if text_search == None or text_search == "":
+                start_date = datetime(
+                    int(start_date.split("/")[2]),
+                    int(start_date.split("/")[1]),
+                    int(start_date.split("/")[0]),
+                )
+                query["$and"].append({"pub_date": {"$gte": start_date}})
+        elif end_date != "":
+            if text_search != "":
+                end_date = (
+                    end_date.split("/")[2]
+                    + "-"
+                    + end_date.split("/")[1]
+                    + "-"
+                    + end_date.split("/")[0]
+                    + "T00:00:00Z"
+                )
+            if text_search == None or text_search == "":
+                end_date = datetime(
+                    int(end_date.split("/")[2]),
+                    int(end_date.split("/")[1]),
+                    int(end_date.split("/")[0]),
+                )
+                query["$and"].append({"pub_date": {"$lte": end_date}})
         if sac_thai != "" and sac_thai != "all":
             query["$and"].append({"data:class_sacthai": sac_thai})
-
         if language_source != "":
             language_source_ = language_source.split(",")
             language_source = []
@@ -1012,7 +1051,6 @@ def get_result_job(
                 ls.append({"source_language": i})
 
             query["$and"].append({"$or": ls.copy()})
-
         if news_letter_id != "":
             mongo = MongoRepository().get_one(
                 collection_name="newsletter", filter_spec={"_id": news_letter_id}
@@ -1047,7 +1085,6 @@ def get_result_job(
                     query["$and"].append(
                         {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
                     )
-
         elif bookmarks == "1":
             mongo = MongoRepository().get_one(
                 collection_name="users", filter_spec={"_id": user_id}
@@ -1078,39 +1115,79 @@ def get_result_job(
             #     query["$and"].append(
             #         {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
             #     )
-            query["$and"].append(
-                {
-                    "$or": [
-                        {
-                            "data:content": {
-                                # "$regex": rf"\b{text_search}\b",
-                                # "$options": "i",
-                                # "$regex": text_search,
-                                "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
-                                "$options": "iu",
-                            }
-                        },
-                        {
-                            "data:title": {
-                                # "$regex": rf"\b{text_search}\b",
-                                # "$options": "i",
-                                # "$regex": text_search,
-                                "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
-                                "$options": "iu",
-                            }
-                        },
-                    ]
-                },
+
+            pipeline_dtos = my_es.search_main(
+                index_name="vosint",
+                query=text_search,
+                gte=start_date,
+                lte=end_date,
+                lang=language_source,
+                sentiment=sac_thai,
+                size=(int(page_number)) * int(page_size),
             )
+
+            total_record = len(pipeline_dtos)
+
+            for i in range(len(pipeline_dtos)):
+                try:
+                    pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"][
+                        "id"
+                    ]
+                except:
+                    pass
+                pipeline_dtos[i] = pipeline_dtos[i]["_source"].copy()
+
+            news_ids = [ObjectId(row["id"]) for row in pipeline_dtos]
+            raw_isreads, _ = MongoRepository().get_many(
+                "News", {"_id": {"$in": news_ids}}
+            )
+            isread = {}
+            for raw_isread in raw_isreads:
+                isread[str(raw_isread["_id"])] = raw_isread.get("list_user_read")
+            for row in pipeline_dtos:
+                row["list_user_read"] = isread.get(row["_id"])
+
+            result = pipeline_dtos[
+                (int(page_number) - 1)
+                * int(page_size) : (int(page_number))
+                * int(page_size)
+            ]
+            # return {"result": result, "total_record": len(pipeline_dtos)}
+
+            # query["$and"].append(
+            #     {
+            #         "$or": [
+            #             {
+            #                 "data:title": {
+            #                     # "$regex": rf"\b{text_search}\b",
+            #                     # "$options": "i",
+            #                     # "$regex": text_search,
+            #                     "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
+            #                     "$options": "iu",
+            #                 }
+            #             },
+            #             {
+            #                 "data:content": {
+            #                     # "$regex": rf"\b{text_search}\b",
+            #                     # "$options": "i",
+            #                     # "$regex": text_search,
+            #                     "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
+            #                     "$options": "iu",
+            #                 }
+            #             },
+            #         ]
+            #     },
+            # )
     except:
         query = {}
     if str(query) == "{'$and': []}":
         query = {}
 
     # order="data: gtitle"
-    result = job_controller.get_result_job(
-        "News", order, page_number, page_size, filter=query
-    )
+    if text_search == None or text_search == "":
+        result = job_controller.get_result_job(
+            "News", order, page_number, page_size, filter=query
+        )
 
     list_fields = [
         "data:html",
@@ -1128,7 +1205,10 @@ def get_result_job(
 
     limit_string = 270
 
-    for record in result["result"]:
+    current_result = (
+        result["result"] if (text_search == None or text_search == "") else result
+    )
+    for record in current_result:
         try:
             record["data:content"] = record["data:content"][0:limit_string]
             record["data:content_translate"] = record["data:content_translate"][
@@ -1139,7 +1219,11 @@ def get_result_job(
         for key in list_fields:
             record.pop(key, None)
 
-    return result
+    return (
+        result
+        if (text_search == None or text_search == "")
+        else {"result": result, "total_record": total_record}
+    )
 
     # return JSONResponse(
     #     job_controller.get_result_job(

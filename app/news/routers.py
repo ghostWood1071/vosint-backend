@@ -253,58 +253,58 @@ async def get_statistics_sentiments(
 
             query["$and"].append({"$or": ls.copy()})
 
-        if news_letter_id != "":
-            mongo = MongoRepository().get_one(
-                collection_name="newsletter", filter_spec={"_id": news_letter_id}
-            )
-            ls = []
-            kt_rong = 1
-            try:
-                for new_id in mongo["news_id"]:
-                    ls.append({"_id": new_id})
-                    kt_rong = 0
-                if kt_rong == 0:
-                    query["$and"].append({"$or": ls.copy()})
-            except:
-                if kt_rong == 1:
-                    query["$and"].append(
-                        {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
-                    )
-        elif vital == "1":
-            mongo = MongoRepository().get_one(
-                collection_name="users", filter_spec={"_id": user_id}
-            )
-            ls = []
-            kt_rong = 1
-            try:
-                for new_id in mongo["vital_list"]:
-                    ls.append({"_id": new_id})
-                    kt_rong = 0
-                if kt_rong == 0:
-                    query["$and"].append({"$or": ls.copy()})
-            except:
-                if kt_rong == 1:
-                    query["$and"].append(
-                        {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
-                    )
+        # if news_letter_id != "":
+        #     mongo = MongoRepository().get_one(
+        #         collection_name="newsletter", filter_spec={"_id": news_letter_id}
+        #     )
+        #     ls = []
+        #     kt_rong = 1
+        #     try:
+        #         for new_id in mongo["news_id"]:
+        #             ls.append({"_id": new_id})
+        #             kt_rong = 0
+        #         if kt_rong == 0:
+        #             query["$and"].append({"$or": ls.copy()})
+        #     except:
+        #         if kt_rong == 1:
+        #             query["$and"].append(
+        #                 {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
+        #             )
+        # elif vital == "1":
+        #     mongo = MongoRepository().get_one(
+        #         collection_name="users", filter_spec={"_id": user_id}
+        #     )
+        #     ls = []
+        #     kt_rong = 1
+        #     try:
+        #         for new_id in mongo["vital_list"]:
+        #             ls.append({"_id": new_id})
+        #             kt_rong = 0
+        #         if kt_rong == 0:
+        #             query["$and"].append({"$or": ls.copy()})
+        #     except:
+        #         if kt_rong == 1:
+        #             query["$and"].append(
+        #                 {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
+        #             )
 
-        elif bookmarks == "1":
-            mongo = MongoRepository().get_one(
-                collection_name="users", filter_spec={"_id": user_id}
-            )
-            ls = []
-            kt_rong = 1
-            try:
-                for new_id in mongo["news_bookmarks"]:
-                    ls.append({"_id": new_id})
-                    kt_rong = 0
-                if kt_rong == 0:
-                    query["$and"].append({"$or": ls.copy()})
-            except:
-                if kt_rong == 1:
-                    query["$and"].append(
-                        {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
-                    )
+        # elif bookmarks == "1":
+        #     mongo = MongoRepository().get_one(
+        #         collection_name="users", filter_spec={"_id": user_id}
+        #     )
+        #     ls = []
+        #     kt_rong = 1
+        #     try:
+        #         for new_id in mongo["news_bookmarks"]:
+        #             ls.append({"_id": new_id})
+        #             kt_rong = 0
+        #         if kt_rong == 0:
+        #             query["$and"].append({"$or": ls.copy()})
+        #     except:
+        #         if kt_rong == 1:
+        #             query["$and"].append(
+        #                 {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
+        #             )
         elif text_search != "":
             # tmp = my_es.search_main(index_name="vosint", query=text_search)
             # # print(text_search)
@@ -348,4 +348,13 @@ async def get_statistics_sentiments(
     if str(query) == "{'$and': []}":
         query = {}
     # order="data: gtitle"
-    return await statistics_sentiments(query)
+    return await statistics_sentiments(
+        query,
+        params={
+            "text_search": text_search,
+            "sentiment": sac_thai,
+            "language_source": language_source,
+            "start_date": start_date,
+            "end_date": end_date,
+        },
+    )

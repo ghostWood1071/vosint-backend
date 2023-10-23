@@ -11,10 +11,12 @@ from vosint_ingestion.models import MongoRepository
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
+
 from elasticsearch import helpers
 
 client = get_collection_client("News")
 events_client = get_collection_client("events")
+news_es = My_ElasticSearch()
 
 
 async def find_news_by_filter(filter, projection=None):
@@ -302,63 +304,106 @@ def get_timeline(
     return {"data": data, "total_records": total_records}
 
 
-async def statistics_sentiments(filter_spec):
-    # Get total documents
-    total_docs = await client.count_documents(filter_spec)
+async def statistics_sentiments(filter_spec, params):
+    if params["text_search"] != None and params["text_search"] != "":
+        total_docs = news_es.count_search_main(
+            index_name="vosint",
+            query=params["text_search"],
+            gte=params["start_date"],
+            lte=params["end_date"],
+            lang=params["language_source"],
+            sentiment=params["sentiment"],
+        )
 
-    # Get total sentiments
-    check_array = filter_spec.get("$and") or []
-    # Remove the object with the specified field
-    removed_object = None
-    updated_conditions = []
-    for condition in check_array:
-        if "data:class_sacthai" in condition:
-            removed_object = condition
-        else:
-            updated_conditions.append(condition)
+        total_positive = news_es.count_search_main(
+            index_name="vosint",
+            query=params["text_search"],
+            gte=params["start_date"],
+            lte=params["end_date"],
+            lang=params["language_source"],
+            sentiment="1"
+            if params["sentiment"] == "" or params["sentiment"] == "1"
+            else 9999,
+        )
 
-    total_positive = await client.count_documents(
-        {
-            **filter_spec,
-            **{"$and": [*updated_conditions, {"data:class_sacthai": "9999"}]},
-        }
-        if any(
-            "data:class_sacthai" in obj and obj["data:class_sacthai"] != "1"
-            for obj in check_array
+        total_negative = news_es.count_search_main(
+            index_name="vosint",
+            query=params["text_search"],
+            gte=params["start_date"],
+            lte=params["end_date"],
+            lang=params["language_source"],
+            sentiment="2"
+            if params["sentiment"] == "" or params["sentiment"] == "2"
+            else 9999,
         )
-        else {
-            **filter_spec,
-            **{"$and": [*updated_conditions, {"data:class_sacthai": "1"}]},
-        }
-    )
-    total_negative = await client.count_documents(
-        {
-            **filter_spec,
-            **{"$and": [*updated_conditions, {"data:class_sacthai": "9999"}]},
-        }
-        if any(
-            "data:class_sacthai" in obj and obj["data:class_sacthai"] != "2"
-            for obj in check_array
+
+        total_normal = news_es.count_search_main(
+            index_name="vosint",
+            query=params["text_search"],
+            gte=params["start_date"],
+            lte=params["end_date"],
+            lang=params["language_source"],
+            sentiment="0"
+            if params["sentiment"] == "" or params["sentiment"] == "0"
+            else 9999,
         )
-        else {
-            **filter_spec,
-            **{"$and": [*updated_conditions, {"data:class_sacthai": "2"}]},
-        }
-    )
-    total_normal = await client.count_documents(
-        {
-            **filter_spec,
-            **{"$and": [*updated_conditions, {"data:class_sacthai": "9999"}]},
-        }
-        if any(
-            "data:class_sacthai" in obj and obj["data:class_sacthai"] != "0"
-            for obj in check_array
+    else:
+        # Get total documents
+        total_docs = await client.count_documents(filter_spec)
+
+        # Get total sentiments
+        check_array = filter_spec.get("$and") or []
+        # Remove the object with the specified field
+        removed_object = None
+        updated_conditions = []
+        for condition in check_array:
+            if "data:class_sacthai" in condition:
+                removed_object = condition
+            else:
+                updated_conditions.append(condition)
+
+        total_positive = await client.count_documents(
+            {
+                **filter_spec,
+                **{"$and": [*updated_conditions, {"data:class_sacthai": "9999"}]},
+            }
+            if any(
+                "data:class_sacthai" in obj and obj["data:class_sacthai"] != "1"
+                for obj in check_array
+            )
+            else {
+                **filter_spec,
+                **{"$and": [*updated_conditions, {"data:class_sacthai": "1"}]},
+            }
         )
-        else {
-            **filter_spec,
-            **{"$and": [*updated_conditions, {"data:class_sacthai": "0"}]},
-        }
-    )
+        total_negative = await client.count_documents(
+            {
+                **filter_spec,
+                **{"$and": [*updated_conditions, {"data:class_sacthai": "9999"}]},
+            }
+            if any(
+                "data:class_sacthai" in obj and obj["data:class_sacthai"] != "2"
+                for obj in check_array
+            )
+            else {
+                **filter_spec,
+                **{"$and": [*updated_conditions, {"data:class_sacthai": "2"}]},
+            }
+        )
+        total_normal = await client.count_documents(
+            {
+                **filter_spec,
+                **{"$and": [*updated_conditions, {"data:class_sacthai": "9999"}]},
+            }
+            if any(
+                "data:class_sacthai" in obj and obj["data:class_sacthai"] != "0"
+                for obj in check_array
+            )
+            else {
+                **filter_spec,
+                **{"$and": [*updated_conditions, {"data:class_sacthai": "0"}]},
+            }
+        )
 
     total_sentiments = {
         "total_positive": total_positive,
