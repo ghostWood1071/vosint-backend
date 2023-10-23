@@ -348,4 +348,13 @@ async def get_statistics_sentiments(
     if str(query) == "{'$and': []}":
         query = {}
     # order="data: gtitle"
-    return await statistics_sentiments(query)
+    return await statistics_sentiments(
+        query,
+        params={
+            "text_search": text_search,
+            "sentiment": sac_thai,
+            "language_source": language_source,
+            "start_date": start_date,
+            "end_date": end_date,
+        },
+    )

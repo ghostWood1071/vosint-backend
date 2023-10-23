@@ -28,8 +28,8 @@ def get_news_from_newsletter_id__(
 ):
     # list_id = None
     query = None
+    # index_name = "vosint"
     index_name = "vosint"
-    # index_name = "vosint_news_search"
 
     # date-------------------------------------------
     try:
@@ -269,7 +269,6 @@ def get_news_from_newsletter_id__(
         list_source_name = []
         for i in name:
             list_source_name.append('"' + i["name"] + '"')
-
     if text_search == None and list_source_name == None:
         pipeline_dtos = my_es.search_main(
             index_name=index_name,
@@ -299,7 +298,9 @@ def get_news_from_newsletter_id__(
         if list_source_name == None:
             pipeline_dtos = my_es.search_main(
                 index_name=index_name,
-                query=query,
+                query=text_search
+                if (text_search != "" or text_search != None)
+                else query,
                 gte=start_date,
                 lte=end_date,
                 lang=language_source,
@@ -311,7 +312,9 @@ def get_news_from_newsletter_id__(
         else:
             pipeline_dtos = my_es.search_main(
                 index_name=index_name,
-                query=query,
+                query=text_search
+                if (text_search != "" or text_search != None)
+                else query,
                 gte=start_date,
                 lte=end_date,
                 lang=language_source,
@@ -323,8 +326,10 @@ def get_news_from_newsletter_id__(
             )
         if list_id == None:
             list_id = []
+
         for i in range(len(pipeline_dtos)):
             list_id.append(pipeline_dtos[i]["_source"]["id"])
+
         pipeline_dtos = my_es.search_main(
             index_name=index_name,
             query=text_search,
@@ -333,6 +338,7 @@ def get_news_from_newsletter_id__(
             lang=language_source,
             sentiment=sac_thai,
             list_id=list_id,
+            # list_source_name=list_source_name,
             # size=page_size,
             size=(int(page_number)) * int(page_size),
         )
@@ -351,4 +357,5 @@ def get_news_from_newsletter_id__(
             isread[str(raw_isread["_id"])] = raw_isread.get("list_user_read")
         for row in pipeline_dtos:
             row["list_user_read"] = isread.get(row["_id"])
+
     return pipeline_dtos
