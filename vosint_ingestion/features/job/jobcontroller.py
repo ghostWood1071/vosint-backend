@@ -8,6 +8,12 @@ import requests
 from core.config import settings
 import json
 from datetime import datetime
+import re
+from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
+    My_ElasticSearch,
+)
+
+news_es = My_ElasticSearch()
 
 
 def get_depth(mylist):
@@ -326,17 +332,43 @@ class JobController:
         if end_date != None and end_date != "":
             _end_date = datetime.strptime(end_date, "%d/%m/%Y")
             filter_spec.update({"pub_date": {"$lte": _end_date}})
+            if text_search != "" or text_search != None:
+                end_date = (
+                    end_date.split("/")[2]
+                    + "-"
+                    + end_date.split("/")[1]
+                    + "-"
+                    + end_date.split("/")[0]
+                    + "T00:00:00Z"
+                )
         if start_date != None and start_date != "":
             _start_date = datetime.strptime(start_date, "%d/%m/%Y")
             if filter_spec.get("pub_date") == None:
                 filter_spec.update({"pub_date": {"$gte": _start_date}})
             else:
                 filter_spec["pub_date"].update({"$gte": _start_date})
+            if text_search != "" or text_search != None:
+                start_date = (
+                    start_date.split("/")[2]
+                    + "-"
+                    + start_date.split("/")[1]
+                    + "-"
+                    + start_date.split("/")[0]
+                    + "T00:00:00Z"
+                )
 
         if sac_thai != None and sac_thai != "":
             filter_spec.update({"data:class_sacthai": sac_thai})
         if language_source != None and language_source != "":
-            filter_spec.update({"source_language": language_source})
+            language_source_ = language_source.split(",")
+            language_source = []
+            for i in language_source_:
+                language_source.append(i)
+            ls = []
+            for i in language_source:
+                ls.append(i)
+
+            filter_spec.update({"source_language": {"$in": ls.copy()}})
 
         skip = int(page_size) * (int(page_number) - 1)
         news_ids_pipe_line = [
@@ -345,19 +377,22 @@ class JobController:
             {
                 "$project": {
                     "arrayLength": 1,
-                    "sub_set": {
-                        "$slice": [
-                            "$news_list",
-                            # {
-                            #     "$subtract": [
-                            #         "$arrayLength",
-                            #         int(page_size) * int(page_number),
-                            #     ]
-                            # },
-                            int(skip),
-                            int(page_size),
-                        ]
-                    },
+                    "sub_set": "$news_list"
+                    # {
+                    #     "$slice": [
+                    #         "$news_list",
+                    #         # {
+                    #         #     "$subtract": [
+                    #         #         "$arrayLength",
+                    #         #         int(page_size) * int(page_number),
+                    #         #     ]
+                    #         # },
+                    #         # int(skip),
+                    #         # int(page_size),
+                    #         int(skip),
+                    #         int(10000),
+                    #     ]
+                    # },
                 }
             },
         ]
@@ -366,15 +401,73 @@ class JobController:
 
             if len(objects) == 0:
                 return {"result": [], "total_record": 0}
-            news_ids = [ObjectId(news_id) for news_id in objects[0].get("sub_set")]
+
+            news_ids = (
+                [ObjectId(news_id) for news_id in objects[0].get("sub_set")]
+                if (text_search == "" or text_search == None)
+                else [news_id for news_id in objects[0].get("sub_set")]
+            )
             total = int(objects[0].get("arrayLength"))
             filter_spec["_id"] = {"$in": news_ids}
 
-            news, _ = MongoRepository().get_many_News("News", filter_spec, ["pub_date"])
+            # _start_date = datetime.strftime(start_date, "%Y-%m-%dT00:00:00Z")
+            # _end_date = datetime.strftime(end_date, "%Y-%m-%dT00:00:00Z")
+            if text_search == "" or text_search == None:
+                page_number = int(page_number) if page_number is not None else None
+                # page_size = request.args.get('page_size')
+                page_size = int(page_size) if page_size is not None else None
+                page_number = page_number if page_number else 1
+                page_size = page_size if page_size else 20
+                pagination_spec = {
+                    "skip": page_size * (page_number - 1),
+                    "limit": page_size,
+                }
+                # print("paginate", pagination_spec)
+                news, _ = MongoRepository().get_many_News(
+                    "News", filter_spec, ["pub_date"], pagination_spec=pagination_spec
+                )
+                for row_new in news:
+                    row_new["_id"] = str(row_new["_id"])
+                    row_new["pub_date"] = str(row_new["pub_date"])
+            else:
+                pipeline_dtos = news_es.search_main(
+                    index_name="vosint",
+                    query=text_search,
+                    gte=start_date,
+                    lte=end_date,
+                    lang=language_source,
+                    sentiment=sac_thai,
+                    list_id=news_ids,
+                    size=(int(page_number)) * int(page_size),
+                )
 
-            for row_new in news:
-                row_new["_id"] = str(row_new["_id"])
-                row_new["pub_date"] = str(row_new["pub_date"])
+                total = len(pipeline_dtos)
+
+                for i in range(len(pipeline_dtos)):
+                    try:
+                        pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i][
+                            "_source"
+                        ]["id"]
+                    except:
+                        pass
+                    pipeline_dtos[i] = pipeline_dtos[i]["_source"].copy()
+
+                news_ids = [ObjectId(row["id"]) for row in pipeline_dtos]
+                raw_isreads, _ = MongoRepository().get_many(
+                    "News", {"_id": {"$in": news_ids}}
+                )
+                isread = {}
+                for raw_isread in raw_isreads:
+                    isread[str(raw_isread["_id"])] = raw_isread.get("list_user_read")
+                for row in pipeline_dtos:
+                    row["list_user_read"] = isread.get(row["_id"])
+
+                news = pipeline_dtos[
+                    (int(page_number) - 1)
+                    * int(page_size) : (int(page_number))
+                    * int(page_size)
+                ]
+
         except Exception as e:
             print(e)
             news = []
