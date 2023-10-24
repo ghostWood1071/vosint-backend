@@ -1127,7 +1127,6 @@ def get_result_job(
             )
 
             total_record = len(pipeline_dtos)
-
             for i in range(len(pipeline_dtos)):
                 try:
                     pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"][
