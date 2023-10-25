@@ -4,6 +4,7 @@ import datetime
 from elasticsearch.helpers import bulk
 import elasticsearch
 import json
+import re
 
 # import warnings
 # from elasticsearch.exceptions import ElasticsearchWarning
@@ -346,12 +347,23 @@ class My_ElasticSearch:
             "OR": "|",
             "NOT": "-",
         }
+        # if this word is not exact
+        specific_chars = ["+", "-", "|", '"', "(", ")"]
+        specific_chars_pattern = "[" + re.escape("".join(specific_chars)) + "]"
+
+        #  check not contain
+        does_not_contain = not bool(re.search(specific_chars_pattern, query))
+
+        if does_not_contain:
+            query = '"' + query + '"'
+
         terms = query.split(" ")
         i = 0
         while i < len(terms):
             if terms[i] in rules.values():
                 terms[i] = list(rules.keys())[list(rules.values()).index(terms[i])]
             i += 1
+
         query_string = " ".join(terms)
 
         return query_string
@@ -564,7 +576,6 @@ class My_ElasticSearch:
         }
 
         searched = self.es.search(index=index_name, body=simple_filter)
-        # print("total", searched["hits"]["total"]["value"])
         return searched["hits"]["total"]["value"]
 
     def search_main_ttxvn(

@@ -414,11 +414,17 @@ def get_event_from_newsletter_list_id(
             # filter_other={"_id": 1, "title": 1, "parent_id": 1},
         )
         child_newsletter["_id"] = str(child_newsletter["_id"])
+
         if child_newsletter.get("parent_id"):
             child_newsletter["parent_id"] = str(child_newsletter["parent_id"])
 
         if child_newsletter.get("user_id"):
             child_newsletter["user_id"] = str(child_newsletter["user_id"])
+
+        if child_newsletter.get("news_id") != None:
+            ls = [str(news_id) for news_id in child_newsletter.get("news_id")]
+            child_newsletter["news_id"] = ls
+
         infor_tree.append(child_newsletter)
 
         try:
@@ -464,6 +470,7 @@ def get_event_from_newsletter_list_id(
             if query == "":
                 continue
             plt_size = event_number * 2 if event_number else 100
+
             pipeline_dtos = my_es.search_main(
                 index_name="vosint",
                 query=query,
@@ -473,8 +480,8 @@ def get_event_from_newsletter_list_id(
                 sentiment=sac_thai,
                 size=plt_size,
             )
-            list_id = [i["_source"]["id"] for i in pipeline_dtos]
 
+            list_id = [i["_source"]["id"] for i in pipeline_dtos]
             events_filter = {}
             if end_date != None and start_date == None:
                 events_filter["created_at"] = {"$lte": end_date}
@@ -498,7 +505,6 @@ def get_event_from_newsletter_list_id(
                 pagination_spec=event_paginate,
                 order_spec=["date_created-desc"],
             )
-
             # sk = []
             relevent_news_ids = []  # [event for event in events]
             for event in events:
