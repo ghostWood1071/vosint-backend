@@ -348,13 +348,13 @@ class My_ElasticSearch:
             "NOT": "-",
         }
         # if this word is not exact
-        specific_chars = ["+", "-", "|", '"', "(", ")"]
+        specific_chars = ["+", "-", "|", '"', "(", ")", "*"]
         specific_chars_pattern = "[" + re.escape("".join(specific_chars)) + "]"
 
         #  check not contain
         does_not_contain = not bool(re.search(specific_chars_pattern, query))
 
-        if does_not_contain:
+        if does_not_contain and query != "*":
             query = '"' + query + '"'
 
         terms = query.split(" ")
