@@ -141,7 +141,7 @@ def get_keyword_regex(keyword_dict):
 def add_news_to_object(object_id):
     object, _ = MongoRepository().get_many("object", {"_id": ObjectId(object_id)})
     end_date = datetime.now().replace(hour=0, minute=0, second=0)
-    start_date = end_date - timedelta(days=30)
+    start_date = end_date - timedelta(days=90)
     pattern = get_keyword_regex(object[0].get("keywords"))
 
     _start_date = datetime.strftime(start_date, "%Y-%m-%dT00:00:00Z")
