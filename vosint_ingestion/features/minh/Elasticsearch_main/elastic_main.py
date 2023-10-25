@@ -382,6 +382,7 @@ class My_ElasticSearch:
         list_id=None,
         text_search=None,
         ids=None,
+        list_fields=None,
     ):
         # print(ids)
         """Tìm kiếm document theo query
@@ -446,6 +447,10 @@ class My_ElasticSearch:
             "size": size,
             "track_total_hits": True,
         }
+
+        if list_fields:
+            simple_filter["_source"] = list_fields
+
         if list_source_name != None:
             _id_query_source_name = " OR ".join(list_source_name)
             a = {

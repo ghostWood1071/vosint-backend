@@ -117,7 +117,23 @@ def get_news_from_ttxvn(
 async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    # print("aa", elt.search_Query)
+    list_fields = [
+        "source_favicon",
+        "source_name",
+        "source_host_name",
+        "source_language",
+        "source_publishing_country",
+        "data:title",
+        "data:content",
+        "pub_date",
+        "data:title_translate",
+        "data:content_translate",
+        "data:class_sacthai",
+        "data:url",
+        "id",
+        "_id",
+        "list_user_read",
+    ]
     vital = ""
     bookmarks = ""
     if elt.groupType == "vital":
@@ -140,7 +156,19 @@ async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
         vital=vital,
         bookmarks=bookmarks,
         is_get_read_state=True,
+        list_fields=list_fields,
     )
+
+    limit_string = 270
+
+    for record in result_elt:
+        try:
+            record["data:content"] = record["data:content"][0:limit_string]
+            record["data:content_translate"] = record["data:content_translate"][
+                0:limit_string
+            ]
+        except:
+            pass
 
     return JSONResponse(
         {
@@ -1199,7 +1227,6 @@ def get_result_job(
         "keywords",
         "source_publishing_country",
         "source_source_type",
-        "data:url",
         "data:class_linhvuc",
         "data:class_chude",
         "created",

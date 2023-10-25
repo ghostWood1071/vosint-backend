@@ -35,6 +35,11 @@ def get_pipelines(
     )
 
 
+@router.get("/api/get-all")
+def get_pipelines():
+    return JSONResponse(pipeline_controller.get_all())
+
+
 @router.post("/api/put_pipeline")
 async def put_pipeline(pipeline_obj: Request):
     print(pipeline_obj)
