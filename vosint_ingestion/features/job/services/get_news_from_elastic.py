@@ -25,6 +25,7 @@ def get_news_from_newsletter_id__(
     bookmarks: str = "",
     user_id=None,
     is_get_read_state=False,
+    list_fields=None,
 ):
     # list_id = None
     query = None
@@ -280,6 +281,7 @@ def get_news_from_newsletter_id__(
             list_id=list_id,
             # size=page_size,
             size=(int(page_number)) * int(page_size),
+            list_fields=list_fields,
         )
     elif text_search == None and list_source_name != None:
         pipeline_dtos = my_es.search_main(
@@ -293,6 +295,7 @@ def get_news_from_newsletter_id__(
             list_source_name=list_source_name,
             # size=page_size,
             size=(int(page_number)) * int(page_size),
+            list_fields=list_fields,
         )
     else:
         if list_source_name == None:
@@ -308,6 +311,7 @@ def get_news_from_newsletter_id__(
                 list_id=list_id,
                 # size=page_size,
                 size=(int(page_number)) * int(page_size),
+                list_fields=list_fields,
             )
         else:
             pipeline_dtos = my_es.search_main(
@@ -323,6 +327,7 @@ def get_news_from_newsletter_id__(
                 list_source_name=list_source_name,
                 # size=page_size,
                 size=(int(page_number)) * int(page_size),
+                list_fields=list_fields,
             )
         if list_id == None:
             list_id = []
@@ -341,6 +346,7 @@ def get_news_from_newsletter_id__(
             # list_source_name=list_source_name,
             # size=page_size,
             size=(int(page_number)) * int(page_size),
+            list_fields=list_fields,
         )
 
     for i in range(len(pipeline_dtos)):

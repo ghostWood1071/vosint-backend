@@ -12,6 +12,12 @@ class PipelineController:
 
         return {"success": True, "payload": action_infos}
 
+    def get_all(self):
+        # Execution at service
+        data = self.__pipeline_service.get_all()
+
+        return data
+
     def get_pipeline_by_id(self, id: str):
         # Execution at service
         pipeline_dto = self.__pipeline_service.get_pipeline_by_id(id)
