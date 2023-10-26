@@ -117,7 +117,23 @@ def get_news_from_ttxvn(
 async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
-    # print("aa", elt.search_Query)
+    list_fields = [
+        "source_favicon",
+        "source_name",
+        "source_host_name",
+        "source_language",
+        "source_publishing_country",
+        "data:title",
+        "data:content",
+        "pub_date",
+        "data:title_translate",
+        "data:content_translate",
+        "data:class_sacthai",
+        "data:url",
+        "id",
+        "_id",
+        "list_user_read",
+    ]
     vital = ""
     bookmarks = ""
     if elt.groupType == "vital":
@@ -140,7 +156,19 @@ async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
         vital=vital,
         bookmarks=bookmarks,
         is_get_read_state=True,
+        list_fields=list_fields,
     )
+
+    limit_string = 270
+
+    for record in result_elt:
+        try:
+            record["data:content"] = record["data:content"][0:limit_string]
+            record["data:content_translate"] = record["data:content_translate"][
+                0:limit_string
+            ]
+        except:
+            pass
 
     return JSONResponse(
         {
@@ -414,11 +442,17 @@ def get_event_from_newsletter_list_id(
             # filter_other={"_id": 1, "title": 1, "parent_id": 1},
         )
         child_newsletter["_id"] = str(child_newsletter["_id"])
+
         if child_newsletter.get("parent_id"):
             child_newsletter["parent_id"] = str(child_newsletter["parent_id"])
 
         if child_newsletter.get("user_id"):
             child_newsletter["user_id"] = str(child_newsletter["user_id"])
+
+        if child_newsletter.get("news_id") != None:
+            ls = [str(news_id) for news_id in child_newsletter.get("news_id")]
+            child_newsletter["news_id"] = ls
+
         infor_tree.append(child_newsletter)
 
         try:
@@ -464,6 +498,7 @@ def get_event_from_newsletter_list_id(
             if query == "":
                 continue
             plt_size = event_number * 2 if event_number else 100
+
             pipeline_dtos = my_es.search_main(
                 index_name="vosint",
                 query=query,
@@ -473,8 +508,8 @@ def get_event_from_newsletter_list_id(
                 sentiment=sac_thai,
                 size=plt_size,
             )
-            list_id = [i["_source"]["id"] for i in pipeline_dtos]
 
+            list_id = [i["_source"]["id"] for i in pipeline_dtos]
             events_filter = {}
             if end_date != None and start_date == None:
                 events_filter["created_at"] = {"$lte": end_date}
@@ -498,7 +533,6 @@ def get_event_from_newsletter_list_id(
                 pagination_spec=event_paginate,
                 order_spec=["date_created-desc"],
             )
-
             # sk = []
             relevent_news_ids = []  # [event for event in events]
             for event in events:
@@ -1127,7 +1161,6 @@ def get_result_job(
             )
 
             total_record = len(pipeline_dtos)
-
             for i in range(len(pipeline_dtos)):
                 try:
                     pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"][
@@ -1194,7 +1227,6 @@ def get_result_job(
         "keywords",
         "source_publishing_country",
         "source_source_type",
-        "data:url",
         "data:class_linhvuc",
         "data:class_chude",
         "created",

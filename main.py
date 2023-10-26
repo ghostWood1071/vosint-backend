@@ -56,7 +56,7 @@ def auth_exception_handler(request: Request, exc: AuthJWTException):
 
 @app.on_event("startup")
 async def on_startup():
-    Scheduler.instance().add_job_crawl_ttxvn()
+    # Scheduler.instance().add_job_crawl_ttxvn()
     Scheduler.instance().add_job_update_error_source()
     await init_db.connect_db()
     await start_all_jobs()

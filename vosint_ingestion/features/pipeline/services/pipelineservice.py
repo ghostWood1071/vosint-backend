@@ -30,6 +30,18 @@ class PipelineService:
         pipeline_dto = PipelineForDetailsDto(pipeline) if pipeline else None
         return pipeline_dto
 
+    def get_all(self) -> PipelineForDetailsDto:
+        # Query from the database
+        data = self.__mongo_repo.aggregate(
+            self.__collection_name,
+            [{"$project": {"_id": 1, "name": 1, "cron_expr": 1}}],
+        )
+
+        for row in data:
+            row["_id"] = str(row["_id"])
+
+        return data
+
     def get_pipeline_state(self, date):
         query = [
             {"$match": {"created_at": {"$gte": date}}},

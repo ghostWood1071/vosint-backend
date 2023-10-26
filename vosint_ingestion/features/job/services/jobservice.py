@@ -279,12 +279,17 @@ class JobService:
         query = {
             "$and": [
                 {"pipeline_id": id},
-                {"$or": [{"actione": "GetNewsInfoAction"}, {"log": "error"}]},
+                {
+                    "$or": [
+                        {"actione": "GetNewsInfoAction"},
+                        {"log": "error"},
+                        {"log": "inqueue"},
+                    ]
+                },
                 {"created_at": {"$gte": f"{start_date_str} 00:00:00"}},
                 {"created_at": {"$lte": f"{end_date_str} 23:59:59"}},
             ]
         }
-        print(query)
         results = self.__mongo_repo.get_many_his_log(
             "his_log",
             query,

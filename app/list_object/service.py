@@ -7,9 +7,12 @@ from vosint_ingestion.models.mongorepository import MongoRepository
 from db.init_db import get_collection_client
 import re
 from datetime import datetime, timedelta
+from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
+    My_ElasticSearch,
+)
 
 db = get_collection_client("object")
-
+news_es = My_ElasticSearch()
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 
 
@@ -127,7 +130,8 @@ def get_keyword_regex(keyword_dict):
     keyword_arr = [
         # rf"\b{keyword.strip()}\b"
         # rf"(?<!\pL\pN){re.escape(keyword.strip())}(?!\\pL\\pN)"
-        rf"(?<![\p{{L}}\p{{N}}]){re.escape(keyword.strip())}(?![\p{{L}}\p{{N}}])"
+        # rf"(?<![\p{{L}}\p{{N}}]){re.escape(keyword.strip())}(?![\p{{L}}\p{{N}}])"
+        '"' + keyword.strip() + '"'
         for keyword in list(filter(lambda x: x != "", keyword_arr))
     ]
     pattern = "|".join(keyword_arr)
@@ -137,31 +141,54 @@ def get_keyword_regex(keyword_dict):
 def add_news_to_object(object_id):
     object, _ = MongoRepository().get_many("object", {"_id": ObjectId(object_id)})
     end_date = datetime.now().replace(hour=0, minute=0, second=0)
-    start_date = end_date - timedelta(days=30)
+    start_date = end_date - timedelta(days=90)
     pattern = get_keyword_regex(object[0].get("keywords"))
 
-    filter_spec = {
-        "$or": [
-            # {"data:title": {"$regex": pattern, "$options": "i"}},
-            # {"data:content": {"$regex": pattern, "$options": "i"}},
-            {"data:title": {"$regex": pattern, "$options": "iu"}},
-            {"data:content": {"$regex": pattern, "$options": "iu"}},
-        ],
-        "pub_date": {"$gte": start_date, "$lte": end_date},
-        # "pub_date": {"$lte": end_date},
-    }
+    _start_date = datetime.strftime(start_date, "%Y-%m-%dT00:00:00Z")
+    _end_date = datetime.strftime(end_date, "%Y-%m-%dT00:00:00Z")
+    # search for mongo
+    # filter_spec = {
+    #     "$or": [
+    #         # {"data:title": {"$regex": pattern, "$options": "i"}},
+    #         # {"data:content": {"$regex": pattern, "$options": "i"}},
+    #         {"data:title": {"$regex": pattern, "$options": "iu"}},
+    #         {"data:content": {"$regex": pattern, "$options": "iu"}},
+    #     ],
+    #     "pub_date": {"$gte": start_date, "$lte": end_date},
+    #     # "pub_date": {"$lte": end_date},
+    # }
 
-    news, _ = MongoRepository().get_many(
-        "News", filter_spec, ["pub_date"], {"skip": 0, "limit": 500}, sor_direction=1
-    )
+    # news, _ = MongoRepository().get_many(
+    #     "News", filter_spec, ["pub_date"], {"skip": 0, "limit": 500}, sor_direction=1
+    # )
 
-    news_ids = [str(_id["_id"]) for _id in news]
-    if len(news_ids) > 0:
-        MongoRepository().update_many(
-            "object",
-            {"_id": {"$in": [ObjectId(object_id)]}},
-            {"$set": {"news_list": news_ids}},
+    # search for elastic
+    if pattern != "":
+        pipeline_dtos = news_es.search_main(
+            index_name="vosint",
+            query=pattern,
+            gte=_start_date,
+            lte=_end_date,
         )
+
+        for i in range(len(pipeline_dtos)):
+            try:
+                pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"]["id"]
+            except:
+                pass
+            pipeline_dtos[i] = pipeline_dtos[i]["_source"].copy()
+
+        news_ids = [str(_id["_id"]) for _id in pipeline_dtos]
+        # print("news_ids", news_ids)
+    else:
+        news_ids = []
+
+    # if len(news_ids) > 0:
+    MongoRepository().update_many(
+        "object",
+        {"_id": {"$in": [ObjectId(object_id)]}},
+        {"$set": {"news_list": news_ids}},
+    )
 
 
 def update_news(object_id: str):
