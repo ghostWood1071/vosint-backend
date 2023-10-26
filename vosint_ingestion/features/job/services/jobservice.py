@@ -135,7 +135,7 @@ class JobService:
             result = ""
         return result
 
-    def create_required_keyword(self, newsletter_id, lang):
+    def create_required_keyword(self, newsletter_id):
         a = self.__mongo_repo.get_one(
             collection_name="newsletter", filter_spec={"_id": newsletter_id}
         )["news_samples"]
