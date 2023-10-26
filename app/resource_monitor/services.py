@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from bson import ObjectId
 from fastapi import status
+import pytz
 
 from app.social.models import AddFollow, UpdateAccountMonitor
 from db.init_db import get_collection_client
@@ -33,6 +34,8 @@ async def insert_resource_monitors(server, resource_monitor):
 
 async def get_average_monitor():
     try:
+        # Define the UTC+7 timezone
+        utc_plus_7 = pytz.timezone('Asia/Bangkok')
         all_servers = servers_client.find({})
         normal_heartbeat = 3
         sleeping_time = 600
@@ -46,9 +49,9 @@ async def get_average_monitor():
         total_count = 0
 
         from_datetime = (
-            datetime.now() - timedelta(seconds=sleeping_time * (normal_heartbeat + 1))
+            datetime.now(utc_plus_7) - timedelta(seconds=sleeping_time * (normal_heartbeat + 1))
         ).strftime("%Y-%m-%d %H:%M:%S")
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.now(utc_plus_7).strftime("%Y-%m-%d %H:%M:%S")
         async for server in all_servers:
             # Kiểm tra server có đang active hay không
             heartbeat_query = {
@@ -100,19 +103,21 @@ async def get_average_monitor():
 
 async def get_server_details():
     try:
+        # Define the UTC+7 timezone
+        utc_plus_7 = pytz.timezone('Asia/Bangkok')
         sleeping_time = 600
         normal_heartbeat = 3
 
         all_servers = servers_client.find({})
         total_count = 0
         from_datetime = (
-            datetime.now() - timedelta(seconds=sleeping_time * normal_heartbeat)
+            datetime.now(utc_plus_7) - timedelta(seconds=sleeping_time * normal_heartbeat)
         ).strftime("%Y-%m-%d %H:%M:%S")
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.now(utc_plus_7).strftime("%Y-%m-%d %H:%M:%S")
         server_details = []
 
         async for server in all_servers:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = datetime.now(utc_plus_7).strftime("%Y-%m-%d %H:%M:%S")
 
             # Kiểm tra server có đang active hay không
             heartbeat_query = {
@@ -186,7 +191,7 @@ async def get_server_details():
 
             server_details.append(server_detail)
         data = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "timestamp": datetime.now(utc_plus_7).strftime("%Y-%m-%d %H:%M:%S"),
             "count": total_count,
             "server_details": server_details,
         }
