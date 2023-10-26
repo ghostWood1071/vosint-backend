@@ -57,7 +57,11 @@ async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
     newsletter_dict = body.dict()
     newsletter_dict["user_id"] = user_id
     a = await create_newsletter(newsletter_to_object_id(newsletter_dict))
-    JobService().create_required_keyword(a.inserted_id)
+    try:
+        JobService().create_required_keyword(a.inserted_id)
+    except Exception as e:
+        await delete_newsletter(ObjectId(a.inserted_id))
+        raise e
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
 
