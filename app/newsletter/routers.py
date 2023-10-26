@@ -200,7 +200,9 @@ async def delete_news_in_newsletter(
 
 @router.patch("/{newsletter_id}")
 async def update(
-    newsletter_id: str, body: NewsLetterUpdateModel, authorize: AuthJWT = Depends()
+    newsletter_id: str,
+    body: NewsLetterUpdateModel,
+    authorize: AuthJWT = Depends(),
 ):
     authorize.jwt_required()
     parsed_newsletter = newsletter_to_object_id(body.dict())
