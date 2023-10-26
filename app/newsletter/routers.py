@@ -61,7 +61,9 @@ async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
         JobService().create_required_keyword(a.inserted_id)
     except Exception as e:
         await delete_newsletter(ObjectId(a.inserted_id))
-        raise e
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=None
+        )
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=None)
 
 
