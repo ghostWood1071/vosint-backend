@@ -119,6 +119,22 @@ class JobService:
                 Logger.instance().error(str(error))
 
     # -------------------------------------------------------------------------------------------
+    def translate(self, language: str, content: str):
+        result = ""
+        try:
+            lang_dict = {"cn": "chinese", "ru": "russia", "en": "english"}
+            lang_code = lang_dict.get(language)
+            req = requests.post(
+                settings.TRANSLATE_API,
+                data=json.dumps({"language": lang_code, "text": content}),
+            )
+            result = req.json().get("translate_text")
+            if not req.ok:
+                raise Exception()
+        except:
+            result = ""
+        return result
+
     def create_required_keyword(self, newsletter_id):
         a = self.__mongo_repo.get_one(
             collection_name="newsletter", filter_spec={"_id": newsletter_id}
@@ -126,21 +142,20 @@ class JobService:
         # print('len aaaaaaaaaa',len(a))
         list_keyword = []
         for i in a:
-            # print(i['title']+i['content'])
-            # b = Keywords_Ext().extracting(
-            #     document=i["title"] + i["content"], num_keywords=10
-            # )
-            req = requests.post(
-                settings.KEYWORD_EXTRACTION_API,
-                {"text": i["title"] + i["content"], "number_keyword": 10},
-            )
+            content = i["title"] + i["content"]
+            lang = i.get("lang") if i.get("lang") else "vi"
+            tmp_lang = "vi" if lang == "cn" or lang == "ru" else lang
+            if lang == "cn" or lang == "ru":
+                content = self.translate(lang, content)
+            body = json.dumps({"text": content, "number_keyword": 10, "lang": tmp_lang})
+            print(body)
+            req = requests.post(settings.KEYWORD_EXTRACTION_API, body)
+
             if req.ok:
                 b = req.json().get("translate_text")
             else:
                 raise Exception("create keyword failed")
-            # print('aaaaaaaaaaaaaaa',b)
             list_keyword.append(",".join(b))
-
         doc = self.__mongo_repo.get_one(
             collection_name="newsletter", filter_spec={"_id": newsletter_id}
         )
