@@ -147,9 +147,10 @@ class JobService:
             tmp_lang = "vi" if lang == "cn" or lang == "ru" else lang
             if lang == "cn" or lang == "ru":
                 content = self.translate(lang, content)
-            body = {"text": content, "number_keyword": 10, "lang": tmp_lang}
+            body = json.dumps({"text": content, "number_keyword": 10, "lang": tmp_lang})
             print(body)
             req = requests.post(settings.KEYWORD_EXTRACTION_API, body)
+
             if req.ok:
                 b = req.json().get("translate_text")
             else:
