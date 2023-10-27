@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List
 from bson import ObjectId
+import time
 
 from db.init_db import get_collection_client
 from vosint_ingestion.features.pipeline.services import PipelineService
@@ -899,13 +900,13 @@ async def status_error_source_news(
             else:
                 result["unknown"] += 1
 
-            pipeline_filter = [pl_id for pl_id in pipeline_err.keys()]
-            offset = (page_index - 1) * page_index if page_index > 0 else 0
-            err_pipeline_list = []
-            async for item in pipelines_client.find(
-                {"_id": {"$in": pipeline_filter}}
-            ).skip(offset).limit(page_size):
-                err_pipeline_list.append(item)
+        pipeline_filter = [pl_id for pl_id in pipeline_err.keys()]
+        offset = (page_index - 1) * page_index if page_index > 0 else 0
+        err_pipeline_list = []
+        async for item in pipelines_client.find({"_id": {"$in": pipeline_filter}}).skip(
+            offset
+        ).limit(page_size):
+            err_pipeline_list.append(item)
     return {"total": len(pipeline_filter), "data": err_pipeline_list}
 
 
@@ -959,13 +960,13 @@ async def status_completed_source_news(
                             pipeline_comp[id] = 1
                             break
 
-            pipeline_filter = [pl_id for pl_id in pipeline_comp.keys()]
-            offset = (page_index - 1) * page_index if page_index > 0 else 0
-            comp_pipeline_list = []
-            async for item in pipelines_client.find(
-                {"_id": {"$in": pipeline_filter}}
-            ).skip(offset).limit(page_size):
-                comp_pipeline_list.append(item)
+        pipeline_filter = [pl_id for pl_id in pipeline_comp.keys()]
+        offset = (page_index - 1) * page_index if page_index > 0 else 0
+        comp_pipeline_list = []
+        async for item in pipelines_client.find({"_id": {"$in": pipeline_filter}}).skip(
+            offset
+        ).limit(page_size):
+            comp_pipeline_list.append(item)
     return {"total": len(pipeline_filter), "data": comp_pipeline_list}
 
 
@@ -995,6 +996,7 @@ async def status_unknown_source_news(
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
+    start = time.time()
     list_hist = await his_log_client.aggregate(
         [
             {
@@ -1004,8 +1006,14 @@ async def status_unknown_source_news(
             }
         ]
     ).to_list(None)
+    end = time.time()
 
+    print("job: ", end - start)
+
+    start = time.time()
     list_pipelines = await pipelines_client.aggregate([]).to_list(None)
+    end = time.time()
+    print("pipeline: ", end - start)
 
     pipeline_unknown = {}
     if list_pipelines:
@@ -1023,13 +1031,16 @@ async def status_unknown_source_news(
             else:
                 pipeline_unknown[id] = 1
 
-            pipeline_filter = [pl_id for pl_id in pipeline_unknown.keys()]
-            offset = (page_index - 1) * page_index if page_index > 0 else 0
-            unknown_pipeline_list = []
-            async for item in pipelines_client.find(
-                {"_id": {"$in": pipeline_filter}}
-            ).skip(offset).limit(page_size):
-                unknown_pipeline_list.append(item)
+        pipeline_filter = [pl_id for pl_id in pipeline_unknown.keys()]
+        offset = (page_index - 1) * page_index if page_index > 0 else 0
+        unknown_pipeline_list = []
+        async for item in pipelines_client.find({"_id": {"$in": pipeline_filter}}).skip(
+            offset
+        ).limit(page_size):
+            unknown_pipeline_list.append(item)
+
+    end = time.time()
+    print("end: ", end - start)
     return {"total": len(pipeline_filter), "data": unknown_pipeline_list}
 
 

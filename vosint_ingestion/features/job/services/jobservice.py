@@ -296,7 +296,16 @@ class JobService:
                 {"pipeline_id": id},
                 {
                     "$or": [
-                        {"actione": "GetNewsInfoAction"},
+                        {
+                            "actione": {
+                                "$in": [
+                                    "GetNewsInfoAction",
+                                    "FeedAction",
+                                    "FacebookAction",
+                                    "TtxvnAction",
+                                ]
+                            }
+                        },
                         {"log": "error"},
                         {"log": "inqueue"},
                     ]
