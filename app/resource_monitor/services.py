@@ -1,3 +1,4 @@
+import traceback
 from typing import List, Optional
 
 from bson import ObjectId
@@ -36,6 +37,7 @@ async def get_average_monitor():
     try:
         # Define the UTC+7 timezone
         utc_plus_7 = pytz.timezone('Asia/Bangkok')
+        datetime_format = "%Y-%m-%d %H:%M:%S"
         all_servers = servers_client.find({})
         normal_heartbeat = 3
         sleeping_time = 600
@@ -50,8 +52,16 @@ async def get_average_monitor():
 
         from_datetime = (
             datetime.now(utc_plus_7) - timedelta(seconds=sleeping_time * (normal_heartbeat + 1))
-        ).strftime("%Y-%m-%d %H:%M:%S")
-        current_time = datetime.now(utc_plus_7).strftime("%Y-%m-%d %H:%M:%S")
+        ).strftime(datetime_format)
+        current_time = datetime.now(utc_plus_7).strftime(datetime_format)
+        latest_resource_monitor = await resource_monitors_client.find_one(sort=[("_id", pymongo.DESCENDING)])
+
+        if latest_resource_monitor is not None:
+            lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp'], datetime_format)
+        else:
+            # Trường hợp chưa có bản ghi nào
+            lu_timestamp = datetime.now(utc_plus_7)
+
         async for server in all_servers:
             # Kiểm tra server có đang active hay không
             heartbeat_query = {
@@ -85,7 +95,7 @@ async def get_average_monitor():
                 "cpu_percent": 0,
                 "ram_percent": 0,
                 "disk_percent": 0,
-                "timestamp": current_time,
+                "timestamp": datetime.strftime(lu_timestamp, datetime_format),
             }
         cpu_percent = total_used_cpu / total_count
         ram_percent = (total_used_ram / total_ram) * 100
@@ -94,10 +104,12 @@ async def get_average_monitor():
             "cpu_percent": cpu_percent,
             "ram_percent": ram_percent,
             "disk_percent": disk_percent,
-            "timestamp": current_time,
+            "timestamp": datetime.strftime(lu_timestamp, datetime_format),
         }
         return data
-    except Exception:
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
         raise
 
 
@@ -105,6 +117,7 @@ async def get_server_details():
     try:
         # Define the UTC+7 timezone
         utc_plus_7 = pytz.timezone('Asia/Bangkok')
+        datetime_format = "%Y-%m-%d %H:%M:%S"
         sleeping_time = 600
         normal_heartbeat = 3
 
@@ -112,12 +125,19 @@ async def get_server_details():
         total_count = 0
         from_datetime = (
             datetime.now(utc_plus_7) - timedelta(seconds=sleeping_time * normal_heartbeat)
-        ).strftime("%Y-%m-%d %H:%M:%S")
-        current_time = datetime.now(utc_plus_7).strftime("%Y-%m-%d %H:%M:%S")
+        ).strftime(datetime_format)
+        current_time = datetime.now(utc_plus_7).strftime(datetime_format)
         server_details = []
+        latest_resource_monitor = await resource_monitors_client.find_one(sort=[("_id", pymongo.DESCENDING)])
+
+        if latest_resource_monitor is not None:
+            lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp'], datetime_format)
+        else:
+            # Trường hợp chưa có bản ghi nào
+            lu_timestamp = datetime.now(utc_plus_7)
 
         async for server in all_servers:
-            timestamp = datetime.now(utc_plus_7).strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = datetime.now(utc_plus_7).strftime(datetime_format)
 
             # Kiểm tra server có đang active hay không
             heartbeat_query = {
@@ -190,8 +210,9 @@ async def get_server_details():
                 }
 
             server_details.append(server_detail)
+
         data = {
-            "timestamp": datetime.now(utc_plus_7).strftime("%Y-%m-%d %H:%M:%S"),
+            "timestamp": datetime.strftime(lu_timestamp, datetime_format),
             "count": total_count,
             "server_details": server_details,
         }
