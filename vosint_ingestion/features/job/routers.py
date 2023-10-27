@@ -1338,6 +1338,24 @@ def get_table(
     if str(query) == "{'$and': []}":
         query = {}
 
+    # limit_string = 270
+
+    # result = job_controller.get_result_job(
+    #     name, order, page_number, page_size, filter=query
+    # )
+
+    # list_fields = []
+
+    # for record in result["result"]:
+    #     try:
+    #         record["content"] = record["content"][0:limit_string]
+    #     except:
+    #         pass
+    #     for key in list_fields:
+    #       record.pop(key, None)
+
+    # return result
+
     return JSONResponse(
         job_controller.get_result_job(name, order, page_number, page_size, filter=query)
     )

@@ -21,7 +21,7 @@ from .services import (
     check_read_socials,
     check_unread_socials,
     feature_keywords,
-    get_news_facebook,
+    get_news_social,
     social_personal,
     statistic_interaction,
     active_member,
@@ -29,9 +29,10 @@ from .services import (
     statistic_interaction_from_priority,
     total_interaction_priority,
     total_post_priority,
+    active_member_priority,
     statistic_sentiment,
 )
-from word_exporter import export_facebook_word
+from word_exporter import export_social_word
 from datetime import datetime
 
 client = get_collection_client("social_media")
@@ -106,6 +107,11 @@ async def get_total_post_priority(
     id_social: str, start_date: str = "", end_date: str = ""
 ):
     return await total_post_priority(id_social, start_date, end_date)
+
+
+@router.get("/get-active-member-priority")
+async def get_active_member_priority():
+    return await active_member_priority()
 
 
 # statistic
@@ -315,15 +321,21 @@ async def unread_socials(
 
 
 @router.post("/export-to-word")
-async def export_to_word(news_ids: List[str]):
-    news_fb = await get_news_facebook(news_ids)
-    file_buff = export_facebook_word(news_fb)
+async def export_to_word(news_ids: List[str], platform: str = "facebook"):
+    news_social = await get_news_social(news_ids, platform)
+    file_buff = export_social_word(news_social)
     nowstr = datetime.now().strftime("%d-%m-%Y")
+
+    nameFile = (
+        "facebook"
+        if platform == "facebook"
+        else ("twitter" if platform == "twitter" else "tiktok")
+    )
     return Response(
         file_buff.read(),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers={
             "Access-Control-Expose-Headers": "Content-Disposition",
-            "Content-Disposition": f"attachment; filename=su_kien(facebook-{nowstr}).docx",
+            "Content-Disposition": f"attachment; filename=su_kien({nameFile}-{nowstr}).docx",
         },
     )
