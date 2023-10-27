@@ -15,7 +15,8 @@ from app.user.routers import router as UserRouter
 from app.user_config.router import router as UserConfigRouter
 from app.vnanet.vn_new import router as VNNewRouter
 from vosint_ingestion.features.job.routers import router as Job
-from app.resource_monitor.routers import  router as ResourceMonitorRouter
+from app.resource_monitor.routers import router as ResourceMonitorRouter
+from app.slave_activity.routers import router as SlaveActivityRouter
 
 # from vosint_ingestion.features.nlp.routers import router as Nlp
 from vosint_ingestion.features.pipeline.routers import router as PipeLine
@@ -44,10 +45,15 @@ ROUTE_LIST = [
         "tags": ["Account ttxvn config"],
         "prefix": "/account-ttxvn-config",
     },
-{
+    {
         "route": ResourceMonitorRouter,
         "tags": ["ResourceMonitor"],
         "prefix": "/resource-monitor",
+    },
+    {
+        "route": SlaveActivityRouter,
+        "tags": ["SlaveActivity"],
+        "prefix": "/slave-activity",
     },
     {"route": DashboardRouter, "tags": ["Dashboard"], "prefix": "/dashboard"},
 ]
