@@ -8,6 +8,7 @@ from app.social_media.utils import object_to_json
 from db.init_db import get_collection_client
 from vosint_ingestion.models import MongoRepository
 from datetime import datetime, timedelta
+import time
 
 client = get_collection_client("social_media")
 client2 = get_collection_client("socials")
@@ -299,10 +300,16 @@ async def feature_keywords(k: int, start_date: str, end_date: str, name: str):
     return result
 
 
-async def get_news_facebook(news_ids: List[str]):
+async def get_news_social(news_ids: List[str], platform: str = "facebook"):
+    collection_client = (
+        facebook_client
+        if platform == "facebook"
+        else (twitter_client if platform == "twitter" else tiktok_client)
+    )
+
     filters = [ObjectId(n_id) for n_id in news_ids]
     results = []
-    async for row in facebook_client.find({"_id": {"$in": filters}}):
+    async for row in collection_client.find({"_id": {"$in": filters}}):
         results.append(row)
     return results
 
@@ -407,6 +414,7 @@ async def active_member(name: str):
         },
         {"$match": {"_id": {"$nin": [None, ""]}}},
         {"$sort": {"value": -1}},
+        {"$limit": 10},
     ]
 
     collection_client = (
@@ -432,12 +440,14 @@ async def posts_from_priority(
 
     # filter by text_search
     if text_search != "":
-        filter_spec.update({
-            "$or": [
-                {"header": {"$regex": text_search, "$options": "i"}},
-                {"content": {"$regex": text_search, "$options": "i"}},
-            ]
-        })
+        filter_spec.update(
+            {
+                "$or": [
+                    {"header": {"$regex": text_search, "$options": "i"}},
+                    {"content": {"$regex": text_search, "$options": "i"}},
+                ]
+            }
+        )
 
     # filter by start_date, end_date, text_search
     if start_date:
@@ -823,5 +833,49 @@ async def statistic_sentiment(name: str, start_date: str, end_date: str):
     )
 
     data = await collection_client.aggregate(pipeline).to_list(None)
+
+    return data
+
+
+async def active_member_priority():
+    date_current = datetime.now()
+    date_ago = date_current - timedelta(days=89)
+
+    date_ago = date_ago.replace(hour=0, minute=0, second=0)
+    date_current = date_current.replace(hour=23, minute=59, second=59)
+
+    date_current = str(date_current).replace("-", "/")
+    date_ago = str(date_ago).replace("-", "/")
+
+    filter_spec = {}
+    filter_spec.update({"created_at": {"$gte": date_ago, "$lte": date_current}})
+
+    # person post the most
+    pipeline = [
+        {"$match": filter_spec},
+        {"$unionWith": {"coll": "twitter"}},
+        {"$unionWith": {"coll": "tiktok"}},
+        {
+            "$project": {
+                "_id": 0,
+                "id_social": 1,
+            }
+        },
+        {
+            "$group": {"_id": "$id_social", "value": {"$sum": 1}},
+        },
+        {
+            "$lookup": {
+                "from": "social_media",
+                "localField": "_id",
+                "foreignField": "_id",
+                "as": "user",
+            }
+        },
+        {"$match": {"_id": {"$nin": [None, ""]}}},
+        {"$sort": {"value": -1}},
+        {"$limit": 10},
+    ]
+    data = await facebook_client.aggregate(pipeline).to_list(None)
 
     return data
