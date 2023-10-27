@@ -151,7 +151,7 @@ def export_news_to_words(news):
     return buff
 
 
-def export_facebook_word(news_list):
+def export_social_word(news_list, platform: str = ""):
     doc: Document = Document()
     for news in news_list:
         header = news.get("header")
@@ -167,8 +167,8 @@ def export_facebook_word(news_list):
         content = "Ngày " + date_str + "\n\n" + content.replace("\nSee translation", "")
         doc_content = doc.add_paragraph(content)
         doc_source = doc.add_paragraph()
-        doc_source.add_run("Nguồn tin \n").italic = True
-        doc_source.add_run(f"+ {news.get('id')}\n").italic = True
+        # doc_source.add_run("Nguồn tin \n").italic = True
+        # doc_source.add_run(f"+ {news.get('id')}\n").italic = True
     buff = BytesIO()
     doc.save(buff)
     buff.seek(0)
