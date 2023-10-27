@@ -56,7 +56,7 @@ router = APIRouter()
 @router.post("/api/get_news_from_ttxvn")
 def get_news_from_ttxvn(
     page_number=1,
-    page_size=20,
+    page_size=50,
     start_date: str = None,
     end_date: str = None,
     sac_thai: str = None,
@@ -92,7 +92,9 @@ def get_news_from_ttxvn(
         lte=end_date,
         lang=language_source,
         sentiment=sac_thai,
+        size=(int(page_number)) * int(page_size),
     )
+
     for i in range(len(pipeline_dtos)):
         try:
             pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"]["id"]
