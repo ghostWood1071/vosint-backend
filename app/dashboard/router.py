@@ -76,8 +76,10 @@ async def get_total_users():
 
 
 @router.get("/get-total-users-online")
-async def get_total_users_online():
-    return await users_online()
+async def get_total_users_online(authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    return await users_online(user_id)
 
 
 @router.get("/get-top-user-read")
