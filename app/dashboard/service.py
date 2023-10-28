@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List
 from bson import ObjectId
-import time
 
 from db.init_db import get_collection_client
 from vosint_ingestion.features.pipeline.services import PipelineService
@@ -643,19 +642,18 @@ async def hot_events_today():
     return result
 
 
-async def users_online():
+async def users_online(user_id: ObjectId):
     """Get users online"""
+    print(user_id)
     pipeline = [
-        {"$match": {"online": True}},
-        {"$count": "online"},
-        {"$project": {"total": "$online"}},
+        {"$match": {"online": True, "_id": {"$ne": ObjectId(user_id)}}},
+        {"$group": {"_id": None, "total": {"$sum": 1}}},
+        {"$project": {"_id": 0}},
     ]
 
     data = await users_client.aggregate(pipeline).to_list(None)
 
-    result = {}
-    for i in data:
-        result = i
+    result = {"total": data[0]["total"] + 1} if len(data) > 0 else {"total": 1}
 
     return result
 
@@ -864,7 +862,15 @@ async def status_error_source_news(
                 "$match": {
                     "created_at": {"$gte": start_of_day, "$lte": end_of_day},
                 }
-            }
+            },
+            {"$group": {"_id": {"pipeline_id": "$pipeline_id", "log": "$log"}}},
+            {
+                "$project": {
+                    "_id": 0,
+                    "pipeline_id": "$_id.pipeline_id",
+                    "log": "$_id.log",
+                }
+            },
         ]
     ).to_list(None)
 
@@ -884,7 +890,7 @@ async def status_error_source_news(
                 is_completed = False
                 is_unknown = True
                 for his in list_hist:
-                    if ObjectId(his["pipeline_id"]) == id:
+                    if his["pipeline_id"] == str(id):
                         is_unknown = False
                         if his["log"] == "completed":
                             is_completed = True
@@ -901,7 +907,7 @@ async def status_error_source_news(
                 result["unknown"] += 1
 
         pipeline_filter = [pl_id for pl_id in pipeline_err.keys()]
-        offset = (page_index - 1) * page_index if page_index > 0 else 0
+        offset = (page_index - 1) * page_size if page_index > 0 else 0
         err_pipeline_list = []
         async for item in pipelines_client.find({"_id": {"$in": pipeline_filter}}).skip(
             offset
@@ -942,31 +948,38 @@ async def status_completed_source_news(
                 "$match": {
                     "created_at": {"$gte": start_of_day, "$lte": end_of_day},
                 }
-            }
+            },
+            {"$group": {"_id": {"pipeline_id": "$pipeline_id", "log": "$log"}}},
+            {
+                "$project": {
+                    "_id": 0,
+                    "pipeline_id": "$_id.pipeline_id",
+                    "log": "$_id.log",
+                }
+            },
         ]
     ).to_list(None)
 
     list_pipelines = await pipelines_client.aggregate([]).to_list(None)
 
     pipeline_comp = {}
-    if list_pipelines:
-        for pipeline in list_pipelines:
-            if pipeline["enabled"]:
-                id = pipeline["_id"]
+    for pipeline in list_pipelines:
+        if not pipeline["enabled"]:
+            continue
+        id = pipeline["_id"]
+        for his in list_hist:
+            if his["pipeline_id"] == str(id) and his["log"] == "completed":
+                pipeline_comp[id] = 1
+                break
 
-                for his in list_hist:
-                    if ObjectId(his["pipeline_id"]) == id:
-                        if his["log"] == "completed":
-                            pipeline_comp[id] = 1
-                            break
+    pipeline_filter = [pl_id for pl_id in pipeline_comp.keys()]
+    offset = (page_index - 1) * page_size if page_index > 0 else 0
+    comp_pipeline_list = []
+    async for item in pipelines_client.find({"_id": {"$in": pipeline_filter}}).skip(
+        offset
+    ).limit(page_size):
+        comp_pipeline_list.append(item)
 
-        pipeline_filter = [pl_id for pl_id in pipeline_comp.keys()]
-        offset = (page_index - 1) * page_index if page_index > 0 else 0
-        comp_pipeline_list = []
-        async for item in pipelines_client.find({"_id": {"$in": pipeline_filter}}).skip(
-            offset
-        ).limit(page_size):
-            comp_pipeline_list.append(item)
     return {"total": len(pipeline_filter), "data": comp_pipeline_list}
 
 
@@ -996,51 +1009,48 @@ async def status_unknown_source_news(
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
-    start = time.time()
     list_hist = await his_log_client.aggregate(
         [
             {
                 "$match": {
                     "created_at": {"$gte": start_of_day, "$lte": end_of_day},
                 }
-            }
+            },
+            {"$group": {"_id": {"pipeline_id": "$pipeline_id", "log": "$log"}}},
+            {
+                "$project": {
+                    "_id": 0,
+                    "pipeline_id": "$_id.pipeline_id",
+                    "log": "$_id.log",
+                }
+            },
         ]
     ).to_list(None)
-    end = time.time()
 
-    print("job: ", end - start)
-
-    start = time.time()
     list_pipelines = await pipelines_client.aggregate([]).to_list(None)
-    end = time.time()
-    print("pipeline: ", end - start)
 
     pipeline_unknown = {}
-    if list_pipelines:
-        for pipeline in list_pipelines:
-            id = pipeline["_id"]
-            if pipeline["enabled"]:
-                is_unknown = True
-                for his in list_hist:
-                    if ObjectId(his["pipeline_id"]) == id:
-                        is_unknown = False
-                        if his["log"] == "completed":
-                            break
-                if is_unknown:
-                    pipeline_unknown[id] = 1
-            else:
+    for pipeline in list_pipelines:
+        id = pipeline["_id"]
+        if pipeline["enabled"]:
+            is_unknown = True
+            for his in list_hist:
+                if his["pipeline_id"] == str(id):
+                    is_unknown = False
+                    break
+            if is_unknown:
                 pipeline_unknown[id] = 1
+        else:
+            pipeline_unknown[id] = 1
 
-        pipeline_filter = [pl_id for pl_id in pipeline_unknown.keys()]
-        offset = (page_index - 1) * page_index if page_index > 0 else 0
-        unknown_pipeline_list = []
-        async for item in pipelines_client.find({"_id": {"$in": pipeline_filter}}).skip(
-            offset
-        ).limit(page_size):
-            unknown_pipeline_list.append(item)
+    pipeline_filter = [pl_id for pl_id in pipeline_unknown.keys()]
+    offset = (page_index - 1) * page_size if page_index > 0 else 0
+    unknown_pipeline_list = []
+    async for item in pipelines_client.find({"_id": {"$in": pipeline_filter}}).skip(
+        offset
+    ).limit(page_size):
+        unknown_pipeline_list.append(item)
 
-    end = time.time()
-    print("end: ", end - start)
     return {"total": len(pipeline_filter), "data": unknown_pipeline_list}
 
 
