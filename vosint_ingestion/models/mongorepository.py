@@ -262,7 +262,9 @@ class MongoRepository:
                     return by, direction
 
                 order_spec = list(map(lambda o: __map_order(o), order_spec))
-            query = query.sort([("pub_date", -1), ("created_at", -1)])  # (order_spec)
+            query = query.sort(
+                [("PublishDate", -1), ("pub_date", -1), ("created_at", -1)]
+            )  # (order_spec)
 
             # Apply pagination
             if pagination_spec:
