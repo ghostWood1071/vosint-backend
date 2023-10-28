@@ -626,6 +626,10 @@ async def hot_events_today():
             "$project": {
                 "new_list_length": {"$size": "$new_list"},
                 "source_url": {"$arrayElemAt": ["$new_list.data:url", 0]},
+                "title_translated": {
+                    "$arrayElemAt": ["$new_list.data:title_translate", 0]
+                },
+                "source_language": {"$arrayElemAt": ["$new_list.source_language", 0]},
                 "event_name": 1,
                 "sentiment": 1,
                 "date_created": 1,
