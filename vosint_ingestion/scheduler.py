@@ -8,6 +8,8 @@ from core.config import settings
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 import utils
 import statistic_schedule
+from datetime import datetime
+import pytz
 
 
 class Scheduler:
@@ -34,7 +36,7 @@ class Scheduler:
         jobstore = {"default": MongoDBJobStore(**mongo_config)}
         self.__bg_scheduler = BackgroundScheduler(jobstores=jobstore)
         self.__bg_scheduler.start()
-
+        self.timezone = "Asia/Ho_Chi_Minh"
         Scheduler.__instance = self
 
     @staticmethod
@@ -46,9 +48,10 @@ class Scheduler:
 
     def add_job(self, id: str, func: Callable, cron_expr: str, args: list = []):
         # print('args..............',args)
-        self.__bg_scheduler.add_job(
-            id=id, func=func, args=args, trigger=CronTrigger.from_crontab(cron_expr)
-        )
+        trigger = CronTrigger().from_crontab(cron_expr)
+        aware_time = datetime.now(pytz.timezone(self.timezone))
+        trigger.timezone = aware_time.tzinfo
+        self.__bg_scheduler.add_job(id=id, func=func, args=args, trigger=trigger)
 
     def remove_job(self, id: str):
         self.__bg_scheduler.remove_job(id)

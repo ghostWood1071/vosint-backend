@@ -18,7 +18,6 @@ class PipelineService:
     def get_pipeline_by_id(self, id: str) -> PipelineForDetailsDto:
         # Query from the database
         pipeline = self.__mongo_repo.get_one(self.__collection_name, {"_id": id})
-
         # Map to dto
         jobs = Scheduler.instance().get_jobs()
         pipeline["actived"] = str(pipeline["_id"]) in jobs
