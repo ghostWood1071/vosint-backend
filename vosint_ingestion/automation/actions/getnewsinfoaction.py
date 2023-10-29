@@ -19,7 +19,7 @@ from .baseaction import BaseAction
 
 
 
-my_es = My_ElasticSearch(host=['http://192.168.1.99:9200'], user='USER', password='PASS', verify_certs=False)
+my_es = My_ElasticSearch(host='http://192.168.1.99:9200', user='USER', password='PASS', verify_certs=False)
 
 def call_tran(content = '', lang = 'en'):
     result = ''
