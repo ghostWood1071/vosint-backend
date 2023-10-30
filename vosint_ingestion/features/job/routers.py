@@ -1344,7 +1344,16 @@ def get_table(
     #     name, order, page_number, page_size, filter=query
     # )
 
-    # list_fields = []
+    # list_fields = [
+    #     "id_data_ft",
+    #     "footer_date",
+    #     "footer_type",
+    #     "video_id",
+    #     "video_link",
+    #     "post_link",
+    #     "post_id",
+    #     "user_id",
+    # ]
 
     # for record in result["result"]:
     #     try:
@@ -1352,7 +1361,7 @@ def get_table(
     #     except:
     #         pass
     #     for key in list_fields:
-    #       record.pop(key, None)
+    #         record.pop(key, None)
 
     # return result
 
@@ -1497,8 +1506,8 @@ def get_table_ttxvn(
                 {
                     "$or": [
                         {"content": {"$exists": False}},
-                        {"content": {"$ne": None}},
-                        {"content": {"$ne": ""}},
+                        {"content": None},
+                        {"content": ""},
                     ]
                 }
             )

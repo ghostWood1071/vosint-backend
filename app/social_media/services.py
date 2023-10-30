@@ -412,7 +412,7 @@ async def active_member(name: str):
                 "as": "user",
             }
         },
-        {"$match": {"_id": {"$nin": [None, ""]}}},
+        {"$match": {"_id": {"$nin": [None, ""]}, "user": {"$ne": []}}},
         {"$sort": {"value": -1}},
         {"$limit": 10},
     ]
