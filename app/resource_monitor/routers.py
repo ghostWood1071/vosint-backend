@@ -11,6 +11,8 @@ from app.resource_monitor.services import (
     get_average_monitor as get_avg_monitor_service,
 )
 from app.resource_monitor import services
+from datetime import datetime
+import pytz
 
 router = APIRouter()
 
@@ -40,7 +42,7 @@ async def create_insert_resource_monitor(body: ResourceMonitorCreate):
         resource_monitor = ResourceMonitor(
             id=id,
             server_name=server_name,
-            timestamp=timestamp,
+            timestamp= datetime.isoformat(timestamp),
             cpu=cpu,
             ram=ram,
             disk=disk,

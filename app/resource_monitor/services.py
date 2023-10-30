@@ -15,6 +15,11 @@ resource_monitors_client = get_collection_client("resource_monitors")
 
 
 async def insert_resource_monitors(server, resource_monitor):
+    # Xóa các bản ghi có cũ cách trước đó 1 giờ.
+    current_time = datetime.utcnow()
+    one_hour_ago = current_time - timedelta(hours=1)
+    await resource_monitors_client.delete_many({"timestamp": {"$lt": one_hour_ago}})
+
     server_query = {"server_name": server["server_name"]}
     server_rp = await servers_client.find_one(server_query)
 
@@ -27,16 +32,35 @@ async def insert_resource_monitors(server, resource_monitor):
             }
         }
         await servers_client.update_one(server_query, update_operation)
-        await resource_monitors_client.insert_one(resource_monitor)
+
+        # Kiểm tra xem đã có bản ghi nào được tạo chưa
+        normal_heartbeat = 3
+        count = await resource_monitors_client.count_documents(server_query)
+        if count == 0:
+            resource_monitors = []
+            for i in range(normal_heartbeat):
+                resource_monitors.append(resource_monitor.copy())
+            await resource_monitors_client.insert_many(resource_monitors)
+        else:
+            await resource_monitors_client.insert_one(resource_monitor)
     else:
         await servers_client.insert_one(server)
-        await resource_monitors_client.insert_one(resource_monitor)
+
+        # Kiểm tra xem đã có bản ghi nào được tạo chưa
+        normal_heartbeat = 3
+        count = await resource_monitors_client.count_documents(server_query)
+        if count == 0:
+            for i in range(normal_heartbeat):
+                await resource_monitors_client.insert_one(resource_monitor)
+        else:
+            await resource_monitors_client.insert_one(resource_monitor)
+
+
+
 
 
 async def get_average_monitor():
     try:
-        # Define the UTC+7 timezone
-        utc_plus_7 = pytz.timezone('Asia/Bangkok')
         datetime_format = "%Y-%m-%d %H:%M:%S"
         all_servers = servers_client.find({})
         normal_heartbeat = 3
@@ -50,17 +74,15 @@ async def get_average_monitor():
         total_used_disk = 0
         total_count = 0
 
-        from_datetime = (
-            datetime.now(utc_plus_7) - timedelta(seconds=sleeping_time * (normal_heartbeat + 1))
-        ).strftime(datetime_format)
-        current_time = datetime.now(utc_plus_7).strftime(datetime_format)
-        latest_resource_monitor = await resource_monitors_client.find_one(sort=[("_id", pymongo.DESCENDING)])
+        from_datetime = datetime.utcnow() - timedelta(seconds=sleeping_time * (normal_heartbeat + 1))
+        current_time = datetime.utcnow()
+        latest_resource_monitor = await resource_monitors_client.find_one(sort=[("timestamp", pymongo.DESCENDING)])
 
         if latest_resource_monitor is not None:
-            lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp'], datetime_format)
+            lu_timestamp = latest_resource_monitor['timestamp']
         else:
             # Trường hợp chưa có bản ghi nào
-            lu_timestamp = datetime.now(utc_plus_7)
+            lu_timestamp = datetime.utcnow()
 
         async for server in all_servers:
             # Kiểm tra server có đang active hay không
@@ -95,7 +117,7 @@ async def get_average_monitor():
                 "cpu_percent": 0,
                 "ram_percent": 0,
                 "disk_percent": 0,
-                "timestamp": datetime.strftime(lu_timestamp, datetime_format),
+                "timestamp": datetime.strftime(lu_timestamp + timedelta(hours=7), datetime_format),
             }
         cpu_percent = total_used_cpu / total_count
         ram_percent = (total_used_ram / total_ram) * 100
@@ -104,7 +126,7 @@ async def get_average_monitor():
             "cpu_percent": cpu_percent,
             "ram_percent": ram_percent,
             "disk_percent": disk_percent,
-            "timestamp": datetime.strftime(lu_timestamp, datetime_format),
+            "timestamp": datetime.strftime(lu_timestamp + timedelta(hours=7), datetime_format),
         }
         return data
     except Exception as e:
@@ -115,29 +137,24 @@ async def get_average_monitor():
 
 async def get_server_details():
     try:
-        # Define the UTC+7 timezone
-        utc_plus_7 = pytz.timezone('Asia/Bangkok')
         datetime_format = "%Y-%m-%d %H:%M:%S"
         sleeping_time = 600
         normal_heartbeat = 3
 
         all_servers = servers_client.find({})
         total_count = 0
-        from_datetime = (
-            datetime.now(utc_plus_7) - timedelta(seconds=sleeping_time * normal_heartbeat)
-        ).strftime(datetime_format)
-        current_time = datetime.now(utc_plus_7).strftime(datetime_format)
+        from_datetime = datetime.utcnow() - timedelta(seconds=sleeping_time * normal_heartbeat)
+        current_time = datetime.utcnow()
         server_details = []
         latest_resource_monitor = await resource_monitors_client.find_one(sort=[("_id", pymongo.DESCENDING)])
 
         if latest_resource_monitor is not None:
-            lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp'], datetime_format)
+            lu_timestamp = latest_resource_monitor['timestamp']
         else:
             # Trường hợp chưa có bản ghi nào
-            lu_timestamp = datetime.now(utc_plus_7)
+            lu_timestamp = datetime.utcnow()
 
         async for server in all_servers:
-            timestamp = datetime.now(utc_plus_7).strftime(datetime_format)
 
             # Kiểm tra server có đang active hay không
             heartbeat_query = {
@@ -153,17 +170,12 @@ async def get_server_details():
                     "cpu_percent": 0,
                     "ram_percent": 0,
                     "disk_percent": 0,
-                    "is_active": False,
-                    "timestamp": timestamp,
+                    "is_active": False
                 }
                 server_details.append(server_detail)
                 continue
 
-            last_resource_monitor = None
             is_active = True
-            cpu_percent = 0
-            disk_percent = 0
-            ram_percent = 0
 
             total_count += 1
 
@@ -183,8 +195,7 @@ async def get_server_details():
                 "cpu_percent": 0,
                 "ram_percent": 0,
                 "disk_percent": 0,
-                "is_active": False,
-                "timestamp": timestamp,
+                "is_active": False
             }
             if last_resource_monitor != None:
                 cpu_percent = last_resource_monitor["cpu"]
@@ -198,21 +209,19 @@ async def get_server_details():
                     / float(server["total_ram"])
                     * 100
                 )
-                timestamp = last_resource_monitor["timestamp"]
                 server_detail = {
                     "server_ip": server["server_ip"],
                     "server_name": server["server_name"],
                     "cpu_percent": cpu_percent,
                     "ram_percent": ram_percent,
                     "disk_percent": disk_percent,
-                    "is_active": is_active,
-                    "timestamp": timestamp,
+                    "is_active": is_active
                 }
 
             server_details.append(server_detail)
 
         data = {
-            "timestamp": datetime.strftime(lu_timestamp, datetime_format),
+            "timestamp": datetime.strftime(lu_timestamp + timedelta(hours=7), datetime_format),
             "count": total_count,
             "server_details": server_details,
         }
