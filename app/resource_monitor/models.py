@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
+from datetime import datetime
 
 
 class Server(BaseModel):
@@ -16,7 +17,7 @@ class Server(BaseModel):
 class ResourceMonitor(BaseModel):
     id: str = Field(default_factory=ObjectId, alias="_id")
     server_name: str = Field(...)
-    timestamp: str = Field(...)
+    timestamp: datetime = Field(...)
     cpu: str = Field(...)
     ram: str = Field(...)
     disk: str = Field(...)
@@ -32,7 +33,7 @@ class ResourceMonitorCreate(BaseModel):
 
     id: str = Field(default_factory=ObjectId, alias="_id")
     server_ip: str = Field(...)
-    timestamp: str = Field(...)
+    timestamp: datetime = Field(...)
     cpu: str = Field(...)
     ram: str = Field(...)
     disk: str = Field(...)
