@@ -879,3 +879,16 @@ async def active_member_priority():
     data = await facebook_client.aggregate(pipeline).to_list(None)
 
     return data
+
+
+async def post_detail(_id: str):
+    collection_names = [facebook_client, twitter_client, tiktok_client]
+    query = {"_id": ObjectId(_id)}
+    result = {}
+
+    for collection_name in collection_names:
+        post = await collection_name.find_one(query)
+        if post is not None:
+            result = post
+
+    return result

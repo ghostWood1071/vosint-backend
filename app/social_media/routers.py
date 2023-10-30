@@ -31,6 +31,7 @@ from .services import (
     total_post_priority,
     active_member_priority,
     statistic_sentiment,
+    post_detail,
 )
 from word_exporter import export_social_word
 from datetime import datetime
@@ -339,3 +340,8 @@ async def export_to_word(news_ids: List[str], platform: str = "facebook"):
             "Content-Disposition": f"attachment; filename=su_kien({nameFile}-{nowstr}).docx",
         },
     )
+
+
+@router.get("/post-detail/{_id}")
+async def get_post_detail(_id: str):
+    return await post_detail(_id)
