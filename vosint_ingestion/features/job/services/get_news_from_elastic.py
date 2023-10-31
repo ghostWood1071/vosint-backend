@@ -9,6 +9,54 @@ from bson import ObjectId
 my_es = My_ElasticSearch()
 
 
+def get_news_category(_ids):
+    data, _ = MongoRepository().get_many(
+        collection_name="News",
+        order_spec=["pub_date"],
+        filter_spec={"_id": {"$in": _ids}},
+    )
+
+    result = []
+    for item in data:
+        item["_id"] = str(item["_id"])
+        item["pub_date"] = str(item["pub_date"])
+
+        result.append(item)
+
+    result = get_optimized(result)
+
+    return result
+
+
+def get_optimized(result):
+    list_fields = [
+        "data:html",
+        "keywords",
+        "source_publishing_country",
+        "source_source_type",
+        "data:class_linhvuc",
+        "data:class_chude",
+        "created",
+        "created_at",
+        "id_social",
+        "modified_at",
+    ]
+
+    limit_string = 270
+
+    for record in result:
+        try:
+            record["data:content"] = record["data:content"][0:limit_string]
+            record["data:content_translate"] = record["data:content_translate"][
+                0:limit_string
+            ]
+        except:
+            pass
+        for key in list_fields:
+            record.pop(key, None)
+    return result
+
+
 def get_news_from_newsletter_id__(
     list_id=None,
     type=None,
@@ -78,6 +126,10 @@ def get_news_from_newsletter_id__(
         if ls == []:
             return []
         list_id = ls
+        if text_search == "" or text_search == None:
+            _ids = [ObjectId(item) for item in list_id]
+            data = get_news_category(_ids)
+            return data
 
     # tin đánh dấu ---------------------------------------------------
     elif bookmarks == "1":
@@ -94,6 +146,11 @@ def get_news_from_newsletter_id__(
         if ls == []:
             return []
         list_id = ls
+
+        if text_search == "" or text_search == None:
+            _ids = [ObjectId(item) for item in list_id]
+            data = get_news_category(_ids)
+            return data
 
     # get newsletter --------------------------------------------------
     if news_letter_id != "" and news_letter_id != None:
@@ -113,6 +170,11 @@ def get_news_from_newsletter_id__(
         if ls == []:
             return []
         list_id = ls
+
+        if text_search == "" or text_search == None:
+            _ids = [ObjectId(item) for item in list_id]
+            data = get_news_category(_ids)
+            return data
 
     # nếu không là giỏ tin
     if news_letter_id != "" and a["tag"] != "gio_tin":
@@ -364,4 +426,5 @@ def get_news_from_newsletter_id__(
         for row in pipeline_dtos:
             row["list_user_read"] = isread.get(row["_id"])
 
+    # print("dtos", pipeline_dtos)
     return pipeline_dtos
