@@ -480,7 +480,7 @@ def top_news_by_topic():
             data.append({"_id": field["title"], "value": len(data_es)})
 
     if len(data) > 0:
-        data = sorted(result, key=lambda x: x["value"], reverse=True)
+        data = sorted(data, key=lambda x: x["value"], reverse=True)
 
     result = {}
 
