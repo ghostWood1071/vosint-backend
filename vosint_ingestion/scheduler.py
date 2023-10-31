@@ -90,9 +90,9 @@ class Scheduler:
     def add_job_update_error_source(self):
         try:
             self.__bg_scheduler.add_job(
-                id="dashboard_error_source",
-                func=statistic_schedule.status_source_news,
-                trigger=CronTrigger.from_crontab("0 * * * *"),
+                id="top_news",
+                func=statistic_schedule.top_news_by_topic,
+                trigger=CronTrigger.from_crontab("* * * * *"),
             )
         except Exception as e:
             print("dashboard_error_source existed, no need to crete new one")
