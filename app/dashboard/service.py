@@ -513,9 +513,9 @@ async def hot_events_today():
                     {"$match": {"$expr": {"$eq": ["$_id", "$$id"]}}},
                     {
                         "$project": {
-                            "title_translated": 1,
+                            "data:title_translate": 1,
                             "source_language": 1,
-                            "source_url": 1,
+                            "data:url": 1,
                             "_id": 1,
                         }
                     },
