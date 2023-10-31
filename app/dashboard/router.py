@@ -59,8 +59,8 @@ async def get_news_seven_nearest_r(day_space: int = 7):
 
 
 @router.get("/get-top-news-by-topic")
-async def get_top_news_by_topic(day_space: int = 7):
-    return await top_news_by_topic(day_space)
+async def get_top_news_by_topic():
+    return await top_news_by_topic()
 
 
 @router.get("/get-top-news-by-country")
@@ -113,8 +113,8 @@ async def get_news_read_by_user(days: int = 7, authorize: AuthJWT = Depends()):
 
 # ------- Start admin --------
 @router.get("/get-status-source-news")
-async def get_status_source_news():
-    return await status_source_news()
+async def get_status_source_news(day_space: int = 3):
+    return await status_source_news(day_space)
 
 
 @router.get("/get-pipeline-error")

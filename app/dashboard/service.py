@@ -12,7 +12,6 @@ import json
 import os
 
 dashboard_client = get_collection_client("dashboard")
-err_source_statistic_client = get_collection_client("err_source_statistic")
 object_client = get_collection_client("object")
 news_client = get_collection_client("News")
 users_client = get_collection_client("users")
@@ -21,6 +20,7 @@ event_client = get_collection_client("event")
 his_log_client = get_collection_client("his_log")
 pipelines_client = get_collection_client("pipelines")
 newsletter_client = get_collection_client("newsletter")
+topic_statistic_client = get_collection_client("top_statistic")
 report_client = get_collection_client("report")
 
 
@@ -193,83 +193,51 @@ async def news_seven_nearest(day_space: int = 7):
     return result
 
 
-"""
-async def top_news_by_topic(day_space=7):
-    #Get total of news in seven days by topics (top 5) with key: data:class_linhvuc
-    now = datetime.now()
-    now = now.today() - timedelta(days=day_space - 1)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
-
-    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
-    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
-    pipeline = [
-        {
-            "$match": {
-                "created_at": {
-                    "$gte": start_of_day,
-                    "$lt": end_of_day,
-                }
-            }
-        },
-        {"$unwind": {"path": "$data:class_linhvuc"}},
-        {
-            "$group": {
-                "_id": "$data:class_linhvuc",
-                "value": {"$sum": 1},
-            }
-        },
-        {"$sort": {"value": -1}},
-        {"$limit": 5},
-    ]
-
-    data = news_client.aggregate(pipeline)
-
-    result = []
-    async for document in data:
-        result.append(document)
-
-    return result
-"""
+async def top_news_by_topic():
+    try:
+        data = await topic_statistic_client.find_one({})
+        return data["data"]
+    except:
+        return []
 
 
-async def top_news_by_topic(day_space=7):
-    # Get total of news in seven days by topics (top 5) with key: data:class_linhvuc
-    now = datetime.now()
-    now = now.today() - timedelta(days=day_space - 1)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+# async def top_news_by_topic(day_space=7):
+#     # Get total of news in seven days by topics (top 5) with key: data:class_linhvuc
+#     now = datetime.now()
+#     now = now.today() - timedelta(days=day_space - 1)
+#     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+#     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
 
-    start_of_day = start_of_day.strftime("%d/%m/%Y")
-    end_of_day = end_of_day.strftime("%d/%m/%Y")
+#     start_of_day = start_of_day.strftime("%d/%m/%Y")
+#     end_of_day = end_of_day.strftime("%d/%m/%Y")
 
-    data_fields = await newsletter_client.find(
-        {"tag": "linh_vuc"}, {"_id": 1, "title": 1}
-    ).to_list(None)
+#     data_fields = await newsletter_client.find(
+#         {"tag": "linh_vuc"}, {"_id": 1, "title": 1}
+#     ).to_list(None)
 
-    result = []
+#     result = []
 
-    for field in data_fields:
-        data_es = None
-        try:
-            data_es = get_news_from_newsletter_id__(
-                news_letter_id=field["_id"],
-                page_size=10000,
-                start_date=start_of_day,
-                end_date=end_of_day,
-            )
-        except:
-            pass
+#     for field in data_fields:
+#         data_es = None
+#         try:
+#             data_es = get_news_from_newsletter_id__(
+#                 news_letter_id=field["_id"],
+#                 page_size=10000,
+#                 start_date=start_of_day,
+#                 end_date=end_of_day,
+#             )
+#         except:
+#             pass
 
-        if data_es:
-            result.append({"_id": field["title"], "value": len(data_es)})
+#         if data_es:
+#             result.append({"_id": field["title"], "value": len(data_es)})
 
-    if len(result) > 0:
-        result = sorted(result, key=lambda x: x["value"], reverse=True)
+#     if len(result) > 0:
+#         result = sorted(result, key=lambda x: x["value"], reverse=True)
 
-    result = result[0:5]
+#     result = result[0:5]
 
-    return result
+#     return result
 
 
 async def top_news_by_country(day_space: int = 7, top: int = 5):
@@ -428,70 +396,6 @@ async def total_users():
         result.append(document)
 
     return {"total": len(result)}
-
-
-"""Get top users in one month"""
-"""
-async def top_user_read():
-    now = datetime.now()
-    start_of_day = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    next_month = now.replace(day=28) + timedelta(days=4)
-    end_of_day = (next_month - timedelta(days=next_month.day)).replace(
-        hour=23, minute=59, second=59
-    )
-
-    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
-    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
-
-    pipeline = [
-        Where
-        {
-            "$match": {
-                "created_at": {
-                    "$gte": start_of_day,
-                    "$lt": end_of_day,
-                }
-            }
-        },
-        Flatten
-        {"$unwind": {"path": "$list_user_read"}},
-        Group with user is key
-        {
-            "$group": {
-                "_id": {"$toObjectId": "$list_user_read"},
-                "value": {"$sum": 1},
-            }
-        },
-        Join with users collection
-        {
-            "$lookup": {
-                "from": "users",
-                "let": {"id": "$_id"},
-                "pipeline": [
-                    {"$match": {"$expr": {"$eq": ["$_id", "$$id"]}}},
-                    {
-                        "$project": {
-                            "hashed_password": 0,
-                            "news_bookmarks": 0,
-                            "vital_list": 0,
-                        }
-                    },
-                ],
-                "as": "user",
-            }
-        },
-        {"$sort": {"value": -1}},
-        {"$limit": 5},
-    ]
-
-    data = news_client.aggregate(pipeline)
-
-    result = []
-    async for document in data:
-        result.append(document)
-
-    return result 
-"""
 
 
 async def top_user_read(limit=5):
@@ -781,84 +685,16 @@ async def news_read_by_user(day_space: int = 7, user_id=""):
 """ START ADMIN """
 
 
-# async def status_source_news(day_space: int = 7, start_date=None, end_date=None):
-#     now = datetime.now()
-#     now = now.today() - timedelta(days=day_space)
-#     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-#     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
-
-#     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
-#     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
-
-#     pipelineService = PipelineService()
-
-#     result = {
-#         "normal": 0,
-#         "error": 0,
-#         "unknown": 0,
-#     }
-#     data = pipelineService.get_pipelines(page_size=10000)
-
-#     if data[0]:
-#         for pipeline in data[0]:
-#             if pipeline.enabled and pipeline.actived:
-#                 id: str = pipeline._id
-#                 mini_pipeline = [
-#                     {
-#                         "$match": {
-#                             "created_at": {"$gte": start_of_day, "$lte": end_of_day},
-#                             "pipeline_id": id,
-#                             "log": "completed",
-#                         }
-#                     },
-#                 ]
-
-#                 dataLogs = await his_log_client.aggregate(mini_pipeline).to_list(None)
-
-#                 if len(dataLogs) > 0:
-#                     result["normal"] += 1
-#                 else:
-#                     result["error"] += 1
-#             else:
-#                 result["unknown"] += 1
-
-#     return result
-
-
-async def status_source_news():
-    result = {}
-    data = await err_source_statistic_client.find().to_list(None)
-    if data:
-        result = data[0]
-
-    return result
-
-
-async def status_error_source_news(
-    day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
-):
+async def status_source_news(day_space: int = 3):
     now = datetime.now()
-    now = now.today() - timedelta(days=day_space)
+    now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
 
-    if start_date:
-        start_of_day = datetime(
-            int(start_date.split("/")[2]),
-            int(start_date.split("/")[1]),
-            int(start_date.split("/")[0]),
-        )
-
-    if end_date:
-        end_date = datetime(
-            int(end_date.split("/")[2]),
-            int(end_date.split("/")[1]),
-            int(end_date.split("/")[0]),
-        )
-        end_of_day = end_date.replace(hour=23, minute=59, second=59)
-
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    print(start_of_day, end_of_day)
 
     list_hist = await his_log_client.aggregate(
         [
@@ -909,6 +745,73 @@ async def status_error_source_news(
 
             else:
                 result["unknown"] += 1
+
+    return result
+
+
+async def status_error_source_news(
+    day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
+):
+    now = datetime.now()
+    now = now.today() - timedelta(days=day_space)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+
+    if start_date:
+        start_of_day = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_of_day = end_date.replace(hour=23, minute=59, second=59)
+
+    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    list_hist = await his_log_client.aggregate(
+        [
+            {
+                "$match": {
+                    "created_at": {"$gte": start_of_day, "$lte": end_of_day},
+                }
+            },
+            {"$group": {"_id": {"pipeline_id": "$pipeline_id", "log": "$log"}}},
+            {
+                "$project": {
+                    "_id": 0,
+                    "pipeline_id": "$_id.pipeline_id",
+                    "log": "$_id.log",
+                }
+            },
+        ]
+    ).to_list(None)
+
+    list_pipelines = await pipelines_client.aggregate([]).to_list(None)
+
+    pipeline_err = {}
+    if list_pipelines:
+        for pipeline in list_pipelines:
+            if pipeline["enabled"]:
+                id = pipeline["_id"]
+
+                is_completed = False
+                is_unknown = True
+                for his in list_hist:
+                    if his["pipeline_id"] == str(id):
+                        is_unknown = False
+                        if his["log"] == "completed":
+                            is_completed = True
+                            break
+
+                if not is_completed and not is_unknown:
+                    pipeline_err[id] = 1
 
         pipeline_filter = [pl_id for pl_id in pipeline_err.keys()]
         offset = (page_index - 1) * page_size if page_index > 0 else 0
