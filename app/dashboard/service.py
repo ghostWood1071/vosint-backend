@@ -511,6 +511,14 @@ async def hot_events_today():
                 "let": {"id": {"$toObjectId": "$new_list"}},
                 "pipeline": [
                     {"$match": {"$expr": {"$eq": ["$_id", "$$id"]}}},
+                    {
+                        "$project": {
+                            "title_translated": 1,
+                            "source_language": 1,
+                            "source_url": 1,
+                            "_id": 1,
+                        }
+                    },
                 ],
                 "as": "new_list",
             }
