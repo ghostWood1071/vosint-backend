@@ -1232,7 +1232,7 @@ def get_result_job(
         "data:class_linhvuc",
         "data:class_chude",
         "created",
-        "created_at",
+        # "created_at",
         "id_social",
         "modified_at",
     ]

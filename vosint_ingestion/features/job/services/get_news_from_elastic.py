@@ -12,7 +12,7 @@ my_es = My_ElasticSearch()
 def get_news_category(_ids):
     data, _ = MongoRepository().get_many(
         collection_name="News",
-        order_spec=["pub_date"],
+        order_spec=["pub_date", "created_at"],
         filter_spec={"_id": {"$in": _ids}},
     )
 
@@ -37,7 +37,7 @@ def get_optimized(result):
         "data:class_linhvuc",
         "data:class_chude",
         "created",
-        "created_at",
+        # "created_at",
         "id_social",
         "modified_at",
     ]
