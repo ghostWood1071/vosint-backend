@@ -92,7 +92,7 @@ class Scheduler:
             self.__bg_scheduler.add_job(
                 id="top_news",
                 func=statistic_schedule.top_news_by_topic,
-                trigger=CronTrigger.from_crontab("* * * * *"),
+                trigger=CronTrigger.from_crontab("0,15,30,45 * * * *"),
             )
         except Exception as e:
             print("dashboard_error_source existed, no need to crete new one")

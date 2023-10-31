@@ -447,8 +447,9 @@ def get_news_from_newsletter_id__(
     return pipeline_dtos
 
 
-def top_news_by_topic(day_space=7):
+def top_news_by_topic():
     # Get total of news in seven days by topics (top 5) with key: data:class_linhvuc
+    day_space = 7
     now = datetime.now()
     now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -479,7 +480,7 @@ def top_news_by_topic(day_space=7):
             data.append({"_id": field["title"], "value": len(data_es)})
 
     if len(data) > 0:
-        data = sorted(result, key=lambda x: x["value"], reverse=True)
+        data = sorted(data, key=lambda x: x["value"], reverse=True)
 
     result = {}
 
