@@ -18,8 +18,8 @@ def get_news_category(_ids):
 
     result = []
     for item in data:
-        item["_id"] = str(item["_id"])
-        item["pub_date"] = str(item["pub_date"])
+        item["_id"] = str(item.get("_id"))
+        item["pub_date"] = str(item.get("pub_date"))
 
         result.append(item)
 
