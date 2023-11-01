@@ -102,6 +102,14 @@ def get_news_from_ttxvn(
             pass
         pipeline_dtos[i] = pipeline_dtos[i]["_source"].copy()
 
+    news_ids = [ObjectId(row["id"]) for row in pipeline_dtos]
+    raw_is_reads, _ = MongoRepository().get_many("ttxvn", {"_id": {"$in": news_ids}})
+    is_read = {}
+    for raw_is_read in raw_is_reads:
+        is_read[str(raw_is_read["_id"])] = raw_is_read.get("list_user_read")
+    for row in pipeline_dtos:
+        row["list_user_read"] = is_read.get(row["_id"])
+
     return JSONResponse(
         {
             "success": True,
@@ -113,6 +121,21 @@ def get_news_from_ttxvn(
             ],
         }
     )
+
+    # data = MongoRepository().get_one(
+    #     "ttxvn", {"_id": ObjectId("6541e5b00aae56bc757b8109")}
+    # )
+    # data["_id"] = str(data["_id"])
+    # data["PublishDate"] = str(data["PublishDate"])
+    # data["Created"] = str(data["Created"])
+
+    # return JSONResponse(
+    #     {
+    #         "success": True,
+    #         "total_record": len(pipeline_dtos),
+    #         "result": [data],
+    #     }
+    # )
 
 
 @router.post("/api/get_news_from_elt")

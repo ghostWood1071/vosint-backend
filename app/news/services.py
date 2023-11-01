@@ -412,3 +412,35 @@ async def statistics_sentiments(filter_spec, params):
     }
 
     return {"total_records": total_docs, "total_sentiments": total_sentiments}
+
+
+async def count_ttxvn(filter_spec, params):
+    total_docs = news_es.count_search_main_ttxvn(
+        index_name="vosint_ttxvn",
+        query=params["text_search"],
+        gte=params["start_date"] or None,
+        lte=params["end_date"] or None,
+        # lang=params["language_source"],
+        # sentiment=params["sentiment"],
+    )
+
+    return {"total_records": total_docs}
+
+
+def read_ttxvn(news_ids: List[str], user_id):
+    news_ids_list = [ObjectId(news_id) for news_id in news_ids]
+    filter_spec = {
+        "_id": {"$in": news_ids_list},
+        "list_user_read": {"$not": {"$all": [user_id]}},
+    }
+    update_command = {"$push": {"list_user_read": user_id}}
+    collection = "ttxvn"
+    return MongoRepository().update_many(collection, filter_spec, update_command)
+
+
+def unread_ttxvn(news_ids: List[str], user_id):
+    news_ids_list = [ObjectId(news_id) for news_id in news_ids]
+    filter_spec = {"_id": {"$in": news_ids_list}}
+    update_command = {"$pull": {"list_user_read": {"$in": [user_id]}}}
+    collection = "ttxvn"
+    return MongoRepository().update_many(collection, filter_spec, update_command)
