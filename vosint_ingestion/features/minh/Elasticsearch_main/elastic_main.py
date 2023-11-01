@@ -645,6 +645,7 @@ class My_ElasticSearch:
             },
             "sort": [{"PublishDate": {"order": "desc"}}],
             "size": size,
+            "track_total_hits": True,
         }
         if list_source_name != None:
             _id_query_source_name = " OR ".join(list_source_name)
@@ -689,6 +690,46 @@ class My_ElasticSearch:
             return result
         else:
             return result[:k]
+
+    def count_search_main_ttxvn(
+        self,
+        index_name,
+        query="*",
+        gte=None,
+        lte=None,
+        size=100,
+        text_search=None,
+    ):
+        if query is None or query == "":
+            query = "*"
+        _query_string = self.query_process(query)
+        # print(_query_string)
+        _fields = ["Title^2", "content"]
+        if gte is None:
+            _gte = "1990-03-28T00:00:00Z"
+        else:
+            _gte = gte
+        if lte is None:
+            _lte = "2090-03-28T00:00:00Z"
+        else:
+            _lte = lte
+
+        simple_filter = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {"query_string": {"query": _query_string, "fields": _fields}}
+                    ],
+                    "filter": {"range": {"PublishDate": {"gte": _gte, "lte": _lte}}},
+                }
+            },
+            "sort": [{"PublishDate": {"order": "desc"}}],
+            "size": size,
+            "track_total_hits": True,
+        }
+
+        searched = self.es.search(index=index_name, body=simple_filter)
+        return searched["hits"]["total"]["value"]
 
     def query(self, index_name="", query=""):
         searched = self.es.search(index=index_name, body=query)
