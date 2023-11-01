@@ -18,6 +18,9 @@ from .services import (
     add_news_to_object,
     get_timeline,
     statistics_sentiments,
+    count_ttxvn,
+    read_ttxvn,
+    unread_ttxvn,
 )
 from .utils import news_to_json
 from fastapi import Response
@@ -222,6 +225,7 @@ async def get_statistics_sentiments(
                 int(end_date.split("/")[0]),
             )
 
+            end_date = end_date.replace(hour=23, minute=59, second=59)
             query["$and"].append({"pub_date": {"$gte": start_date, "$lte": end_date}})
 
         elif start_date != "":
@@ -237,6 +241,7 @@ async def get_statistics_sentiments(
                 int(end_date.split("/")[1]),
                 int(end_date.split("/")[0]),
             )
+            end_date = end_date.replace(hour=23, minute=59, second=59)
             query["$and"].append({"pub_date": {"$lte": end_date}})
 
         if sac_thai != "" and sac_thai != "all":
@@ -358,3 +363,84 @@ async def get_statistics_sentiments(
             "end_date": end_date,
         },
     )
+
+
+@router.get("/get-count-ttxvn")
+async def get_count_ttxvn(
+    text_search="",
+    start_date: str = "",
+    end_date: str = "",
+    authorize: AuthJWT = Depends(),
+):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    try:
+        query = {}
+        query["$and"] = []
+
+        if start_date != "" and end_date != "":
+            start_date = datetime(
+                int(start_date.split("/")[2]),
+                int(start_date.split("/")[1]),
+                int(start_date.split("/")[0]),
+            )
+            end_date = datetime(
+                int(end_date.split("/")[2]),
+                int(end_date.split("/")[1]),
+                int(end_date.split("/")[0]),
+            )
+            end_date = end_date.replace(hour=23, minute=59, second=59)
+
+            query["$and"].append(
+                {"PublishDate": {"$gte": start_date, "$lte": end_date}}
+            )
+        elif start_date != "":
+            start_date = datetime(
+                int(start_date.split("/")[2]),
+                int(start_date.split("/")[1]),
+                int(start_date.split("/")[0]),
+            )
+            query["$and"].append({"PublishDate": {"$gte": start_date}})
+        elif end_date != "":
+            end_date = datetime(
+                int(end_date.split("/")[2]),
+                int(end_date.split("/")[1]),
+                int(end_date.split("/")[0]),
+            )
+            end_date = end_date.replace(hour=23, minute=59, second=59)
+
+            query["$and"].append({"PublishDate": {"$lte": end_date}})
+
+    except:
+        query = {}
+    if str(query) == "{'$and': []}":
+        query = {}
+
+    return await count_ttxvn(
+        query,
+        params={
+            "text_search": text_search,
+            "start_date": start_date,
+            "end_date": end_date,
+        },
+    )
+
+
+@router.post("/ttxvn/read")
+def read_news_ttxvn(news_ids: List[str], authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    result = read_ttxvn(news_ids, user_id)
+    return result
+
+
+@router.post("/ttxvn/unread")
+def unread_news_ttxvn(
+    news_ids: List[str],
+    authorize: AuthJWT = Depends(),
+):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    print(news_ids, user_id)
+    result = unread_ttxvn(news_ids, user_id)
+    return result
