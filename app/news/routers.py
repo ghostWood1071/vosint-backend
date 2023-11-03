@@ -79,9 +79,9 @@ async def get_news_detail(id: str, authorize: AuthJWT = Depends()):
         ObjectId(id),
     )
 
-    if news["_id"] in user["vital_list"]:
+    if "vital_list" in user and news["_id"] in user["vital_list"]:
         news["is_bell"] = True
-    if news["_id"] in user["news_bookmarks"]:
+    if "news_bookmarks" in user and news["_id"] in user["news_bookmarks"]:
         news["is_star"] = True
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=news_to_json(news))
