@@ -1243,7 +1243,7 @@ def get_graph_data(object_ids, start_date, end_date):
     return result
 
 
-def get_events_data_by_edge(objects, start_date, end_date):
+async def get_events_data_by_edge(objects, start_date, end_date):
     result = {}
     query = {
         "$and": [
@@ -1264,6 +1264,21 @@ def get_events_data_by_edge(objects, start_date, end_date):
         row["date_created"] = str(row["date_created"])
         if result.get(row["sentiment"]) == None:
             result[row["sentiment"]] = []
+
+        if "new_list" in row:
+            # new_list = find_news_by_filter(
+            #     {"_id": {"$in": convert_map_str_to_object_id(row["new_list"])}},
+            #     {"_id": 1, "data:title": 1, "data:url": 1},
+            # )
+            new_list = await client2.find(
+                {"_id": {"$in": convert_map_str_to_object_id(row["new_list"])}},
+                projection={"_id": 1, "data:title": 1, "data:url": 1},
+            ).to_list(None)
+            for item in new_list:
+                item["_id"] = str(item["_id"])
+
+            row["new_list"] = new_list
+
         result[row["sentiment"]].append(row)
 
     return result
