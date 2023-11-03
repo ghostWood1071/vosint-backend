@@ -160,10 +160,12 @@ async def news_seven_nearest(day_space: int = 7):
     now = datetime.now()
     now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+    end_of_day = start_of_day + timedelta(days=day_space, seconds=-1)
 
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    print(start_of_day, end_of_day)
 
     pipeline = [
         {
@@ -201,43 +203,45 @@ async def top_news_by_topic():
         return []
 
 
-# async def top_news_by_topic(day_space=7):
-#     # Get total of news in seven days by topics (top 5) with key: data:class_linhvuc
-#     now = datetime.now()
-#     now = now.today() - timedelta(days=day_space - 1)
-#     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-#     end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+"""
+async def top_news_by_topic(day_space=7):
+    # Get total of news in seven days by topics (top 5) with key: data:class_linhvuc
+    now = datetime.now()
+    now = now.today() - timedelta(days=day_space - 1)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
 
-#     start_of_day = start_of_day.strftime("%d/%m/%Y")
-#     end_of_day = end_of_day.strftime("%d/%m/%Y")
+    start_of_day = start_of_day.strftime("%d/%m/%Y")
+    end_of_day = end_of_day.strftime("%d/%m/%Y")
 
-#     data_fields = await newsletter_client.find(
-#         {"tag": "linh_vuc"}, {"_id": 1, "title": 1}
-#     ).to_list(None)
+    data_fields = await newsletter_client.find(
+        {"tag": "linh_vuc"}, {"_id": 1, "title": 1}
+    ).to_list(None)
 
-#     result = []
+    result = []
 
-#     for field in data_fields:
-#         data_es = None
-#         try:
-#             data_es = get_news_from_newsletter_id__(
-#                 news_letter_id=field["_id"],
-#                 page_size=10000,
-#                 start_date=start_of_day,
-#                 end_date=end_of_day,
-#             )
-#         except:
-#             pass
+    for field in data_fields:
+        data_es = None
+        try:
+            data_es = get_news_from_newsletter_id__(
+                news_letter_id=field["_id"],
+                page_size=10000,
+                start_date=start_of_day,
+                end_date=end_of_day,
+            )
+        except:
+            pass
 
-#         if data_es:
-#             result.append({"_id": field["title"], "value": len(data_es)})
+        if data_es:
+            result.append({"_id": field["title"], "value": len(data_es)})
 
-#     if len(result) > 0:
-#         result = sorted(result, key=lambda x: x["value"], reverse=True)
+    if len(result) > 0:
+        result = sorted(result, key=lambda x: x["value"], reverse=True)
 
-#     result = result[0:5]
+    result = result[0:5]
 
-#     return result
+    return result
+"""
 
 
 async def top_news_by_country(day_space: int = 7, top: int = 5):
@@ -285,7 +289,7 @@ async def top_country_by_entities(
     now = datetime.now()
     now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+    end_of_day = start_of_day + timedelta(days=day_space, seconds=-1)
     # end_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     # start_of_day = end_of_day - timedelta(days=1000 + 1, seconds=-1)
 
@@ -320,7 +324,7 @@ async def top_country_by_entities(
             "$match": {
                 "date_created": {
                     "$gte": start_of_day,
-                    "$lt": end_of_day,
+                    "$lte": end_of_day,
                 }
             }
         },
@@ -377,12 +381,16 @@ async def top_country_by_entities(
     # Sort the dictionary by values in ascending order
     sorted_data = dict(sorted(result.items(), key=lambda item: item[1], reverse=True))
 
-    result = []
+    data_result = []
+    total = 0
     # Display the sorted dictionary
     for country, value in sorted_data.items():
-        result.append({"_id": country, "country": country, "value": value})
+        total += value
+        data_result.append({"_id": country, "country": country, "value": value})
 
-    result = result[0:top]
+    data_result = data_result[0:top]
+
+    result = {"data": data_result, "total": total}
 
     return result
 
@@ -697,12 +705,10 @@ async def status_source_news(day_space: int = 3):
     now = datetime.now()
     now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+    end_of_day = start_of_day + timedelta(days=day_space, seconds=-1)
 
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
-
-    print(start_of_day, end_of_day)
 
     list_hist = await his_log_client.aggregate(
         [
@@ -761,9 +767,9 @@ async def status_error_source_news(
     day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
 ):
     now = datetime.now()
-    now = now.today() - timedelta(days=day_space)
+    now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+    end_of_day = start_of_day + timedelta(days=day_space, seconds=-1)
 
     if start_date:
         start_of_day = datetime(
@@ -782,6 +788,8 @@ async def status_error_source_news(
 
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+
+    print(start_of_day, end_of_day)
 
     list_hist = await his_log_client.aggregate(
         [
@@ -835,9 +843,9 @@ async def status_completed_source_news(
     day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
 ):
     now = datetime.now()
-    now = now.today() - timedelta(days=day_space)
+    now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+    end_of_day = start_of_day + timedelta(days=day_space, seconds=-1)
 
     if start_date:
         start_of_day = datetime(
@@ -902,9 +910,9 @@ async def status_unknown_source_news(
     day_space: int = 7, start_date=None, end_date=None, page_index=1, page_size=10
 ):
     now = datetime.now()
-    now = now.today() - timedelta(days=day_space)
+    now = now.today() - timedelta(days=day_space - 1)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=day_space + 1, seconds=-1)
+    end_of_day = start_of_day + timedelta(days=day_space, seconds=-1)
 
     if start_date:
         start_of_day = datetime(
