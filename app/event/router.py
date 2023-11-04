@@ -516,7 +516,7 @@ def get_international_graph(
 
 
 @router.post("/get-events-by-edge")
-def get_events_by_edge(
+async def get_events_by_edge(
     objects: Dict[str, Any], start_date: str = "", end_date: str = ""
 ):
     # try:
@@ -541,5 +541,5 @@ def get_events_by_edge(
     #     )
     # except:
     #     pass
-    data = get_events_data_by_edge(objects, start_date, end_date)
+    data = await get_events_data_by_edge(objects, start_date, end_date)
     return JSONResponse(data, 200)
