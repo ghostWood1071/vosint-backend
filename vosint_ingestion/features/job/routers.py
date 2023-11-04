@@ -26,6 +26,8 @@ import asyncio
 import json
 import re
 
+ttxvn_client = get_collection_client("ttxvn")
+
 
 class Translate(BaseModel):
     lang: str
@@ -1480,7 +1482,7 @@ def search_news_from_object(
 
 
 @router.post("/api/get_table_ttxvn")
-def get_table_ttxvn(
+async def get_table_ttxvn(
     name,
     order=None,
     page_number=None,
@@ -1504,6 +1506,8 @@ def get_table_ttxvn(
             int(end_date.split("/")[0]),
         )
 
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+
         query["$and"].append({"PublishDate": {"$gte": start_date, "$lte": end_date}})
     elif start_date != "":
         start_date = datetime(
@@ -1518,6 +1522,8 @@ def get_table_ttxvn(
             int(end_date.split("/")[1]),
             int(end_date.split("/")[0]),
         )
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+
         query["$and"].append({"PublishDate": {"$lte": end_date}})
     if text_search != None and text_search != "":
         query["$and"].append({"Title": {"$regex": str(text_search), "$options": "i"}})
@@ -1536,13 +1542,47 @@ def get_table_ttxvn(
             )
     if query["$and"] == []:
         query = {}
+
     data = job_controller.get_result_job(
         name, order, page_number, page_size, filter=query
     )
+
     for row in data.get("result"):
         row["PublishDate"] = str(row.get("PublishDate"))
         row["Created"] = str(row.get("Created"))
+
     return JSONResponse(data)
+
+
+@router.get("/get-total-crawl")
+async def get_total_crawl():
+    current_date = datetime.now().strftime("%d/%m/%Y")
+    start_date = datetime(
+        int(current_date.split("/")[2]),
+        int(current_date.split("/")[1]),
+        int(current_date.split("/")[0]),
+    )
+
+    end_date = datetime(
+        int(current_date.split("/")[2]),
+        int(current_date.split("/")[1]),
+        int(current_date.split("/")[0]),
+    )
+
+    end_date = end_date.replace(hour=23, minute=59, second=59)
+
+    filter_spec = {
+        "$and": [
+            {"PublishDate": {"$gte": start_date, "$lte": end_date}},
+            {"content": {"$exists": True}},
+            {"content": {"$ne": ""}},
+            {"content": {"$ne": None}},
+        ]
+    }
+    total = 0
+
+    total = await ttxvn_client.count_documents(filter_spec)
+    return total
 
 
 @router.post("/api/translate")
