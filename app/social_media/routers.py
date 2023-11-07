@@ -32,6 +32,7 @@ from .services import (
     active_member_priority,
     statistic_sentiment,
     post_detail,
+    exec_posts,
 )
 from word_exporter import export_social_word
 from datetime import datetime
@@ -40,6 +41,30 @@ client = get_collection_client("social_media")
 client2 = get_collection_client("users")
 
 router = APIRouter()
+
+
+# post
+@router.get("/get-posts")
+async def get_posts(
+    collection_name,
+    order=None,
+    page_number=None,
+    page_size=None,
+    text_search="",
+    start_date="",
+    end_date="",
+    sac_thai="",
+):
+    return await exec_posts(
+        collection_name,
+        order,
+        page_number,
+        page_size,
+        text_search,
+        start_date,
+        end_date,
+        sac_thai,
+    )
 
 
 # social
