@@ -15,7 +15,6 @@ from .foraction import ForAction
 from .scrollaction import ScrollAction
 from .hoveraction import HoverAction
 from .facebook import FacebookAction
-
 def get_action_class(name: str):
     action_cls = (
         GotoAction
