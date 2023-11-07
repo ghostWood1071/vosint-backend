@@ -524,6 +524,14 @@ async def posts_from_priority(
         {"$unwind": "$post_list"},
         {"$sort": {"post_list.created_at": -1}},
         {"$group": {"_id": "$_id", "post_list": {"$push": "$post_list"}}},
+        {
+            "$lookup": {
+                "from": "social_media",
+                "localField": "_id",
+                "foreignField": "_id",
+                "as": "infos",
+            }
+        },
     ]
 
     data = client.aggregate(pipeline)
@@ -892,3 +900,92 @@ async def post_detail(_id: str):
             result = post
 
     return result
+
+
+async def exec_posts(
+    collection_name,
+    order=None,
+    page_number=None,
+    page_size=None,
+    text_search="",
+    start_date="",
+    end_date="",
+    sac_thai="",
+):
+    filter_spec = {}
+    skip = int(page_size) * (int(page_number) - 1)
+
+    # filter by text_search
+    if text_search != "":
+        filter_spec.update(
+            {
+                "$or": [
+                    {"header": {"$regex": text_search, "$options": "i"}},
+                    {"content": {"$regex": text_search, "$options": "i"}},
+                ]
+            }
+        )
+
+    # filter by start_date, end_date, text_search
+    if start_date:
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        end_date = str(end_date).replace("-", "/")
+
+    if start_date != "" and end_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
+
+    elif start_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date}})
+
+    elif end_date != "":
+        filter_spec.update({"created_at": {"$lte": end_date}})
+
+    if sac_thai != "" and sac_thai != "all":
+        filter_spec.update({"sentiment": sac_thai})
+
+    pipeline = [
+        {
+            "$facet": {
+                "data": [
+                    {"$match": filter_spec},
+                    {
+                        "$lookup": {
+                            "from": "social_media",
+                            "localField": "id_social",
+                            "foreignField": "_id",
+                            "as": "infos",
+                        }
+                    },
+                    {"$sort": {"created_at": -1}},
+                    {"$skip": skip},
+                    {
+                        "$limit": int(page_size),
+                    },
+                ],
+                "total": [
+                    {"$match": filter_spec},
+                    {"$count": "count"},
+                ],
+            }
+        }
+    ]
+    collection_client = get_collection_client(collection_name)
+
+    result = await collection_client.aggregate(pipeline).to_list(None)
+
+    data = result[0]["data"] if result[0]["data"] else []
+    total_record = result[0]["total"][0]["count"] if result[0]["total"] else 0
+    return {"result": data, "total_record": total_record}
