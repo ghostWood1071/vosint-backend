@@ -17,6 +17,14 @@ class TwitterAction(BaseAction):
                     val_type="str",
                     default_val="",
                     validators=["required_"],
+                ),
+                ParamInfo(
+                    name="type",
+                    display_name="Đối tượng",
+                    val_type="select",
+                    default_val="",
+                    options = ['account'],
+                    validators=["required_"],
                 )
             ],
             z_index=15,
