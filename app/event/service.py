@@ -185,6 +185,7 @@ projection_event_system = {
     "chu_the": True,
     "khach_the": True,
     "sentiment": True,
+    "new_list": True,
 }
 
 
@@ -232,6 +233,20 @@ async def search_chu_khach(
     async for item in client3.find(query, projection_event_system).sort(
         "date_created", -1
     ).skip(offset).limit(limit):
+        # print(item)
+        current_source = []
+        check_key = "new_list"
+        condition = (
+            check_key in item
+            and isinstance(item["new_list"], list)
+            and len(item["new_list"]) >= 1
+        )
+        if condition:
+            for _id in item["new_list"]:
+                async for news in client2.find({"_id": ObjectId(_id)}, projection):
+                    current_news = json(news)
+                    current_source.append(current_news)
+
         # ll = []
         # ls_rp = []
         # for Item in item["new_list"]:
@@ -246,6 +261,7 @@ async def search_chu_khach(
         #         ls_rp.append(reports)
         # item["new_list"] = ll
         # item["list_report"] = ls_rp
+        item["new_list"] = current_source
         item["date_created"] = str(item["date_created"])
         # item["total_new"] = len(item["new_list"])
         item = json(item)

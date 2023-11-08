@@ -506,32 +506,36 @@ async def posts_from_priority(
         },
         {
             "$project": {
-                "post_list": {
-                    "$slice": [
-                        {
-                            "$concatArrays": [
-                                "$facebook_list",
-                                "$twitter_list",
-                                "$tiktok_list",
-                            ],
-                        },
-                        int(skip),
-                        int(page_size),
+                "post_list":
+                # "$slice": [
+                {
+                    "$concatArrays": [
+                        "$facebook_list",
+                        "$twitter_list",
+                        "$tiktok_list",
                     ],
                 },
+                # int(skip),
+                # int(page_size),
+                # ],
             },
         },
         {"$unwind": "$post_list"},
         {"$sort": {"post_list.created_at": -1}},
         {"$group": {"_id": "$_id", "post_list": {"$push": "$post_list"}}},
         {
-            "$lookup": {
-                "from": "social_media",
-                "localField": "_id",
-                "foreignField": "_id",
-                "as": "infos",
+            "$project": {
+                "post_list": {"$slice": ["$post_list", int(skip), int(page_size)]}
             }
         },
+        # {
+        #     "$lookup": {
+        #         "from": "social_media",
+        #         "localField": "_id",
+        #         "foreignField": "_id",
+        #         "as": "infos",
+        #     }
+        # },
     ]
 
     data = client.aggregate(pipeline)
