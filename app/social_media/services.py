@@ -15,6 +15,13 @@ client2 = get_collection_client("socials")
 facebook_client = get_collection_client("facebook")
 twitter_client = get_collection_client("twitter")
 tiktok_client = get_collection_client("tiktok")
+priority_client = get_collection_client("priority")
+
+
+async def exec_create_priority(priority):
+    created_data = await priority_client.insert_one(priority)
+
+    return created_data.inserted_id
 
 
 async def create_social_media(user):
@@ -39,7 +46,17 @@ async def create_social_media(user):
             }
         },
     )
-    return await client.find_one({"id": created_user.inserted_id})
+    await client.find_one({"id": created_user.inserted_id})
+    return created_user.inserted_id
+
+
+async def exec_delete_priority(id: str):
+    _id = str(id)
+
+    priority_per = await priority_client.find_one({"_id": ObjectId(id)})
+    if priority_per:
+        await priority_client.delete_one({"_id": ObjectId(id)})
+        return True
 
 
 async def delete_user_by_id(id: str):
@@ -371,6 +388,15 @@ async def statistic_interaction(name: str, start_date: str, end_date: str):
                 },
                 "total_like": {"$sum": {"$toInt": "$like"}},
                 "total_comment": {"$sum": {"$toInt": "$comments"}},
+                # "total_comment": {
+                #     "$sum": {
+                #         "$cond": {
+                #             "if": {"$eq": [name, "facebook"]},
+                #             "then": {"$toInt": "$comments"},
+                #             "else": {"$toInt": "$comment"},
+                #         }
+                #     }
+                # },
                 "total_share": {"$sum": {"$toInt": "$share"}},
             }
         },
@@ -580,6 +606,8 @@ async def statistic_interaction_from_priority(
     filter_spec = {}
     if start_date != "" or end_date != "":
         filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
+
+    filter_spec.update({"$expr": {"$eq": ["$id_social", {"$toObjectId": id_social}]}})
 
     pipeline = [
         {"$match": {"_id": ObjectId(id_social)}},
@@ -903,6 +931,19 @@ async def post_detail(_id: str):
         if post is not None:
             result = post
 
+    return result
+
+
+async def exec_get_priorities(text_search: str = ""):
+    filter_spec = {}
+    if text_search != "" or text_search != None:
+        filter_spec.update({"priority_name": {"$regex": text_search, "$options": "i"}})
+
+    pipeline = [{"$match": filter_spec}]
+
+    collection_client = get_collection_client("priority")
+
+    result = await collection_client.aggregate(pipeline).to_list(None)
     return result
 
 
