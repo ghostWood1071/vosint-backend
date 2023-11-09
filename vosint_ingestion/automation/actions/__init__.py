@@ -16,3 +16,5 @@ from .feedaction import FeedAction
 from .facebook import FacebookAction
 from .ttxvnaction import TTXVNAction
 from .twitter import TwitterAction
+from .tiktok import TiktokAction
+from .typingaction import TypingAction
