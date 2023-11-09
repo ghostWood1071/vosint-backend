@@ -496,8 +496,10 @@ async def top_user_read(limit=5):
 async def hot_events_today():
     """Get news of current day"""
     now = datetime.now()
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=1, seconds=-1)
+    start_of_day = (now - timedelta(days=6, seconds=-1)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=0)
     # end_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     # start_of_day = end_of_day - timedelta(days=1000, seconds=-1)
 
