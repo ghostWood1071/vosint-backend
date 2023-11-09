@@ -744,20 +744,21 @@ async def status_source_news(day_space: int = 3):
                 id = pipeline["_id"]
 
                 is_completed = False
-                is_unknown = True
+                # is_unknown = True
                 for his in list_hist:
                     if his["pipeline_id"] == str(id):
-                        is_unknown = False
+                        # is_unknown = False
                         if his["log"] == "completed":
                             is_completed = True
                             result["normal"] += 1
                             break
 
-                if not is_completed and not is_unknown:
+                # if not is_completed and not is_unknown:
+                if not is_completed:
                     result["error"] += 1
                     pipeline_err[id] = 1
-                elif is_unknown:
-                    result["unknown"] += 1
+                # elif is_unknown:
+                #     result["unknown"] += 1
 
             else:
                 result["unknown"] += 1
@@ -820,15 +821,16 @@ async def status_error_source_news(
                 id = pipeline["_id"]
 
                 is_completed = False
-                is_unknown = True
+                # is_unknown = True
                 for his in list_hist:
                     if his["pipeline_id"] == str(id):
-                        is_unknown = False
+                        # is_unknown = False
                         if his["log"] == "completed":
                             is_completed = True
                             break
 
-                if not is_completed and not is_unknown:
+                # if not is_completed and not is_unknown:
+                if not is_completed:
                     pipeline_err[id] = 1
 
         pipeline_filter = [pl_id for pl_id in pipeline_err.keys()]
@@ -934,38 +936,38 @@ async def status_unknown_source_news(
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
-    list_hist = await his_log_client.aggregate(
-        [
-            {
-                "$match": {
-                    "created_at": {"$gte": start_of_day, "$lte": end_of_day},
-                }
-            },
-            {"$group": {"_id": {"pipeline_id": "$pipeline_id", "log": "$log"}}},
-            {
-                "$project": {
-                    "_id": 0,
-                    "pipeline_id": "$_id.pipeline_id",
-                    "log": "$_id.log",
-                }
-            },
-        ]
-    ).to_list(None)
+    # list_hist = await his_log_client.aggregate(
+    #     [
+    #         {
+    #             "$match": {
+    #                 "created_at": {"$gte": start_of_day, "$lte": end_of_day},
+    #             }
+    #         },
+    #         {"$group": {"_id": {"pipeline_id": "$pipeline_id", "log": "$log"}}},
+    #         {
+    #             "$project": {
+    #                 "_id": 0,
+    #                 "pipeline_id": "$_id.pipeline_id",
+    #                 "log": "$_id.log",
+    #             }
+    #         },
+    #     ]
+    # ).to_list(None)
 
     list_pipelines = await pipelines_client.aggregate([]).to_list(None)
 
     pipeline_unknown = {}
     for pipeline in list_pipelines:
         id = pipeline["_id"]
-        if pipeline["enabled"]:
-            is_unknown = True
-            for his in list_hist:
-                if his["pipeline_id"] == str(id):
-                    is_unknown = False
-                    break
-            if is_unknown:
-                pipeline_unknown[id] = 1
-        else:
+        # if pipeline["enabled"]:
+            # is_unknown = True
+            # # for his in list_hist:
+            # #     if his["pipeline_id"] == str(id):
+            # #         is_unknown = False
+            # #         break
+            # if is_unknown:
+            #     pipeline_unknown[id] = 1
+        if not pipeline["enabled"]:
             pipeline_unknown[id] = 1
 
     pipeline_filter = [pl_id for pl_id in pipeline_unknown.keys()]

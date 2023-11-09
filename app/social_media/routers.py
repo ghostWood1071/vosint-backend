@@ -7,7 +7,13 @@ from fastapi_jwt_auth import AuthJWT
 from app.user.services import find_user_by_id
 from db.init_db import get_collection_client
 
-from .models import AddFollowed, CreateSocialModel, UpdateSocial, UpdateStatus
+from .models import (
+    AddFollowed,
+    CreateSocialModel,
+    CreatePriorityModel,
+    UpdateSocial,
+    UpdateStatus,
+)
 from .services import (
     count_object,
     create_social_media,
@@ -33,6 +39,9 @@ from .services import (
     statistic_sentiment,
     post_detail,
     exec_posts,
+    exec_create_priority,
+    exec_get_priorities,
+    exec_delete_priority,
 )
 from word_exporter import export_social_word
 from datetime import datetime
@@ -41,6 +50,11 @@ client = get_collection_client("social_media")
 client2 = get_collection_client("users")
 
 router = APIRouter()
+
+
+@router.get("/get-priorities")
+async def get_priorities(text_search: str = ""):
+    return await exec_get_priorities(text_search)
 
 
 # post
@@ -148,6 +162,12 @@ async def get_statistic_sentiment(
     return await statistic_sentiment(name, start_date, end_date)
 
 
+@router.post("/create-priority")
+async def create_priority(body: CreatePriorityModel):
+    data_dict = body.dict()
+    return await exec_create_priority(data_dict)
+
+
 @router.post("")
 async def add_social(
     body: CreateSocialModel,
@@ -170,6 +190,7 @@ async def add_social(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"message": "Social media account created successfully."},
+        # content={"result": str(result)},
     )
 
 
@@ -214,6 +235,14 @@ async def get_social_by_medias(
 async def delete_user_social_media(id: str):
     deleted_social_media = await delete_user_by_id(id)
     if deleted_social_media:
+        return status.HTTP_200_OK
+    return status.HTTP_403_FORBIDDEN
+
+
+@router.delete("/delete-priority/{id}")
+async def delete_priority(id: str):
+    deleted_user = await exec_delete_priority(id)
+    if deleted_user:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
 
