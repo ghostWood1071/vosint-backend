@@ -14,6 +14,14 @@ class LoginAction(BaseAction):
             readme="Login",
             param_infos=[
                 ParamInfo(
+                    name="cookies",
+                    display_name="save cookies",
+                    val_type="select",  # val_type='str',
+                    default_val="False",
+                    options=["True", "False"],
+                    validators=["required"],
+                ),
+                ParamInfo(
                     name="by",
                     display_name="Select by",
                     val_type="select",  # val_type='str',
