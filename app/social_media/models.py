@@ -9,6 +9,14 @@ class AddFollowed(BaseModel):
     username: str
 
 
+class CreatePriorityModel(BaseModel):
+    priority_name: str = Field(...)
+    avatar_url: str = Field(...)
+    facebook: Optional[str] = ""
+    twitter: Optional[str] = ""
+    tiktok: Optional[str] = ""
+
+
 class CreateSocialModel(BaseModel):
     social_name: str = Field(...)
     social_media: str = Field(...)

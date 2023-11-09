@@ -6,6 +6,7 @@ import json
 from decouple import Config, RepositoryEnv
 import sys
 
+
 script_path = os.path.abspath(sys.argv[0])
 script_directory = os.path.dirname(script_path)
 
