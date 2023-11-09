@@ -21,7 +21,7 @@ class TypingAction(BaseAction):
                     validators=["required"],
                 )
             ],
-            z_index=9,
+            z_index=18,
         )
 
     def exec_func(self, input_val=None, **kwargs):
