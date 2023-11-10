@@ -11,6 +11,7 @@ from .models import (
     AddFollowed,
     CreateSocialModel,
     CreatePriorityModel,
+    UpdatePriorityModel,
     UpdateSocial,
     UpdateStatus,
 )
@@ -40,6 +41,7 @@ from .services import (
     post_detail,
     exec_posts,
     exec_create_priority,
+    exec_update_priority,
     exec_get_priorities,
     exec_delete_priority,
 )
@@ -301,6 +303,18 @@ async def get_social_types(
             "data": results,
         },
     )
+
+
+@router.put("/update-priority")
+async def update_priority(data: UpdatePriorityModel = Body(...)):
+    data = {k: v for k, v in data.dict().items() if v is not None}
+    updated_item = await exec_update_priority(data)
+    if updated_item:
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content="Successful edit",
+        )
+    return status.HTTP_403_FORBIDDEN
 
 
 @router.put("/edit_social")

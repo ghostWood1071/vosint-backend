@@ -1573,7 +1573,8 @@ async def get_total_crawl():
 
     filter_spec = {
         "$and": [
-            {"PublishDate": {"$gte": start_date, "$lte": end_date}},
+            {"PublishDate": {"$gte": start_date}},
+            {"PublishDate": {"$lte": end_date}},
             {"content": {"$exists": True}},
             {"content": {"$ne": ""}},
             {"content": {"$ne": None}},
