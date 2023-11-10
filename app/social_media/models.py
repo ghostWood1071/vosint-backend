@@ -17,6 +17,15 @@ class CreatePriorityModel(BaseModel):
     tiktok: Optional[str] = ""
 
 
+class UpdatePriorityModel(BaseModel):
+    id: str
+    priority_name: str = Field(...)
+    avatar_url: str = Field(...)
+    facebook: Optional[str] = ""
+    twitter: Optional[str] = ""
+    tiktok: Optional[str] = ""
+
+
 class CreateSocialModel(BaseModel):
     social_name: str = Field(...)
     social_media: str = Field(...)
