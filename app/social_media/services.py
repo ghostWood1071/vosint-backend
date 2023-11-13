@@ -3,7 +3,12 @@ from typing import Optional
 from bson import ObjectId
 from fastapi import status
 
-from app.social_media.models import AddFollowed, UpdateSocial, UpdateStatus
+from app.social_media.models import (
+    AddFollowed,
+    UpdateSocial,
+    UpdateStatus,
+    UpdatePriorityModel,
+)
 from app.social_media.utils import object_to_json
 from db.init_db import get_collection_client
 from vosint_ingestion.models import MongoRepository
@@ -86,6 +91,18 @@ async def delete_user_by_id(id: str):
     if user:
         await client.delete_one({"_id": ObjectId(id)})
         return True
+
+
+async def exec_update_priority(data: UpdatePriorityModel):
+    _id = data["id"]
+
+    data_copy = data.copy()
+    data_copy.pop("id")
+
+    return await priority_client.update_one(
+        {"_id": ObjectId(_id)},
+        {"$set": data_copy},
+    )
 
 
 async def update_social_account(data: UpdateSocial):

@@ -12,8 +12,16 @@ class TiktokAction(BaseAction):
             readme="tiktok",
             param_infos=[
                 ParamInfo(
-                    name="link_person",
-                    display_name="cookie",
+                    name="type",
+                    display_name="Tài khoản lấy tin",
+                    val_type="select",
+                    default_val="",
+                    options=['account'],
+                    validators=["required_"],
+                ),
+                ParamInfo(
+                    name="cookies",
+                    display_name="Cookies",
                     val_type="str",
                     default_val="",
                     validators=["required_"],
