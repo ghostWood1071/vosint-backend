@@ -5,14 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: FastAPI",
+            "name": "Pipeline Debug",
             "type": "python",
             "request": "launch",
-            "module": "uvicorn",
-            "args": [
-                "main:app"
-            ],
-            "jinja": true,
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }

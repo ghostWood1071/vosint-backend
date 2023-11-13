@@ -96,3 +96,13 @@ class Scheduler:
             )
         except Exception as e:
             print("dashboard_error_source existed, no need to crete new one")
+
+    def add_job_clear_activity(self):
+        try:
+            self.__bg_scheduler.add_job(
+                id="clear_slave_activity",
+                func=statistic_schedule.clear_slave_activity,
+                trigger=CronTrigger.from_crontab("0 * * * *"),
+            )
+        except Exception as e:
+            print("clear_slave_activity existed, no need to create one")

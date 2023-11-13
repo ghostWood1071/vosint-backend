@@ -1,15 +1,12 @@
 from datetime import timedelta
 from bson.objectid import ObjectId
 from datetime import datetime
-
-# from models import MongoRepository
-# from models import MongoRepository
 from vosint_ingestion.models.mongorepository import MongoRepository
 
-# from vosint_ingestion.features.job import get_news_from_newsletter_id__
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
+import pytz
 
 
 def status_source_news(day_space: int = 3, start_date=None, end_date=None):
@@ -494,3 +491,15 @@ def top_news_by_topic():
         MongoRepository().update_many(
             "top_statistic", {"_id": in_db[0][0]["_id"]}, {"$set": result}
         )
+
+
+def clear_slave_activity():
+    try:
+        past = datetime.now() - timedelta(hours=2)
+        tz = pytz.timezone("Asia/Ho_Chi_Minh")
+        time_pivot = past.astimezone(tz).strftime("%Y/%m/%d %H:%M:%S")
+        MongoRepository().delete_many(
+            "slave_activity", {"created_at": {"$lte": time_pivot}}
+        )
+    except Exception as e:
+        print(e)

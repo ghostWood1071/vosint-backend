@@ -4,6 +4,7 @@ from common.internalerror import *
 from utils import get_time_now_string
 from core.config import settings
 from typing import *
+import traceback
 
 
 class MongoRepository:
@@ -463,6 +464,27 @@ class MongoRepository:
             self.__close()
 
         return success
+
+    def delete_many(self, collection_name: str, filter_spec: dict) -> int:
+        if not collection_name:
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
+
+        if not filter_spec:
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["FILTER_CONDITION"], "msg": ["Filter condition"]},
+            )
+
+        try:
+            self.__connect()
+            result = self.__db[collection_name].delete_many(filter=filter_spec)
+            return result.deleted_count
+        except Exception as e:
+            traceback.print_exc()
+            return 0
 
     def aggregate(self, collection_name: str, pipeline):
         if not collection_name:
