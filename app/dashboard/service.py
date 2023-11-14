@@ -3,8 +3,6 @@ from typing import List
 from bson import ObjectId
 
 from db.init_db import get_collection_client
-from vosint_ingestion.features.pipeline.services import PipelineService
-from vosint_ingestion.features.job import get_news_from_newsletter_id__
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
@@ -18,6 +16,7 @@ users_client = get_collection_client("users")
 events_client = get_collection_client("events")
 event_client = get_collection_client("event")
 his_log_client = get_collection_client("his_log")
+job_store_client = get_collection_client("jobstore")
 pipelines_client = get_collection_client("pipelines")
 newsletter_client = get_collection_client("newsletter")
 topic_statistic_client = get_collection_client("top_statistic")
@@ -164,8 +163,6 @@ async def news_seven_nearest(day_space: int = 7):
 
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
-
-    print(start_of_day, end_of_day)
 
     pipeline = [
         {
@@ -570,7 +567,6 @@ async def hot_events_today():
 
 async def users_online(user_id: ObjectId):
     """Get users online"""
-    print(user_id)
     pipeline = [
         {"$match": {"online": True, "_id": {"$ne": ObjectId(user_id)}}},
         {"$group": {"_id": None, "total": {"$sum": 1}}},
@@ -730,7 +726,10 @@ async def status_source_news(day_space: int = 3):
         ]
     ).to_list(None)
 
-    list_pipelines = await pipelines_client.aggregate([]).to_list(None)
+    list_jobs = await job_store_client.aggregate([{"$project": {"_id": 1}}]).to_list(None)
+    list_jobs = [value for obj in list_jobs for value in obj.values()]
+
+    list_pipelines = await pipelines_client.aggregate([{"$project": {"_id": 1, "enabled": 1}}]).to_list(None)
 
     result = {
         "normal": 0,
@@ -743,11 +742,13 @@ async def status_source_news(day_space: int = 3):
             if pipeline["enabled"]:
                 id = pipeline["_id"]
 
+                if not str(id) in list_jobs:
+                    result["unknown"] += 1
+                    continue
+
                 is_completed = False
-                # is_unknown = True
                 for his in list_hist:
                     if his["pipeline_id"] == str(id):
-                        # is_unknown = False
                         if his["log"] == "completed":
                             is_completed = True
                             result["normal"] += 1
@@ -757,8 +758,6 @@ async def status_source_news(day_space: int = 3):
                 if not is_completed:
                     result["error"] += 1
                     pipeline_err[id] = 1
-                # elif is_unknown:
-                #     result["unknown"] += 1
 
             else:
                 result["unknown"] += 1
@@ -792,8 +791,6 @@ async def status_error_source_news(
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
-    print(start_of_day, end_of_day)
-
     list_hist = await his_log_client.aggregate(
         [
             {
@@ -812,7 +809,10 @@ async def status_error_source_news(
         ]
     ).to_list(None)
 
-    list_pipelines = await pipelines_client.aggregate([]).to_list(None)
+    list_jobs = await job_store_client.aggregate([{"$project": {"_id": 1}}]).to_list(None)
+    list_jobs = [value for obj in list_jobs for value in obj.values()]
+
+    list_pipelines = await pipelines_client.aggregate([{"$project": {"_id": 1, "enabled": 1}}]).to_list(None)
 
     pipeline_err = {}
     if list_pipelines:
@@ -820,11 +820,12 @@ async def status_error_source_news(
             if pipeline["enabled"]:
                 id = pipeline["_id"]
 
+                if not str(id) in list_jobs:
+                    continue
+
                 is_completed = False
-                # is_unknown = True
                 for his in list_hist:
                     if his["pipeline_id"] == str(id):
-                        # is_unknown = False
                         if his["log"] == "completed":
                             is_completed = True
                             break
@@ -887,13 +888,18 @@ async def status_completed_source_news(
         ]
     ).to_list(None)
 
-    list_pipelines = await pipelines_client.aggregate([]).to_list(None)
+    list_jobs = await job_store_client.aggregate([{"$project": {"_id": 1}}]).to_list(None)
+    list_jobs = [value for obj in list_jobs for value in obj.values()]
+
+    list_pipelines = await pipelines_client.aggregate([{"$project": {"_id": 1, "enabled": 1}}]).to_list(None)
 
     pipeline_comp = {}
     for pipeline in list_pipelines:
         if not pipeline["enabled"]:
             continue
         id = pipeline["_id"]
+        if not str(id) in list_jobs:
+            continue
         for his in list_hist:
             if his["pipeline_id"] == str(id) and his["log"] == "completed":
                 pipeline_comp[id] = 1
@@ -936,38 +942,17 @@ async def status_unknown_source_news(
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
-    # list_hist = await his_log_client.aggregate(
-    #     [
-    #         {
-    #             "$match": {
-    #                 "created_at": {"$gte": start_of_day, "$lte": end_of_day},
-    #             }
-    #         },
-    #         {"$group": {"_id": {"pipeline_id": "$pipeline_id", "log": "$log"}}},
-    #         {
-    #             "$project": {
-    #                 "_id": 0,
-    #                 "pipeline_id": "$_id.pipeline_id",
-    #                 "log": "$_id.log",
-    #             }
-    #         },
-    #     ]
-    # ).to_list(None)
+    list_jobs = await job_store_client.aggregate([{"$project": {"_id": 1}}]).to_list(None)
+    list_jobs = [value for obj in list_jobs for value in obj.values()]
 
-    list_pipelines = await pipelines_client.aggregate([]).to_list(None)
+    list_pipelines = await pipelines_client.aggregate([{"$project": {"_id": 1, "enabled": 1}}]).to_list(None)
 
     pipeline_unknown = {}
     for pipeline in list_pipelines:
         id = pipeline["_id"]
-        # if pipeline["enabled"]:
-            # is_unknown = True
-            # # for his in list_hist:
-            # #     if his["pipeline_id"] == str(id):
-            # #         is_unknown = False
-            # #         break
-            # if is_unknown:
-            #     pipeline_unknown[id] = 1
         if not pipeline["enabled"]:
+            pipeline_unknown[id] = 1
+        elif pipeline["enabled"] and not str(id) in list_jobs:
             pipeline_unknown[id] = 1
 
     pipeline_filter = [pl_id for pl_id in pipeline_unknown.keys()]
