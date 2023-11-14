@@ -1556,7 +1556,8 @@ async def get_table_ttxvn(
 
 @router.get("/get-total-crawl")
 async def get_total_crawl():
-    current_date = datetime.now().strftime("%d/%m/%Y")
+    current_date = datetime.utcnow().strftime("%d/%m/%Y")
+
     start_date = datetime(
         int(current_date.split("/")[2]),
         int(current_date.split("/")[1]),
