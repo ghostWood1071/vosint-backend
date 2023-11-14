@@ -155,24 +155,35 @@ async def get_chu_khach(user_id: str, text, skip: int, limit: int):
     #     query["user_id"] = user_id
 
     if text:
-        query["$or"] = [
-            {"chu_the": {"$regex": text, "$options": "i"}},
-            {"khach_the": {"$regex": text, "$options": "i"}},
-        ]
+        query["$or"] = [{"name": {"$regex": text, "$options": "i"}}]
 
-    async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
-        item["date_created"] = str(item["date_created"])
-        obj = {"_id": str(item["_id"]) + "0", "name": item["khach_the"]}
-        obj1 = {"_id": str(item["_id"]) + "1", "name": item["chu_the"]}
-        name = obj["name"]
-        if name not in unique and name != "":
-            unique.add(name)
-            list_ck.append(obj)
+    object_client = get_collection_client("object")
 
-        name = obj1["name"]
-        if name not in unique and name != "":
-            unique.add(name)
-            list_ck.append(obj1)
+    async for item in object_client.find(query, projection={"_id": 1, "name": 1}).sort(
+        "_id"
+    ).skip(offset).limit(limit):
+        item["_id"] = str(item["_id"])
+        list_ck.append(item)
+
+    # if text:
+    #     query["$or"] = [
+    #         {"chu_the": {"$regex": text, "$options": "i"}},
+    #         {"khach_the": {"$regex": text, "$options": "i"}},
+    #     ]
+
+    # async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
+    # item["date_created"] = str(item["date_created"])
+    # obj = {"_id": str(item["_id"]) + "0", "name": item["khach_the"]}
+    # obj1 = {"_id": str(item["_id"]) + "1", "name": item["chu_the"]}
+    # name = obj["name"]
+    # if name not in unique and name != "":
+    #     unique.add(name)
+    #     list_ck.append(obj)
+
+    # name = obj1["name"]
+    # if name not in unique and name != "":
+    #     unique.add(name)
+    #     list_ck.append(obj1)
 
     return list_ck
 
