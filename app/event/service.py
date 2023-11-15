@@ -155,24 +155,35 @@ async def get_chu_khach(user_id: str, text, skip: int, limit: int):
     #     query["user_id"] = user_id
 
     if text:
-        query["$or"] = [
-            {"chu_the": {"$regex": text, "$options": "i"}},
-            {"khach_the": {"$regex": text, "$options": "i"}},
-        ]
+        query["$or"] = [{"name": {"$regex": text, "$options": "i"}}]
 
-    async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
-        item["date_created"] = str(item["date_created"])
-        obj = {"_id": str(item["_id"]) + "0", "name": item["khach_the"]}
-        obj1 = {"_id": str(item["_id"]) + "1", "name": item["chu_the"]}
-        name = obj["name"]
-        if name not in unique and name != "":
-            unique.add(name)
-            list_ck.append(obj)
+    object_client = get_collection_client("object")
 
-        name = obj1["name"]
-        if name not in unique and name != "":
-            unique.add(name)
-            list_ck.append(obj1)
+    async for item in object_client.find(query, projection={"_id": 1, "name": 1}).sort(
+        "_id"
+    ).skip(offset).limit(limit):
+        item["_id"] = str(item["_id"])
+        list_ck.append(item)
+
+    # if text:
+    #     query["$or"] = [
+    #         {"chu_the": {"$regex": text, "$options": "i"}},
+    #         {"khach_the": {"$regex": text, "$options": "i"}},
+    #     ]
+
+    # async for item in client3.find(query).sort("_id").skip(offset).limit(limit):
+    # item["date_created"] = str(item["date_created"])
+    # obj = {"_id": str(item["_id"]) + "0", "name": item["khach_the"]}
+    # obj1 = {"_id": str(item["_id"]) + "1", "name": item["chu_the"]}
+    # name = obj["name"]
+    # if name not in unique and name != "":
+    #     unique.add(name)
+    #     list_ck.append(obj)
+
+    # name = obj1["name"]
+    # if name not in unique and name != "":
+    #     unique.add(name)
+    #     list_ck.append(obj1)
 
     return list_ck
 
@@ -318,6 +329,24 @@ async def search_event(
     skip: int,
     limit: int,
 ):
+    # fields_search = {
+    #     "_id": 1,
+    #     "event_content": 1,
+    #     "event_name": 1,
+    #     "sentiment": 1,
+    #     "title_translate": 1,
+    #     "content_translate": 1,
+    #     "date_created": 1,
+    #     "list_user_read": 1,
+    #     "news_added_by_user": 1,
+    # }
+
+    fields_search = {
+        "data:summaries": False,
+        "embedding_title": False,
+        "embedding_content": False,
+    }
+
     offset = (skip - 1) * limit if skip > 0 else 0
     list_event = []
     query = {}
@@ -341,55 +370,55 @@ async def search_event(
             query["user_id"] = user_id
 
         query["system_created"] = {"$ne": True}
-        async for item in client.find(query).sort("date_created", -1).skip(
+        async for item in client.find(query, fields_search).sort("date_created", -1).skip(
             offset
         ).limit(limit):
             # ll = []
-            ls_rp = []
+            # ls_rp = []
             # for Item in item["new_list"]:
             #     id_new = {"_id": ObjectId(Item)}
             #     async for new in client2.find(id_new, projection):
             #         gg = json(new)
             #         ll.append(gg)
-            if "list_report" in item:
-                for Item2 in item["list_report"]:
-                    id_report = {"_id": ObjectId(Item2)}
-                    async for rp in report_client.find(id_report, projection_rp):
-                        reports = json(rp)
-                        ls_rp.append(reports)
+            # if "list_report" in item:
+            #     for Item2 in item["list_report"]:
+            #         id_report = {"_id": ObjectId(Item2)}
+            #         async for rp in report_client.find(id_report, projection_rp):
+            #             reports = json(rp)
+            #             ls_rp.append(reports)
             # item["new_list"] = ll
-            item["list_report"] = ls_rp
+            # item["list_report"] = ls_rp
             item["date_created"] = str(item["date_created"])
             item["total_new"] = len(item["new_list"])
             items = json(item)
             list_event.append(items)
 
     if system_created == True:
-        async for item3 in client3.find(query).sort("date_created", -1).skip(
+        async for item3 in client3.find(query, fields_search).sort("date_created", -1).skip(
             offset
         ).limit(limit):
             # ll = []
-            ls_rp = []
+            # ls_rp = []
             # for Item in item3["new_list"]:
             #     id_new = {"_id": ObjectId(Item)}
             #     async for new in client2.find(id_new, projection):
             #         gg = json(new)
             #         ll.append(gg)
-            if "list_report" in item3:
-                for Item2 in item3["list_report"]:
-                    id_report = {"_id": ObjectId(Item2)}
-                    async for rp in report_client.find(id_report, projection_rp):
-                        reports = json(rp)
-                        ls_rp.append(reports)
-            # item3["new_list"] = ll
-            item3["list_report"] = ls_rp
+            # if "list_report" in item3:
+            #     for Item2 in item3["list_report"]:
+            #         id_report = {"_id": ObjectId(Item2)}
+            #         async for rp in report_client.find(id_report, projection_rp):
+            #             reports = json(rp)
+            #             ls_rp.append(reports)
+            # # item3["new_list"] = ll
+            # item3["list_report"] = ls_rp
 
             item3["_id"] = str(item3["_id"])
             item3["date_created"] = str(item3["date_created"])
-            if "list_user_clone" not in item3:
-                await client.aggregate(
-                    [{"$addFields": {"list_user_clone": []}}]
-                ).to_list(length=None)
+            # if "list_user_clone" not in item3:
+            #     await client.aggregate(
+            #         [{"$addFields": {"list_user_clone": []}}]
+            #     ).to_list(length=None)
             list_event.append(item3)
 
     list_fields = [
@@ -408,6 +437,8 @@ async def search_event(
     for record in list_event:
         try:
             record["event_content"] = record["event_content"][0:limit_string]
+            if(record.get("event_translate")):
+                record["event_translate"] = record["event_translate"][0:limit_string]
         except:
             pass
         for key in list_fields:
@@ -651,8 +682,12 @@ async def update_event(id: str, data: dict):
     event = await client.find_one({"_id": ObjectId(id)})
     event_2 = await client3.find_one({"_id": ObjectId(id)})
 
-    list_event_1 = await client.find().to_list(length=None)
-    list_event_2 = await client3.find().to_list(length=None)
+    # list_event_1 = await client.find(
+    #     {}, projection={"_id": 1, "event_name": 1, "system_created": 1}
+    # ).to_list(length=None)
+    # list_event_2 = await client3.find(
+    #     {}, projection={"_id": 1, "event_name": 1, "system_created": 1}
+    # ).to_list(length=None)
 
     if event:
         event_name = event["event_name"]
@@ -663,37 +698,55 @@ async def update_event(id: str, data: dict):
             {"event_list.event_id": id_event, "event_list.event_name": event_name},
             {"$pull": {"event_list": {"event_id": id_event, "event_name": event_name}}},
         )
-        for new in newsList:
-            new_id = new
-            await client2.update_one(
-                {"_id": ObjectId(new_id)},
-                {
-                    "$addToSet": {
-                        "event_list": {"event_id": id_event, "event_name": event_name}
-                    }
-                },
-            )
+        # for new in newsList:
+        #     new_id = new
+        news_ids = [ObjectId(_id) for _id in newsList]
 
-        await report_client.update_many(
-            {"event_list": id_event},
-            {"$pull": {"event_list": {"$in": [id_event]}}},
+        await client2.update_many(
+            # {"_id": ObjectId(new_id)},
+            {"_id": {"$in": news_ids}},
+            {
+                "$addToSet": {
+                    "event_list": {"event_id": id_event, "event_name": event_name}
+                }
+            },
         )
-        for rp in reportList:
-            rp_id = rp
-            await report_client.update_one(
-                {"_id": ObjectId(rp_id)}, {"$addToSet": {"event_list": id_event}}
+
+        # await report_client.update_many(
+        #     {"event_list": id_event},
+        #     {"$pull": {"event_list": {"$in": [id_event]}}},
+        # )
+
+        # for rp in reportList:
+        #     rp_id = rp
+        report_ids = [ObjectId(_id) for _id in reportList]
+        await report_client.update_many(
+            # {"_id": ObjectId(rp_id)}, {"$addToSet": {"event_list": id_event}}
+            {"_id": {"$in": report_ids}},
+            {"$addToSet": {"event_list": id_event}},
+        )
+
+        check_dup = await client.find(
+            {
+                "event_name": data["event_name"],
+                "system_created": event.get("system_created"),
+            }
+        ).to_list(None)
+        if len(check_dup) > 1 and data["system_created"] != True:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="event is duplicated"
             )
 
-        for item in list_event_1:
-            if (
-                item["_id"] != event["_id"]
-                and item["event_name"] == data["event_name"]
-                and (item.get("system_created") == event["system_created"])
-                and data["system_created"] != True
-            ):
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT, detail="event is duplicated"
-                )
+        # for item in list_event_1:
+        #     if (
+        #         item["_id"] != event["_id"]
+        #         and item["event_name"] == data["event_name"]
+        #         and (item.get("system_created") == event["system_created"])
+        #         and data["system_created"] != True
+        #     ):
+        #         raise HTTPException(
+        #             status_code=status.HTTP_409_CONFLICT, detail="event is duplicated"
+        #         )
 
         updated_event = await client.update_one({"_id": ObjectId(id)}, {"$set": data})
         if updated_event:
@@ -733,16 +786,27 @@ async def update_event(id: str, data: dict):
                 {"_id": ObjectId(rp_id)}, {"$addToSet": {"event_list": id_event}}
             )
 
-        for item in list_event_2:
-            if (
-                item["_id"] != event_2["_id"]
-                and item["event_name"] == data["event_name"]
-                and (item.get("system_created") == event["system_created"])
-                and data["system_created"] != True
-            ):
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT, detail="event is duplicated"
-                )
+        check_dup = await client3.find(
+            {
+                "event_name": data["event_name"],
+                "system_created": event.get("system_created"),
+            }
+        ).to_list(None)
+
+        if len(check_dup) > 1 and data["system_created"] != True:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="event is duplicated"
+            )
+        # for item in list_event_2:
+        #     if (
+        #         item["_id"] != event_2["_id"]
+        #         and item["event_name"] == data["event_name"]
+        #         and (item.get("system_created") == event["system_created"])
+        #         and data["system_created"] != True
+        #     ):
+        #         raise HTTPException(
+        #             status_code=status.HTTP_409_CONFLICT, detail="event is duplicated"
+        #         )
 
         updated_event = await client3.update_one({"_id": ObjectId(id)}, {"$set": data})
         if updated_event:
