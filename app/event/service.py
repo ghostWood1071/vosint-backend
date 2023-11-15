@@ -1140,7 +1140,6 @@ def create_source_target_pair(source, target):
         for country2 in target:
             if country1 != country2:
                 pairs.append((country1, country2))
-    print("pair:", pairs)
     return pairs
 
 
@@ -1179,7 +1178,11 @@ def group_edges_by_pair(data):
 
 def get_graph_data(object_ids, start_date, end_date):
     object_filter = [ObjectId(object_id) for object_id in object_ids]
-    objects, _ = MongoRepository().get_many("object", {"_id": {"$in": object_filter}})
+    objects, _ = MongoRepository().get_many(
+        "object",
+        {"_id": {"$in": object_filter}},
+        projection={"name": 1, "avatar_url": 1},
+    )
     object_names = [object["name"] for object in objects]
     regex = "|".join(object_names)
     object_image_dict = {}
@@ -1233,9 +1236,6 @@ def get_graph_data(object_ids, start_date, end_date):
         )
 
     for row in data:
-        count_sentiment = (
-            int(row["normal"]) + int(row["negative"]) + int(row["positive"])
-        )
         source = process_source_target(
             row["_id"]["source"], countries_dict, country_regex
         )
@@ -1243,7 +1243,19 @@ def get_graph_data(object_ids, start_date, end_date):
             row["_id"]["target"], countries_dict, country_regex
         )
         target = process_duplicate_source_target(source, target)
-        pairs = create_source_target_pair(source, target)
+        pairs = list(
+            filter(
+                lambda pair: pair[0] in object_names and pair[1] in object_names,
+                create_source_target_pair(source, target),
+            )
+        )
+        if pairs == []:
+            continue
+        print("sađâsđâs,", list(pairs))
+
+        count_sentiment = (
+            int(row["normal"]) + int(row["negative"]) + int(row["positive"])
+        )
         for pair in pairs:
             result["edges"].append(
                 {
