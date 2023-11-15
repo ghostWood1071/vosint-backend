@@ -10,10 +10,19 @@ import utils
 import statistic_schedule
 from datetime import datetime
 import pytz
+from threading import Lock
 
 
 class Scheduler:
     __instance = None
+    # __lock = Lock()
+
+    # def __new__(cls):
+    #     if cls.__instance is None:
+    #         with cls.__lock:
+    #             if cls.__instance is None:
+    #                 cls.__instance = super(Scheduler, cls).__new__(cls)
+    #     return cls.__instance
 
     def __init__(self):
         if Scheduler.__instance is not None:
@@ -26,11 +35,8 @@ class Scheduler:
             )
 
         mongo_config = {
-            "host": settings.mong_host,
-            "port": settings.mongo_port,
-            "username": settings.mongo_username,
-            "password": settings.mongo_passwd,
-            "database": settings.mongo_db_name,
+            "host": settings.MONGO_DETAILS,
+            "database": settings.DATABASE_NAME,
             "collection": "jobstore",
         }
         jobstore = {"default": MongoDBJobStore(**mongo_config)}
