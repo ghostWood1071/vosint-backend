@@ -32,7 +32,7 @@ class TTXVNAction(BaseAction):
                     name="send_queue",
                     display_name="Send_Queue",
                     val_type="select",
-                    default_val="False",
+                    default_val="True",
                     options=["False", "True"],
                     validators=["required_"],
                 ),
