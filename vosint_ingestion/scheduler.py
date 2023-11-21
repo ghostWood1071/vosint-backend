@@ -10,10 +10,12 @@ import utils
 import statistic_schedule
 from datetime import datetime
 import pytz
+from threading import Lock
 
 
 class Scheduler:
     __instance = None
+    __lock = Lock()
 
     def __init__(self):
         if Scheduler.__instance is not None:
@@ -24,13 +26,9 @@ class Scheduler:
                     "msg": [self.__class__.__name__],
                 },
             )
-
         mongo_config = {
-            "host": settings.mong_host,
-            #"port": settings.mongo_port,
-            #"username": settings.mongo_username,
-            #"password": settings.mongo_passwd,
-            "database": settings.mongo_db_name,
+            "host": settings.MONGO_DETAILS,
+            "database": settings.DATABASE_NAME,
             "collection": "jobstore",
         }
         jobstore = {"default": MongoDBJobStore(**mongo_config)}
@@ -43,7 +41,9 @@ class Scheduler:
     def instance():
         """Static access method."""
         if Scheduler.__instance is None:
-            Scheduler()
+            with Scheduler.__lock:
+                if Scheduler.__instance is None:
+                    Scheduler()
         return Scheduler.__instance
 
     def add_job(self, id: str, func: Callable, cron_expr: str, args: list = []):

@@ -303,6 +303,8 @@ class JobService:
                                     "FeedAction",
                                     "FacebookAction",
                                     "TtxvnAction",
+                                    "TwitterAction",
+                                    "TiktokAction",
                                 ]
                             }
                         },

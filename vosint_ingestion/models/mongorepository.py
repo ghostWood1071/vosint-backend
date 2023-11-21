@@ -9,21 +9,13 @@ import traceback
 
 class MongoRepository:
     def __init__(self):
-        self.__host = settings.mong_host
-        self.__port = settings.mongo_port
-        self.__username = settings.mongo_username
-        self.__passwd = settings.mongo_passwd
-        self.__db_name = settings.mongo_db_name
+        self.__host = settings.MONGO_DETAILS
+        self.__db_name = settings.DATABASE_NAME
         self.__client = None
         self.__db = None
 
     def __connect(self):
-        self.__client = pymongo.MongoClient(
-            host=self.__host  # ,
-            # port=self.__port,
-            # username=self.__username,
-            # password=self.__passwd,
-        )
+        self.__client = pymongo.MongoClient(host=self.__host)
         self.__db = self.__client[self.__db_name]
 
     def __close(self):
@@ -68,6 +60,7 @@ class MongoRepository:
         order_spec: list[tuple] = [],
         pagination_spec: dict = {},
         sor_direction=-1,
+        projection: dict = None,
     ) -> tuple[list, int]:
         if not collection_name:
             raise InternalError(
@@ -85,7 +78,7 @@ class MongoRepository:
             total_docs = collection.count_documents(filter_spec)
 
             # Apply filter conditions
-            query = collection.find(filter_spec)
+            query = collection.find(filter_spec, projection=projection)
 
             # Apply sort
             if not order_spec:

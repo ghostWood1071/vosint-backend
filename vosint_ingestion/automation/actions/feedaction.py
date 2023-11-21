@@ -113,8 +113,8 @@ class FeedAction(BaseAction):
                     name="send_queue",
                     display_name="Send_Queue",
                     val_type="select",
-                    default_val="False",
-                    options=["False", "True"],
+                    default_val="True",
+                    # options=["False", "True"],
                     validators=["required_"],
                 ),
                 ParamInfo(
