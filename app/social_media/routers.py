@@ -44,6 +44,9 @@ from .services import (
     exec_update_priority,
     exec_get_priorities,
     exec_delete_priority,
+    exec_influencer,
+    exec_influencer_priority,
+    exec_influential_post,
 )
 from word_exporter import export_social_word
 from datetime import datetime
@@ -98,7 +101,7 @@ async def get_feature_keywords(
 
 @router.get("/get-statistic-interaction")
 async def get_statistic_interaction(
-    name: str = "facebook", start_date: str = "", end_date: str = ""
+    name: str = "", start_date: str = "", end_date: str = ""
 ):
     return await statistic_interaction(name, start_date, end_date)
 
@@ -106,6 +109,21 @@ async def get_statistic_interaction(
 @router.get("/get-active-member")
 async def get_active_member(name: str = "facebook"):
     return await active_member(name)
+
+
+@router.get("/get-influencer")
+async def get_influencer(name: str = "facebook"):
+    return await exec_influencer(name)
+
+
+@router.get("/get-influencer-priority")
+async def get_influencer_priority(name: str = "facebook"):
+    return await exec_influencer_priority(name)
+
+
+@router.get("/get-influential-post")
+async def get_influential_post(name: str = "facebook"):
+    return await exec_influential_post(name)
 
 
 # priority

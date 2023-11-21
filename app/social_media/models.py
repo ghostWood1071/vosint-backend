@@ -11,7 +11,8 @@ class AddFollowed(BaseModel):
 
 class CreatePriorityModel(BaseModel):
     priority_name: str = Field(...)
-    avatar_url: str = Field(...)
+    avatar_url: Optional[str] = ""
+    description: Optional[str] = ""
     facebook: Optional[str] = ""
     twitter: Optional[str] = ""
     tiktok: Optional[str] = ""
@@ -20,7 +21,8 @@ class CreatePriorityModel(BaseModel):
 class UpdatePriorityModel(BaseModel):
     id: str
     priority_name: str = Field(...)
-    avatar_url: str = Field(...)
+    avatar_url: Optional[str] = ""
+    description: Optional[str] = ""
     facebook: Optional[str] = ""
     twitter: Optional[str] = ""
     tiktok: Optional[str] = ""

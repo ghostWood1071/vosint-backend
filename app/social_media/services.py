@@ -98,6 +98,14 @@ async def exec_update_priority(data: UpdatePriorityModel):
 
     data_copy = data.copy()
     data_copy.pop("id")
+    # print(data_copy)
+    # check_exists = await priority_client.find_one(
+    #     {"facebook": data_copy.get("facebook")}
+    # )
+    # if check_exists:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
+    #     )
 
     return await priority_client.update_one(
         {"_id": ObjectId(_id)},
@@ -386,51 +394,54 @@ async def statistic_interaction(name: str, start_date: str, end_date: str):
         end_date = end_date.replace(hour=23, minute=59, second=59)
         end_date = str(end_date).replace("-", "/")
 
-    # if start_date != "" or end_date != "":
-    #     pipeline.append(
-    #         {"$match": {"created_at": {"$gte": start_date, "$lte": end_date}}}
-    #     )
-    #     pipeline.append({"$limit": 7})
-
     filter_spec = {}
     if start_date != "" or end_date != "":
         filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
 
-    pipeline = [
-        {"$match": filter_spec},
-        {
-            "$group": {
-                "_id": {
-                    "$substr": ["$created_at", 0, 10],
-                },
-                "total_like": {"$sum": {"$toInt": "$like"}},
-                "total_comment": {"$sum": {"$toInt": "$comments"}},
-                # "total_comment": {
-                #     "$sum": {
-                #         "$cond": {
-                #             "if": {"$eq": [name, "facebook"]},
-                #             "then": {"$toInt": "$comments"},
-                #             "else": {"$toInt": "$comment"},
-                #         }
-                #     }
-                # },
-                "total_share": {"$sum": {"$toInt": "$share"}},
-            }
-        },
-        {"$sort": {"_id": 1}},
-    ]
+    if name != "":
+        pipeline = [
+            {"$match": filter_spec},
+            {
+                "$group": {
+                    "_id": {
+                        "$substr": ["$created_at", 0, 10],
+                    },
+                    "total_like": {"$sum": {"$toInt": "$like"}},
+                    "total_comment": {"$sum": {"$toInt": "$comments"}},
+                    "total_share": {"$sum": {"$toInt": "$share"}},
+                }
+            },
+            {"$sort": {"_id": 1}},
+        ]
+    else:
+        pipeline = [
+            {"$unionWith": {"coll": "twitter"}},
+            {"$unionWith": {"coll": "tiktok"}},
+            {"$match": filter_spec},
+            {
+                "$group": {
+                    "_id": {
+                        "$substr": ["$created_at", 0, 10],
+                    },
+                    "total_like": {"$sum": {"$toInt": "$like"}},
+                    "total_comment": {"$sum": {"$toInt": "$comments"}},
+                    "total_share": {"$sum": {"$toInt": "$share"}},
+                }
+            },
+            {"$sort": {"_id": 1}},
+        ]
 
     if start_date != "" or end_date != "":
-        # pipeline.append(
-        #     {"$match": {"created_at": {"$gte": start_date, "$lte": end_date}}}
-        # )
         pipeline.append({"$limit": 7})
 
-    collection_client = (
-        facebook_client
-        if name == "facebook"
-        else (twitter_client if name == "twitter" else tiktok_client)
-    )
+    if name != "":
+        collection_client = (
+            facebook_client
+            if name == "facebook"
+            else (twitter_client if name == "twitter" else tiktok_client)
+        )
+    else:
+        collection_client = facebook_client
 
     data = collection_client.aggregate(pipeline)
 
@@ -456,6 +467,157 @@ async def active_member(name: str):
             }
         },
         {"$match": {"_id": {"$nin": [None, ""]}, "user": {"$ne": []}}},
+        {"$sort": {"value": -1}},
+        {"$limit": 10},
+    ]
+
+    collection_client = (
+        facebook_client
+        if name == "facebook"
+        else (twitter_client if name == "twitter" else tiktok_client)
+    )
+
+    data = collection_client.aggregate(pipeline)
+
+    result = []
+    async for record in data:
+        result.append(record)
+
+    return result
+
+
+# get influencer
+async def exec_influencer(name: str):
+    pipeline = [
+        {
+            "$group": {
+                "_id": "$id_social",
+                "value": {
+                    "$sum": {
+                        "$add": [
+                            {"$toInt": "$like"},
+                            {"$toInt": "$comments"},
+                            {"$toInt": "$share"},
+                        ]
+                    }
+                },
+            },
+        },
+        {
+            "$lookup": {
+                "from": "social_media",
+                "localField": "_id",
+                "foreignField": "_id",
+                "as": "user",
+            }
+        },
+        {"$match": {"_id": {"$nin": [None, ""]}, "user": {"$ne": []}}},
+        {"$sort": {"value": -1}},
+        {"$limit": 10},
+    ]
+
+    collection_client = (
+        facebook_client
+        if name == "facebook"
+        else (twitter_client if name == "twitter" else tiktok_client)
+    )
+
+    data = collection_client.aggregate(pipeline)
+
+    result = []
+    async for record in data:
+        result.append(record)
+
+    return result
+
+
+async def exec_influencer_priority(name: str):
+    pipeline = [
+        {
+            "$group": {
+                # "_id": "$id_social",
+                "_id": {"$toString": "$id_social"},
+                "value": {
+                    "$sum": {
+                        "$add": [
+                            {"$toInt": "$like"},
+                            {"$toInt": "$comments"},
+                            {"$toInt": "$share"},
+                        ]
+                    }
+                },
+            },
+        },
+        {
+            "$lookup": {
+                "from": "priority",
+                "localField": "_id",
+                "foreignField": "facebook"
+                if (name == "facebook")
+                else ("twitter" if name == "twitter" else "tiktok"),
+                "as": "user",
+            }
+        },
+        {
+            "$unwind": "$user",
+        },
+        {"$match": {"_id": {"$nin": [None, ""]}, "user": {"$ne": []}}},
+        {"$sort": {"value": -1}},
+        {"$limit": 10},
+    ]
+
+    collection_client = (
+        facebook_client
+        if name == "facebook"
+        else (twitter_client if name == "twitter" else tiktok_client)
+    )
+
+    data = collection_client.aggregate(pipeline)
+
+    result = []
+    async for record in data:
+        result.append(record)
+
+    return result
+
+
+async def exec_influential_post(name: str = "facebook"):
+    pipeline = [
+        {
+            "$group": {
+                "_id": "$_id",
+                "header": {"$first": "$header"},
+                "content": {"$first": "$content"},
+                "created_at": {"$first": "$created_at"},
+                "sentiment": {"$first": "$sentiment"},
+                "link": {"$first": "$link"},
+                "post_link": {"$first": "$post_link"},
+                "video_link": {"$first": "$video_link"},
+                "value": {
+                    "$sum": {
+                        "$add": [
+                            {"$toInt": "$like"},
+                            {"$toInt": "$comments"},
+                            {"$toInt": "$share"},
+                        ]
+                    }
+                },
+            },
+        },
+        {
+            "$project": {
+                "_id": 1,
+                "value": 1,
+                "header": 1,
+                "content": 1,
+                "created_at": 1,
+                "sentiment": 1,
+                "link": 1,
+                "post_link": 1,
+                "video_link": 1,
+            }
+        },
+        {"$match": {"_id": {"$nin": [None, ""]}}},
         {"$sort": {"value": -1}},
         {"$limit": 10},
     ]
@@ -856,24 +1018,29 @@ async def statistic_sentiment(name: str, start_date: str, end_date: str):
         end_date = end_date.replace(hour=23, minute=59, second=59)
         end_date = str(end_date).replace("-", "/")
 
-    if start_date == "" and end_date == "":
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=6)
+    # if start_date == "" and end_date == "":
+    #     end_date = datetime.now()
+    #     start_date = end_date - timedelta(days=6)
 
-        end_date = end_date.replace(hour=23, minute=59, second=59)
+    #     end_date = end_date.replace(hour=23, minute=59, second=59)
 
-        end_date = str(end_date).replace("-", "/")
-        start_date = str(start_date).replace("-", "/")
+    #     end_date = str(end_date).replace("-", "/")
+    #     start_date = str(start_date).replace("-", "/")
+
+    filter_spec = {
+        "$and": [
+            # {"created_at": {"$gte": start_date, "$lte": end_date}},
+            {"sentiment": {"$exists": True}},
+        ]
+    }
+
+    if start_date != "" and end_date != "":
+        filter_spec["$and"].append(
+            {"created_at": {"$gte": start_date, "$lte": end_date}}
+        )
 
     pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"created_at": {"$gte": start_date, "$lte": end_date}},
-                    {"sentiment": {"$exists": True}},
-                ]
-            }
-        },
+        {"$match": filter_spec},
         {
             "$group": {
                 "_id": "$sentiment",

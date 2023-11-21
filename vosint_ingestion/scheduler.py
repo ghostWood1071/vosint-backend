@@ -15,14 +15,7 @@ from threading import Lock
 
 class Scheduler:
     __instance = None
-    # __lock = Lock()
-
-    # def __new__(cls):
-    #     if cls.__instance is None:
-    #         with cls.__lock:
-    #             if cls.__instance is None:
-    #                 cls.__instance = super(Scheduler, cls).__new__(cls)
-    #     return cls.__instance
+    __lock = Lock()
 
     def __init__(self):
         if Scheduler.__instance is not None:
@@ -33,7 +26,6 @@ class Scheduler:
                     "msg": [self.__class__.__name__],
                 },
             )
-
         mongo_config = {
             "host": settings.MONGO_DETAILS,
             "database": settings.DATABASE_NAME,
@@ -49,7 +41,9 @@ class Scheduler:
     def instance():
         """Static access method."""
         if Scheduler.__instance is None:
-            Scheduler()
+            with Scheduler.__lock:
+                if Scheduler.__instance is None:
+                    Scheduler()
         return Scheduler.__instance
 
     def add_job(self, id: str, func: Callable, cron_expr: str, args: list = []):
