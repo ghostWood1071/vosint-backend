@@ -581,8 +581,46 @@ async def exec_influencer_priority(name: str):
     return result
 
 
-async def exec_influential_post(name: str = "facebook"):
+async def exec_influential_post(
+    name: str = "facebook", start_date: str = "", end_date: str = ""
+):
+    filter_spec = {}
+    if start_date:
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        end_date = str(end_date).replace("-", "/")
+
+    if start_date != "" and end_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
+
+    elif start_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date}})
+
+    elif end_date != "":
+        filter_spec.update({"created_at": {"$lte": end_date}})
+
     pipeline = [
+        {"$match": filter_spec},
+        {
+            "$lookup": {
+                "from": "social_media",
+                "localField": "id_social",
+                "foreignField": "_id",
+                "as": "infos",
+            }
+        },
         {
             "$group": {
                 "_id": "$_id",
@@ -590,9 +628,13 @@ async def exec_influential_post(name: str = "facebook"):
                 "content": {"$first": "$content"},
                 "created_at": {"$first": "$created_at"},
                 "sentiment": {"$first": "$sentiment"},
+                "like": {"$first": "$like"},
+                "comments": {"$first": "$comments"},
+                "share": {"$first": "$share"},
                 "link": {"$first": "$link"},
                 "post_link": {"$first": "$post_link"},
                 "video_link": {"$first": "$video_link"},
+                "infos": {"$first": "$infos"},
                 "value": {
                     "$sum": {
                         "$add": [
@@ -612,9 +654,13 @@ async def exec_influential_post(name: str = "facebook"):
                 "content": 1,
                 "created_at": 1,
                 "sentiment": 1,
+                "like": 1,
+                "comments": 1,
+                "share": 1,
                 "link": 1,
                 "post_link": 1,
                 "video_link": 1,
+                "infos": 1,
             }
         },
         {"$match": {"_id": {"$nin": [None, ""]}}},
@@ -726,21 +772,29 @@ async def posts_from_priority(
             },
         },
         {"$unwind": "$post_list"},
-        {"$sort": {"post_list.created_at": -1}},
-        {"$group": {"_id": "$_id", "post_list": {"$push": "$post_list"}}},
         {
-            "$project": {
-                "post_list": {"$slice": ["$post_list", int(skip), int(page_size)]}
+            "$lookup": {
+                "from": "social_media",
+                "localField": "post_list.id_social",
+                "foreignField": "_id",
+                "as": "infos",
             }
         },
-        # {
-        #     "$lookup": {
-        #         "from": "social_media",
-        #         "localField": "_id",
-        #         "foreignField": "_id",
-        #         "as": "infos",
-        #     }
-        # },
+        {"$sort": {"post_list.created_at": -1}},
+        {
+            "$group": {
+                "_id": "$_id",
+                "post_list": {
+                    "$push": {"$mergeObjects": ["$post_list", {"infos": "$infos"}]}
+                    # "$push": "$post_list"
+                },
+            }
+        },
+        {
+            "$project": {
+                "post_list": {"$slice": ["$post_list", int(skip), int(page_size)]},
+            }
+        },
     ]
 
     data = client.aggregate(pipeline)
