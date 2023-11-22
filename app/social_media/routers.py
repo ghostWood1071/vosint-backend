@@ -122,8 +122,10 @@ async def get_influencer_priority(name: str = "facebook"):
 
 
 @router.get("/get-influential-post")
-async def get_influential_post(name: str = "facebook"):
-    return await exec_influential_post(name)
+async def get_influential_post(
+    name: str = "facebook", start_date: str = "", end_date: str = ""
+):
+    return await exec_influential_post(name, start_date, end_date)
 
 
 # priority
