@@ -487,8 +487,38 @@ async def active_member(name: str):
 
 
 # get influencer
-async def exec_influencer(name: str):
+async def exec_influencer(name: str, start_date: str, end_date: str):
+    filter_spec = {}
+
+    # handle filter with date
+    if start_date:
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        start_date = str(start_date).replace("-", "/")
+
+    if end_date:
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        end_date = str(end_date).replace("-", "/")
+
+    if start_date != "" and end_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
+
+    elif start_date != "":
+        filter_spec.update({"created_at": {"$gte": start_date}})
+
+    elif end_date != "":
+        filter_spec.update({"created_at": {"$lte": end_date}})
+
     pipeline = [
+        {"$match": filter_spec},
         {
             "$group": {
                 "_id": "$id_social",
