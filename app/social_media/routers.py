@@ -112,8 +112,10 @@ async def get_active_member(name: str = "facebook"):
 
 
 @router.get("/get-influencer")
-async def get_influencer(name: str = "facebook"):
-    return await exec_influencer(name)
+async def get_influencer(
+    name: str = "facebook", start_date: str = "", end_date: str = ""
+):
+    return await exec_influencer(name, start_date, end_date)
 
 
 @router.get("/get-influencer-priority")
