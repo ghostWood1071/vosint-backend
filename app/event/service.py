@@ -394,6 +394,20 @@ async def search_event(
             list_event.append(items)
 
     if system_created == True:
+        detect_condition = {
+            '$and': [
+                {
+                    '$or': [
+                        {'display': {'$exists': False}}, 
+                        {'display': True}, 
+                    ]
+                },
+            ]
+        }
+
+        # query.setdefault('$and', []).extend(detect_condition['$and'])
+        query.update(detect_condition)
+
         async for item3 in client3.find(query, fields_search).sort("date_created", -1).skip(
             offset
         ).limit(limit):
