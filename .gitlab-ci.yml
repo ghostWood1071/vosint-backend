@@ -1,20 +1,58 @@
-stages:
-  - lint
+image: docker:latest
 
-sonarqube-check:
-  stage: lint
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]
-  variables:
-    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" # Defines the location of the analysis task cache
-    GIT_DEPTH: "0" # Tells git to fetch all the branches of the project, required by the analysis task
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .sonar/cache
-  script:
-    - sonar-scanner
-  allow_failure: true
+services:
+  - docker:dind
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
+  CI_DOCKER_COMPOSE_SERVICE_NAME: vosint-backend-app-api
+  CI_REGISTRY_IMAGE: project/vosint/$CI_DOCKER_COMPOSE_SERVICE_NAME
+  GIT_DEPTH: "3"
+
+stages:
+  #- push-registry-dev
+  - deploy-dev 
+
+before_script:
+  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+##################################################### FOR DEV ######################################################################
+# push-registry-dev:
+#   stage: push-registry-dev
+#   script:
+#     - docker build --pull -t "$CI_REGISTRY_IMAGE" -f Dockerfile .
+#     - docker tag "$CI_REGISTRY_IMAGE" "$CI_REGISTRY/$CI_REGISTRY_IMAGE:latest"
+#     - docker push "$CI_REGISTRY/$CI_REGISTRY_IMAGE:latest"
+#     - echo ""
+#   tags:
+#     - dev
+#   only:
+#     - dev
+
+deploy-dev:
+  stage: deploy-dev  
+  image: alpine:latest
+  timeout: 5 hours 30 minutes
+  
+  tags:
+    - dev
   only:
-    - main
+    - dev
+  before_script:
+    - apk --no-cache add ca-certificates
+    - apk add --no-cache rsync
+    - apk add --no-cache openssh-client
+    - mkdir -p ~/.ssh
+    - echo -e "$DS0_RSA_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - eval "$(ssh-agent -s)"
+    - ssh-add ~/.ssh/id_rsa
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    
+  script:
+    #- ssh -p $DEV_SERVER_SSH_PORT ds3@$DEV_SERVER_HOST "docker login -u '$CI_REGISTRY_USER' -p '$CI_REGISTRY_PASSWORD' $CI_REGISTRY;  docker pull $CI_REGISTRY/$CI_REGISTRY_IMAGE:latest; docker service update --image $CI_REGISTRY/$CI_REGISTRY_IMAGE:latest --with-registry-auth --force '${DEV_DOCKER_STACK_NAME}_${CI_DOCKER_COMPOSE_SERVICE_NAME}'"
+    - ssh -p $DEV_SERVER_SSH_PORT ds3@$DEV_SERVER_HOST "cd $DEV_SOURCE_PATH; git pull;  docker build --pull -t "$CI_REGISTRY/$CI_REGISTRY_IMAGE:latest" -f Dockerfile .; docker service update --image $CI_REGISTRY/$CI_REGISTRY_IMAGE:latest --with-registry-auth --force '${DEV_DOCKER_STACK_NAME}_${CI_DOCKER_COMPOSE_SERVICE_NAME}'"
+    
