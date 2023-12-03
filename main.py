@@ -76,17 +76,17 @@ app.mount("/static", StaticFiles(directory=settings.APP_STATIC_DIR), name="stati
     Import and init route list
 """
 from load_route import ROUTE_LIST
-#manh -  add router
-from fastapi import APIRouter
-router = APIRouter()
-for route in ROUTE_LIST:
-     router.include_router(route["route"], tags=route["tags"], prefix=route["prefix"])
-
-app.include_router(router, prefix="/api")
-#manh -end add router
-
+# #manh -  add router
+# from fastapi import APIRouter
+# router = APIRouter()
 # for route in ROUTE_LIST:
-#     app.include_router(route["route"], tags=route["tags"], prefix=route["prefix"])
+#      router.include_router(route["route"], tags=route["tags"], prefix=route["prefix"])
+
+# app.include_router(router, prefix="/api")
+# #manh -end add router
+
+for route in ROUTE_LIST:
+    app.include_router(route["route"], tags=route["tags"], prefix=route["prefix"])
 
 if __name__ == "__main__":
     print(settings.APP_PORT)
