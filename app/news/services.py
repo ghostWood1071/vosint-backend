@@ -347,6 +347,7 @@ async def statistics_sentiments(filter_spec, params):
             if params["sentiment"] == "" or params["sentiment"] == "0"
             else 9999,
         )
+
     else:
         # Get total documents
         total_docs = await client.count_documents(filter_spec)
