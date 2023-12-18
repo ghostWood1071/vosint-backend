@@ -374,20 +374,20 @@ async def search_event(
             offset
         ).limit(limit):
             # ll = []
-            # ls_rp = []
+            ls_rp = []
             # for Item in item["new_list"]:
             #     id_new = {"_id": ObjectId(Item)}
             #     async for new in client2.find(id_new, projection):
             #         gg = json(new)
             #         ll.append(gg)
-            # if "list_report" in item:
-            #     for Item2 in item["list_report"]:
-            #         id_report = {"_id": ObjectId(Item2)}
-            #         async for rp in report_client.find(id_report, projection_rp):
-            #             reports = json(rp)
-            #             ls_rp.append(reports)
+            if "list_report" in item:
+                for Item2 in item["list_report"]:
+                    id_report = {"_id": ObjectId(Item2)}
+                    async for rp in report_client.find(id_report, projection_rp):
+                        reports = json(rp)
+                        ls_rp.append(reports)
             # item["new_list"] = ll
-            # item["list_report"] = ls_rp
+            item["list_report"] = ls_rp
             item["date_created"] = str(item["date_created"])
             item["total_new"] = len(item["new_list"])
             items = json(item)
@@ -440,7 +440,7 @@ async def search_event(
         "created_at",
         "khach_the",
         "list_linh_vuc",
-        "list_report",
+        # "list_report",
         "location",
         "modified_at",
         "new_list",
