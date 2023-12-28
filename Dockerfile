@@ -14,7 +14,7 @@ RUN ssh-keygen -t rsa -b 4096 -m PEM -E SHA512 -f secrets/PRIVATE_KEY
 
 RUN openssl rsa -in secrets/PRIVATE_KEY -pubout -outform PEM -out secrets/PUBLIC_KEY
 
-EXPOSE 6202
+EXPOSE 6102
 
 CMD [ "python","main.py"]
 
