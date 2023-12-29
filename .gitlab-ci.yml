@@ -8,7 +8,7 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
 
-  CI_DOCKER_COMPOSE_SERVICE_NAME: vosint-backend-app-api
+  CI_DOCKER_COMPOSE_SERVICE_NAME: sca-backend-app-api
   CI_REGISTRY_IMAGE: project/vosint/$CI_DOCKER_COMPOSE_SERVICE_NAME
   GIT_DEPTH: "3"
 
