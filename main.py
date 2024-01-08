@@ -16,6 +16,7 @@ from core.config import settings
 from core.schedule import start_all_jobs, stop_all_jobs
 from db import init_db
 from vosint_ingestion.scheduler import Scheduler
+from vosint_ingestion.db_startup import init_index
 
 app = FastAPI(title=settings.APP_TITLE, root_path=settings.ROOT_PATH)
 
@@ -58,6 +59,7 @@ def auth_exception_handler(request: Request, exc: AuthJWTException):
 async def on_startup():
     Scheduler.instance().add_job_update_error_source()
     Scheduler.instance().add_job_clear_activity()
+    init_index()
     await init_db.connect_db()
     await start_all_jobs()
 
