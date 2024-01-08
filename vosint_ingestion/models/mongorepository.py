@@ -525,3 +525,27 @@ class MongoRepository:
         finally:
             self.__close()
         return result
+    
+    def create_index(self, collection_name:str,  field_name:str, type, options:Any = None):
+        if collection_name is None:
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
+        if field_name is None:
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["FIELD_NAME"], "msg": ["field name"]},
+            )
+        try:
+            self.__connect()
+            if options:
+                index_result = self.__db[collection_name].create_index([(field_name, type)], **options)
+            else:
+                index_result = self.__db[collection_name].create_index([(field_name, type)])
+            return index_result
+        except Exception as e:
+            traceback.print_exc()
+            return None
+        finally:
+            self.__close()
