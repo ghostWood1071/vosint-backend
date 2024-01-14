@@ -386,6 +386,7 @@ class My_ElasticSearch:
         text_search=None,
         ids=None,
         list_fields=None,
+        agg_sentiment = False
     ):
         # print(ids)
         """Tìm kiếm document theo query
@@ -474,6 +475,15 @@ class My_ElasticSearch:
             simple_filter["query"]["bool"]["should"] = {"terms": {"_id": ids}}
 
         print(json.dumps(simple_filter))
+
+        if agg_sentiment:
+            simple_filter["aggs"] = {
+                "sentiment_counts": {
+                    "terms": {
+                        "field": "data:class_sacthai"
+                    }
+                }                
+            }
 
         searched = self.es.search(index=index_name, body=simple_filter)
         # searched_count = self.es.search(

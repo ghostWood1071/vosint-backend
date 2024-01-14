@@ -332,6 +332,7 @@ def get_news_from_newsletter_id__(
         list_source_name = []
         for i in name:
             list_source_name.append('"' + i["name"] + '"')
+
     if text_search == None and list_source_name == None:
         pipeline_dtos = my_es.search_main(
             index_name=index_name,
@@ -344,6 +345,7 @@ def get_news_from_newsletter_id__(
             # size=page_size,
             size=(int(page_number)) * int(page_size),
             list_fields=list_fields,
+            agg_sentiment=True
         )
     elif text_search == None and list_source_name != None:
         pipeline_dtos = my_es.search_main(
@@ -410,7 +412,8 @@ def get_news_from_newsletter_id__(
             size=(int(page_number)) * int(page_size),
             list_fields=list_fields,
         )
-
+   
+    
     for i in range(len(pipeline_dtos)):
         try:
             pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"]["id"]
