@@ -291,6 +291,7 @@ async def get_statistics_sentiments(
             "language_source": language_source,
             "start_date": start_date,
             "end_date": end_date,
+            "newsletter_id": news_letter_id
         },
     )
 

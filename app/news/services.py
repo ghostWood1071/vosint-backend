@@ -11,6 +11,10 @@ from vosint_ingestion.models import MongoRepository
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
+from vosint_ingestion.features.job.services.get_news_from_elastic import (
+    get_news_from_cart,
+    build_search_query_by_keyword
+)
 
 from elasticsearch import helpers
 
@@ -305,10 +309,27 @@ def get_timeline(
 
 
 async def statistics_sentiments(filter_spec, params):
-    if params["text_search"] != None and params["text_search"] != "":
+    news_letter_id = params.get("newsletter_id")
+    query = ""
+    if news_letter_id != "" and news_letter_id != None:
+        news_letter = MongoRepository().get_one(
+            collection_name="newsletter", filter_spec={"_id": news_letter_id}
+        )
+        # nếu không là giỏ tin
+        if news_letter_id != "" and news_letter["tag"] != "gio_tin":
+            #lay tin theo tu khoa trich tu van ban mau
+            query = build_search_query_by_keyword(news_letter)
+            if params.get("text_search") not in [None, ""]:
+                query = f'({query}) +("{params.get("text_search")}")'
+    
+    if query == "":
+        query = params.get("text_search")
+
+    if news_letter_id != "" and news_letter_id != None:
+    #if params["text_search"] != None and params["text_search"] != "":
         total_docs = news_es.count_search_main(
             index_name="vosint",
-            query=params["text_search"],
+            query=query,
             gte=params["start_date"],
             lte=params["end_date"],
             lang=params["language_source"],
@@ -317,7 +338,7 @@ async def statistics_sentiments(filter_spec, params):
 
         total_positive = news_es.count_search_main(
             index_name="vosint",
-            query=params["text_search"],
+            query=query,
             gte=params["start_date"],
             lte=params["end_date"],
             lang=params["language_source"],
@@ -328,7 +349,7 @@ async def statistics_sentiments(filter_spec, params):
 
         total_negative = news_es.count_search_main(
             index_name="vosint",
-            query=params["text_search"],
+            query=query,
             gte=params["start_date"],
             lte=params["end_date"],
             lang=params["language_source"],
@@ -339,7 +360,7 @@ async def statistics_sentiments(filter_spec, params):
 
         total_normal = news_es.count_search_main(
             index_name="vosint",
-            query=params["text_search"],
+            query=query,
             gte=params["start_date"],
             lte=params["end_date"],
             lang=params["language_source"],
