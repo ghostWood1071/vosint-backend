@@ -133,32 +133,37 @@ def get_news_from_cart(news_letter:any, text_search:str):
         "return_data": return_data
     }
     
-def build_keyword(news_letter, lang, first_flat, user_define = True):
+def build_keyword(keyword_source, first_flat, exclude_source = None):
     query = ""
-    lang_key = language_dict.get(lang)
-    keyword_source =news_letter[lang_key]["required_keyword"] if user_define else news_letter["required_keyword_extract"]
+    # keyword_source =news_letter[lang_key]["required_keyword"] if user_define else news_letter["required_keyword_extract"]
     try:
-        for i in keyword_source:
+        for key_line in keyword_source:
             if first_flat == 1:
                 first_flat = 0
                 query += "("
             else:
                 query += "| ("
-            j = i.split(",")
-
-            for k in j:
-                query += "+" + '"' + k + '"'
+            include_keys = key_line.split(",")
+            for key in include_keys:
+                query += "+" + '"' + key + '"'
             query += ")"
     except:
         pass
-    if user_define:
+    if exclude_source is not None:
         try:
-            j = news_letter[lang_key]["exclusion_keyword"].split(",")
-            for k in j:
-                query_vi += "-" + '"' + k + '"'
+            # exclude_keys = news_letter[lang_key]["exclusion_keyword"].split(",")
+            exclude_keys = exclude_source.split(",")
+            for key in exclude_keys:
+                query_vi += "-" + '"' + key + '"'
         except:
             pass
     return query, first_flat
+
+def build_keyword_by_lang(newsletter, lang, first_flat):
+    lang_key = language_dict.get(lang)
+    key_source = newsletter[lang_key]["required_keyword"]
+    exclude_keys = newsletter[lang_key]["exclusion_keyword"]
+    return build_keyword(key_source, first_flat, exclude_keys)
 
 def combine_keyword(*keywords):
     first_lang = 1
@@ -211,19 +216,19 @@ def build_search_query_by_keyword(news_letter):
     query = ""
     if news_letter["is_sample"]:
             first_flat = 1
-            query, first_flat = build_keyword(news_letter, "any", first_flat, False)
-        #lay tin theo tu khoa cua nguoi dung tu dinh ngia
-    else:
+            query, first_flat = build_keyword(news_letter["required_keyword_extract"], first_flat)
+       
+    else:  #lay tin theo tu khoa cua nguoi dung tu dinh ngia
         query = ""
         ### vi
         first_flat = 1
-        query_vi, first_flat = build_keyword(news_letter, "vi", first_flat)
+        query_vi, first_flat = build_keyword_by_lang(news_letter, "vi", first_flat)
         ### cn
-        query_cn, first_flat = build_keyword(news_letter, "cn", first_flat)
+        query_cn, first_flat = build_keyword_by_lang(news_letter, "cn", first_flat)
         ### ru
-        query_ru, first_flat = build_keyword(news_letter, "ru", first_flat)
+        query_ru, first_flat = build_keyword_by_lang(news_letter, "ru", first_flat)
         ### cn
-        query_en, first_flat = build_keyword(news_letter, "en", first_flat)
+        query_en, first_flat = build_keyword_by_lang(news_letter, "en", first_flat)
         ## combine all keyword
         query = combine_keyword(query_vi, query_cn, query_ru, query_en)
     return query
@@ -351,23 +356,7 @@ def get_news_from_newsletter_id__(
         for i in range(len(pipeline_dtos)):
             list_id.append(pipeline_dtos[i]["_source"]["id"])
 
-        # không biết thì phải comment lại
-        # pipeline_dtos = my_es.search_main(
-        #     index_name=index_name,
-        #     query=text_search,
-        #     gte=start_date,
-        #     lte=end_date,
-        #     lang=language_source,
-        #     sentiment=sac_thai,
-        #     list_id=list_id,
-        #     # list_source_name=list_source_name,
-        #     # size=page_size,
-        #     size=(int(page_number)) * int(page_size),
-        #     list_fields=list_fields,
-        # )
    
     validate_read(pipeline_dtos, is_get_read_state)
     
-
-    # print("dtos", pipeline_dtos)
     return pipeline_dtos

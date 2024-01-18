@@ -12,6 +12,7 @@ import re
 from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
+from vosint_ingestion.features.job.services.get_news_from_elastic import build_keyword, combine_keyword
 
 news_es = My_ElasticSearch()
 
@@ -288,6 +289,7 @@ class JobController:
             timeline["date_created"] = str(timeline["date_created"])
         return timelines
 
+    
     def search_news_by_object(
         self,
         page_number,
@@ -306,16 +308,12 @@ class JobController:
                     "$or": [
                         {
                             "data:content": {
-                                # "$regex": text_search,
-                                # "$options": "i",
                                 "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
                                 "$options": "iu",
                             }
                         },
                         {
                             "data:title": {
-                                # "$regex": text_search,
-                                # "$options": "i",
                                 "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
                                 "$options": "iu",
                             }
@@ -377,22 +375,23 @@ class JobController:
             {
                 "$project": {
                     "arrayLength": 1,
-                    "sub_set": "$news_list"
-                    # {
-                    #     "$slice": [
-                    #         "$news_list",
-                    #         # {
-                    #         #     "$subtract": [
-                    #         #         "$arrayLength",
-                    #         #         int(page_size) * int(page_number),
-                    #         #     ]
-                    #         # },
-                    #         # int(skip),
-                    #         # int(page_size),
-                    #         int(skip),
-                    #         int(10000),
-                    #     ]
-                    # },
+                    "sub_set": #"$news_list"
+                    {
+                        "$slice": [
+                            "$news_list",
+                            {
+                                "$subtract": [
+                                    "$arrayLength",
+                                    int(page_size) * int(page_number),
+                                ]
+                            },
+                            # int(skip),
+                            int(page_size),
+                            # int(skip),
+                            # int(10000),
+                        ]
+                    },
+                    "keywords": 1
                 }
             },
         ]
@@ -430,9 +429,16 @@ class JobController:
                     row_new["_id"] = str(row_new["_id"])
                     row_new["pub_date"] = str(row_new["pub_date"])
             else:
+                keyword_dict = objects[0].get("keywords") 
+                query_vi, first_flat = build_keyword([keyword_dict.get("vi")], 1) 
+                query_ru, first_flat = build_keyword([keyword_dict.get("ru")], first_flat)
+                query_en, first_flat = build_keyword([keyword_dict.get("en")], first_flat)
+                query_cn, first_flat = build_keyword([keyword_dict.get("cn")], first_flat)
+                query = combine_keyword(query_vi, query_ru, query_en, query_cn)
+                query = f'({query})+("{text_search}")'
                 pipeline_dtos = news_es.search_main(
                     index_name="vosint",
-                    query=text_search,
+                    query=query,
                     gte=start_date,
                     lte=end_date,
                     lang=language_source,

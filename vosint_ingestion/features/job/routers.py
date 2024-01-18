@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from db.init_db import get_collection_client
 from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_newsletter_id__,
+    build_search_query_by_keyword
 )
 from core.config import settings
 from datetime import timedelta
