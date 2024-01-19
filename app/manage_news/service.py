@@ -126,14 +126,14 @@ async def update_source_group(id: str, data: dict, list_source):
 
     source_group = await db.find_one({"_id": ObjectId(id)})
 
-    list_source_group = await db.find(
-        {"_id": {"$ne": source_group["_id"]}, "source_name": data["source_name"]}
-    ).to_list(length=None)
-    if len(list_source_group) > 0:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Source group is duplicated",
-        )
+    # list_source_group = await db.find(
+    #     {"_id": {"$ne": source_group["_id"]}, "source_name": data["source_name"]}
+    # ).to_list(length=None)
+    # if len(list_source_group) > 0:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT,
+    #         detail="Source group is duplicated",
+    #     )
     updated_source_group = await db.update_many({"_id": ObjectId(id)}, {"$set": data})
     if updated_source_group.modified_count > 0:
         return status.HTTP_200_OK
