@@ -302,6 +302,18 @@ class JobController:
         object_id,
     ):
         filter_spec = {}
+        sentiment_label = {
+            "1": "positive",
+            "2": "negative",
+            "0": "normal"
+        }
+        
+        sentiment_statistic = {
+            "all": 0,
+            "positive": 0,
+            "negative": 0,
+            "normal": 0
+        }
         if text_search != None and text_search != "":
             filter_spec.update(
                 {
@@ -321,12 +333,7 @@ class JobController:
                     ]
                 },
             )
-            # filter_spec.update(
-            #     {"data:content": {"$regex": rf"\b{text_search}\b", "$options": "i"}}
-            # )
-            # filter_spec.update(
-            #     {"data:title": {"$regex": rf"\b{text_search}\b", "$options": "i"}}
-            # )
+
         if end_date != None and end_date != "":
             _end_date = datetime.strptime(end_date, "%d/%m/%Y")
             filter_spec.update({"pub_date": {"$lte": _end_date}})
@@ -368,52 +375,24 @@ class JobController:
 
             filter_spec.update({"source_language": {"$in": ls.copy()}})
 
-        skip = int(page_size) * (int(page_number) - 1)
-        news_ids_pipe_line = [
-            {"$match": {"_id": ObjectId(object_id)}},
-            {"$addFields": {"arrayLength": {"$size": "$news_list"}}},
-            {
-                "$project": {
-                    "arrayLength": 1,
-                    "sub_set": #"$news_list"
-                    {
-                        "$slice": [
-                            "$news_list",
-                            {
-                                "$subtract": [
-                                    "$arrayLength",
-                                    int(page_size) * int(page_number),
-                                ]
-                            },
-                            # int(skip),
-                            int(page_size),
-                            # int(skip),
-                            # int(10000),
-                        ]
-                    },
-                    "keywords": 1
-                }
-            },
-        ]
         try:
-            objects = MongoRepository().aggregate("object", news_ids_pipe_line)
+            
+            objects = MongoRepository().find("object", {"_id": ObjectId(object_id)}, {"keywords": 1, "news_list":1})
 
             if len(objects) == 0:
-                return {"result": [], "total_record": 0}
-
+                return {"sentiments": {}, "result": [], "total_record": 0}
+            
             news_ids = (
-                [ObjectId(news_id) for news_id in objects[0].get("sub_set")]
+                [ObjectId(news_id) for news_id in objects[0].get("news_list")]
                 if (text_search == "" or text_search == None)
-                else [news_id for news_id in objects[0].get("sub_set")]
+                else [news_id for news_id in objects[0].get("news_list")]
             )
-            total = int(objects[0].get("arrayLength"))
+
+            total = len(objects[0].get("news_list"))
             filter_spec["_id"] = {"$in": news_ids}
 
-            # _start_date = datetime.strftime(start_date, "%Y-%m-%dT00:00:00Z")
-            # _end_date = datetime.strftime(end_date, "%Y-%m-%dT00:00:00Z")
             if text_search == "" or text_search == None:
                 page_number = int(page_number) if page_number is not None else None
-                # page_size = request.args.get('page_size')
                 page_size = int(page_size) if page_size is not None else None
                 page_number = page_number if page_number else 1
                 page_size = page_size if page_size else 20
@@ -421,10 +400,24 @@ class JobController:
                     "skip": page_size * (page_number - 1),
                     "limit": page_size,
                 }
-                # print("paginate", pagination_spec)
                 news, _ = MongoRepository().get_many_News(
                     "News", filter_spec, ["pub_date"], pagination_spec=pagination_spec
                 )
+                sentiment_pipeline = [
+                                        {"$match": filter_spec}, 
+                                        {
+                                            '$group': {
+                                                '_id': '$data:class_sacthai', 
+                                                'count': {
+                                                    '$sum': 1
+                                                }
+                                            }  
+                                        }
+                                    ]
+                sentiment_count = MongoRepository().aggregate("News",sentiment_pipeline)
+                sentiment_statistic = {sentiment_label[x["_id"]]:x["count"] for x in sentiment_count}
+                sentiment_statistic["all"] = sum(list(sentiment_statistic.values()))
+                
                 for row_new in news:
                     row_new["_id"] = str(row_new["_id"])
                     row_new["pub_date"] = str(row_new["pub_date"])
@@ -436,17 +429,27 @@ class JobController:
                 query_cn, first_flat = build_keyword([keyword_dict.get("cn")], first_flat)
                 query = combine_keyword(query_vi, query_ru, query_en, query_cn)
                 query = f'({query})+("{text_search}")'
-                pipeline_dtos = news_es.search_main(
-                    index_name="vosint",
-                    query=query,
-                    gte=start_date,
-                    lte=end_date,
-                    lang=language_source,
-                    sentiment=sac_thai,
-                    list_id=news_ids,
-                    size=(int(page_number)) * int(page_size),
-                )
-
+                search_params = {
+                    "index_name": "vosint",
+                    "query": query,
+                    "gte": start_date,
+                    "lte": end_date,
+                    "lang": language_source,
+                    "sentiment": sac_thai,
+                    "list_id": news_ids,
+                    "size": int(page_number) * int(page_size)
+                }
+                pipeline_dtos = news_es.search_main(**search_params)
+                #--count positive--
+                search_params["sentiment"] = "1"
+                sentiment_statistic["positive"] = news_es.count_search_main(**search_params)
+                #--count negative--
+                search_params["sentiment"] = "2"
+                sentiment_statistic["negative"] = news_es.count_search_main(**search_params)
+                #--count normal--
+                search_params["sentiment"] = "0"
+                sentiment_statistic["normal"] = news_es.count_search_main(**search_params)
+                sentiment_statistic["all"] = sum(list(sentiment_statistic.values()))
                 total = len(pipeline_dtos)
 
                 for i in range(len(pipeline_dtos)):
@@ -478,7 +481,7 @@ class JobController:
             print(e)
             news = []
             total = 0
-        return {"result": news, "total_record": total}
+        return { "sentiment": sentiment_statistic,  "result": news, "total_record": total}
 
     def translate(self, lang, content):
         lang_dict = {"en": "english", "ru": "russian", "cn": "chinese"}
