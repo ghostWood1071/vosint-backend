@@ -385,7 +385,7 @@ class My_ElasticSearch:
         list_id=None,
         text_search=None,
         ids=None,
-        list_fields=None,
+        list_fields=None
     ):
         # print(ids)
         """Tìm kiếm document theo query
