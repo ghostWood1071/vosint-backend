@@ -91,5 +91,6 @@ for route in ROUTE_LIST:
 if __name__ == "__main__":
     print(settings.APP_PORT)
     uvicorn.run(
-        "main:app", host=settings.APP_HOST, port=int(settings.APP_PORT)
+        "main:app", host=settings.APP_HOST, port=int(settings.APP_PORT),
+        reload= True
     )
