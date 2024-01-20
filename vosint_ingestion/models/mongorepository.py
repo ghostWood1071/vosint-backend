@@ -527,6 +527,7 @@ class MongoRepository:
             self.__close()
         return result
 
+    
     def create_index(self, collection_name:str,  field_name:str, type, options:Any = None):
         if collection_name is None:
             raise InternalError(

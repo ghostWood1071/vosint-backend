@@ -106,7 +106,11 @@ class PipelineService:
         filter_spec = {}
         if text_search:
             text_search = norm_text(text_search)
-            filter_spec["text_search"] = {"$regex": text_search}
+            filter_spec["$or"] = [
+                {"text_search": {"$regex": text_search}},
+                {"schema.params.url": {"$regex": text_search}} 
+            ]
+            #filter_spec["text_search"] = {"$regex": text_search}
 
         # Filter enabled pipelines
         if isinstance(enabled, bool):
