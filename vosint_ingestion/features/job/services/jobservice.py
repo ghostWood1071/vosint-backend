@@ -12,7 +12,7 @@ import requests
 from core.config import settings
 
 # from models import MongoRepository
-from features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 
 # from nlp.hieu.vosint_v3_document_clustering_main_16_3.create_keyword import Create_vocab_corpus
 # from nlp.keyword_extraction.keywords_ext import Keywords_Ext
@@ -40,7 +40,7 @@ class JobService:
     def __init__(self):
         self.__pipeline_service = PipelineService()
         self.__mongo_repo = MongoRepository()
-        self.__elastic_search = My_ElasticSearch()
+        self.__elastic_search = MyElasticSearch()
 
     # control job crawl
     # ----------------------------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ class JobService:
     def elt_search(
         self, start_date, end_date, sac_thai, language_source, text_search, ids
     ):
-        my_es = My_ElasticSearch()
+        my_es = MyElasticSearch()
         pipeline_dtos = my_es.search_main(
             index_name="vosint",
             query=text_search,

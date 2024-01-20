@@ -7,12 +7,11 @@ from vosint_ingestion.models.mongorepository import MongoRepository
 from db.init_db import get_collection_client
 import re
 from datetime import datetime, timedelta
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
+
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 
 db = get_collection_client("object")
-news_es = My_ElasticSearch()
+news_es = MyElasticSearch()
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
 
 

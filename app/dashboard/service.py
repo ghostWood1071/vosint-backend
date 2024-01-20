@@ -3,9 +3,7 @@ from typing import List
 from bson import ObjectId
 
 from db.init_db import get_collection_client
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 import json
 import os
 
@@ -23,7 +21,7 @@ topic_statistic_client = get_collection_client("top_statistic")
 report_client = get_collection_client("report")
 
 
-my_es = My_ElasticSearch()
+my_es = MyElasticSearch()
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 

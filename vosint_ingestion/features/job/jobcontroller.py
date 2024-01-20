@@ -9,12 +9,9 @@ from core.config import settings
 import json
 from datetime import datetime
 import re
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
-from vosint_ingestion.features.job.services.get_news_from_elastic import build_keyword, combine_keyword
-
-news_es = My_ElasticSearch()
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
+from vosint_ingestion.features.elasticsearch.elastic_query_builder import build_keyword, combine_keyword
+news_es = MyElasticSearch()
 
 
 def get_depth(mylist):

@@ -8,9 +8,7 @@ from db.init_db import get_collection_client
 
 from .utils import news_to_json
 from vosint_ingestion.models import MongoRepository
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_cart,
     build_search_query_by_keyword
@@ -20,7 +18,7 @@ from elasticsearch import helpers
 
 client = get_collection_client("News")
 events_client = get_collection_client("events")
-news_es = My_ElasticSearch()
+news_es = MyElasticSearch()
 
 
 async def find_news_by_filter(filter, projection=None):
@@ -96,7 +94,7 @@ async def find_news_by_ids(ids: List[str], projection: Dict["str", Any]):
 
 
 def add_keywords_to_elasticsearch(index, keywords, doc_ids):
-    es = My_ElasticSearch()
+    es = MyElasticSearch()
     actions = []
     for document_id in doc_ids:
         update_action = {

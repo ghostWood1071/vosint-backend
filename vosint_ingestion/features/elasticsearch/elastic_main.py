@@ -14,7 +14,7 @@ from core.config import settings
 
 # http://118.70.52.237:9200/
 #print(settings.ELASTIC_CONNECT.split(','))
-class My_ElasticSearch:
+class MyElasticSearch:
     def __init__(
         self,
         host="",
@@ -385,7 +385,8 @@ class My_ElasticSearch:
         list_id=None,
         text_search=None,
         ids=None,
-        list_fields=None
+        list_fields=None,
+        subject_id=None
     ):
         # print(ids)
         """Tìm kiếm document theo query
@@ -415,6 +416,12 @@ class My_ElasticSearch:
             _sentiment = "*"
         else:
             _sentiment = sentiment
+
+        if subject_id not in [None, ""]:
+            _subject_id = "*"
+        else:
+            _subject_id = subject_id
+        
         if lang is None or lang == "":
             # print("Lang is none")
             _lang = "*"
@@ -442,6 +449,12 @@ class My_ElasticSearch:
                                 "default_field": "data:class_sacthai",
                             }
                         },
+                        {
+                            "query_string": {
+                                "query": _subject_id,
+                                "default_field": "subject_id",
+                            }
+                        }
                     ],
                     "filter": {"range": {"pub_date": {"gte": _gte, "lte": _lte}}},
                 }
@@ -476,18 +489,6 @@ class My_ElasticSearch:
         print(json.dumps(simple_filter))
 
         searched = self.es.search(index=index_name, body=simple_filter)
-        # searched_count = self.es.search(
-        #     index=index_name,
-        #     body={
-        #         "query": {
-        #             "match_all": {},
-        #         },
-        #         "size": 0,
-        #         "track_total_hits": True,
-        #     },  # Match all documents
-        # )
-        # print("total", searched["hits"]["total"]["value"])
-        # print("total", searched["hits"]["total"])
 
         result = []
         hits = searched["hits"]["hits"]

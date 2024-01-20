@@ -3,9 +3,7 @@ from bson.objectid import ObjectId
 from datetime import datetime
 from vosint_ingestion.models.mongorepository import MongoRepository
 
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 import pytz
 
 
@@ -107,7 +105,7 @@ def get_news_from_newsletter_id__(
     query = None
     # index_name = "vosint"
     index_name = "vosint"
-    my_es = My_ElasticSearch()
+    my_es = MyElasticSearch()
 
     # date-------------------------------------------
     try:

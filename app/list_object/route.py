@@ -5,11 +5,9 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 
-my_es = My_ElasticSearch()
+my_es = MyElasticSearch()
 from app.list_object.model import CreateObject, UpdateObject
 from app.list_object.service import (
     count_all_object,
