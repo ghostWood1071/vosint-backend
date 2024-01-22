@@ -147,7 +147,7 @@ def get_date(start_date, end_date):
         pass
     return start_date, end_date
 
-def build_keyword(keyword_source, first_flat, exclude_source = None):
+def build_keyword(keyword_source, first_flat):
     query = ""
     try:
         for key_line in keyword_source:
@@ -155,31 +155,48 @@ def build_keyword(keyword_source, first_flat, exclude_source = None):
                 first_flat = 0
                 query += "("
             else:
-                query += " | ("
+                query += " + ("
             include_keys = key_line.split(",")
             for key in include_keys:
                 #query += "+" + '"' + key + '"'
                 key = key.strip(" ")
-                query += f'"{key}" + '
-            query = query.strip("+ ")
+                query += f'"{key}" | '
+            query = query.strip("| ")
             query += ")"
     except:
         pass
-    if exclude_source is not None:
-        try:
-            # exclude_keys = news_letter[lang_key]["exclusion_keyword"].split(",")
-            exclude_keys = exclude_source.split(",")
-            for key in exclude_keys:
-                query_vi += " - " + '"' + key + '"'
-        except:
-            pass
+    # if exclude_source is not None:
+    #     try:
+    #         # exclude_keys = news_letter[lang_key]["exclusion_keyword"].split(",")
+    #         exclude_keys = exclude_source.split(",")
+    #         for key in exclude_keys:
+    #             query_vi += " - " + '"' + key + '"'
+    #     except:
+    #         pass
     return query, first_flat
+
+def build_exclude_keywords(newsletter, *langs:list[str]):
+    query_set = []
+    query  = ""
+    for lang in langs:
+        lang_key = language_dict.get(lang)
+        exclude_phrase = newsletter[lang_key].get("exclusion_keyword")
+        if exclude_phrase not in [None, ""]:
+            exclude_keys = [f'"{key.strip(" ")}"' for key in exclude_phrase.split(",")]
+            exclude_query = " + ".join(exclude_keys)
+            if exclude_query != "":
+                query_set.append(exclude_query)
+    if len(query_set) > 0:
+        query = f' - ({" + ".join(query_set)})'
+    return query
+    
+            
 
 def build_keyword_by_lang(newsletter, lang, first_flat):
     lang_key = language_dict.get(lang)
     key_source = newsletter[lang_key]["required_keyword"]
-    exclude_keys = newsletter[lang_key]["exclusion_keyword"]
-    return build_keyword(key_source, first_flat, exclude_keys)
+    # exclude_keys = newsletter[lang_key]["exclusion_keyword"]
+    return build_keyword(key_source, first_flat)
 
 def combine_keyword(*keywords):
     first_lang = 1
@@ -227,5 +244,6 @@ def build_search_query_by_keyword(news_letter):
         ### cn
         query_en, first_flat = build_keyword_by_lang(news_letter, "en", first_flat)
         ## combine all keyword
-        query = combine_keyword(query_vi, query_cn, query_ru, query_en)
+        exclude_query = build_exclude_keywords(news_letter, "vi", "cn", "ru", "en")
+        query = combine_keyword(query_vi, query_cn, query_ru, query_en) + exclude_query
     return query
