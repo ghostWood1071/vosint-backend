@@ -8,9 +8,10 @@ from fastapi import HTTPException
 router = APIRouter()
 
 @router.get("/get-subjects")
-def route_get_subjects(search_text:str="", page_size:int=10, page_index:int=1)->List[Subject]:
+def route_get_subjects(search_text:str="", page_size:int=10, page_index:int=1)->Any:
     try: 
         data = get_subjects(search_text, page_size, page_index)
+        
         return data
     except Exception as e:
         traceback.print_exc()
