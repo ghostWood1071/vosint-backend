@@ -417,7 +417,7 @@ class MyElasticSearch:
         else:
             _sentiment = sentiment
 
-        if subject_id not in [None, ""]:
+        if subject_id in [None, ""]:
             _subject_id = "*"
         else:
             _subject_id = subject_id

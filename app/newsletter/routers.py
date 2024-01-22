@@ -49,7 +49,7 @@ projection = {
     "pub_date": True,
 }
 
-
+#create news letter
 @router.post("")
 async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
