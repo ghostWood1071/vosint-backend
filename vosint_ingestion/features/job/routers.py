@@ -24,6 +24,7 @@ from datetime import timedelta
 import asyncio
 import json
 import re
+from app.newsletter.models import NewsletterTag
 
 ttxvn_client = get_collection_client("ttxvn")
 
@@ -484,7 +485,7 @@ def get_event_from_newsletter_list_id(
 
         try:
             if news_letter_id != "" and news_letter_id != None:
-                if news_letter_id != "" and child_newsletter["tag"] == "gio_tin":
+                if news_letter_id != "" and child_newsletter["tag"] == NewsletterTag.ARCHIVE:
                     list_id = []
                     if child_newsletter.get("news_id") != None:
                         ls = [
@@ -493,7 +494,7 @@ def get_event_from_newsletter_list_id(
                     if ls == []:
                         return []
 
-                if news_letter_id != "" and child_newsletter["tag"] != "gio_tin":
+                if news_letter_id != "" and child_newsletter["tag"] != NewsletterTag.ARCHIVE:
                     if child_newsletter["is_sample"]:
                         query = ""
                         query = build_keyword_query(
@@ -527,7 +528,7 @@ def get_event_from_newsletter_list_id(
             plt_size = event_number * 2 if event_number else 100
 
             pipeline_dtos = my_es.search_main(
-                index_name="vosint",
+                index_name=settings.ELASTIC_NEWS_INDEX,
                 query=query,
                 gte=start_date,
                 lte=end_date,
@@ -691,7 +692,7 @@ def get_news_from_newsletter_id(
         collection_name="newsletter", filter_spec={"_id": news_letter_id}
     )
 
-    if news_letter_id != "" and a["tag"] == "gio_tin":
+    if news_letter_id != "" and a["tag"] == NewsletterTag.ARCHIVE:
         ls = []
         kt_rong = 1
         try:
@@ -726,7 +727,7 @@ def get_news_from_newsletter_id(
     #         query += '-'+'\"' + k + '\"'
     # except:
     #     pass
-    if news_letter_id != "" and a["tag"] != "gio_tin":
+    if news_letter_id != "" and a["tag"] != NewsletterTag.ARCHIVE:
         if a["is_sample"]:
             query = ""
             first_flat = 1
@@ -873,7 +874,7 @@ def get_news_from_newsletter_id(
     #     query += ' AND (' + text_search + ')'
     if text_search == None:
         pipeline_dtos = my_es.search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
             gte=start_date,
             lte=end_date,
@@ -883,7 +884,7 @@ def get_news_from_newsletter_id(
         )
     else:
         pipeline_dtos = my_es.search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
             gte=start_date,
             lte=end_date,
@@ -895,7 +896,7 @@ def get_news_from_newsletter_id(
         for i in range(len(pipeline_dtos)):
             list_id.append(pipeline_dtos[i]["_source"]["id"])
         pipeline_dtos = my_es.search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=text_search,
             gte=start_date,
             lte=end_date,
@@ -989,7 +990,7 @@ def News_search(
         pass
     # print(end_date)
     pipeline_dtos = my_es.search_main(
-        index_name="vosint",
+        index_name=settings.ELASTIC_NEWS_INDEX,
         query=text_search,
         gte=start_date,
         lte=end_date,
@@ -1171,7 +1172,7 @@ def get_result_job(
         elif text_search != "":
 
             pipeline_dtos = my_es.search_main(
-                index_name="vosint",
+                index_name=settings.ELASTIC_NEWS_INDEX,
                 query=text_search,
                 gte=start_date,
                 lte=end_date,

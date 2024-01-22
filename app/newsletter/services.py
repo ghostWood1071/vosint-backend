@@ -4,7 +4,7 @@ from bson.objectid import ObjectId
 
 from db.init_db import get_collection_client
 
-from .models import Tag
+from .models import NewsletterTag
 from .utils import newsletter_to_json
 import re
 
@@ -16,23 +16,19 @@ async def find_newsletter_by_id(newsletter_id: ObjectId, projection=None):
 
 
 async def find_newsletters_and_filter(filter_newsletters: dict, projection=None):
-    topics = {"gio_tin": [], "linh_vuc": [], "chu_de": []}
+    topics = {NewsletterTag.ARCHIVE: [], NewsletterTag.SELFS: []}
 
     async for topic in client.find(filter_newsletters, projection).sort("_id"):
         topic = newsletter_to_json(topic)
         if "tag" not in topic:
             continue
 
-        if topic["tag"] == Tag.gio_tin:
-            topics["gio_tin"].append(topic)
+        if topic["tag"] == NewsletterTag.ARCHIVE:
+            topics[NewsletterTag.ARCHIVE].append(topic)
             continue
 
-        if topic["tag"] == Tag.linh_vuc:
-            topics["linh_vuc"].append(topic)
-            continue
-
-        if topic["tag"] == Tag.chu_de:
-            topics["chu_de"].append(topic)
+        if topic["tag"] == NewsletterTag.SELFS:
+            topics[NewsletterTag.SELFS].append(topic)
             continue
 
     return topics

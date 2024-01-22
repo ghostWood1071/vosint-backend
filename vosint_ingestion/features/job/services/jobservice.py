@@ -194,7 +194,7 @@ class JobService:
             # }
             # a = sefl.__elastic_search.query(index_name='vosint',query=query)
             a = sefl.__elastic_search.search_main(
-                index_name="vosint",
+                index_name=settings.ELASTIC_NEWS_INDEX,
                 query=text_search,
                 gte=start_date,
                 lte=end_date,
@@ -229,7 +229,7 @@ class JobService:
             # }
             # a = sefl.__elastic_search.query(index_name='vosint',query=query)
             a = sefl.__elastic_search.search_main(
-                index_name="vosint",
+                index_name=settings.ELASTIC_NEWS_INDEX,
                 query=text_search,
                 gte=start_date,
                 lte=end_date,
@@ -247,7 +247,7 @@ class JobService:
     ):
         my_es = MyElasticSearch()
         pipeline_dtos = my_es.search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=text_search,
             gte=start_date,
             lte=end_date,

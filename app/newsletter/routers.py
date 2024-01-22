@@ -17,7 +17,7 @@ from .models import (
     NewsLetterCreateModel,
     NewsletterDeleteMany,
     NewsLetterUpdateModel,
-    Tag,
+    NewsletterTag
 )
 from .services import (
     create_news_ids_to_newsletter,
@@ -84,7 +84,7 @@ async def read(title: str = "", authorize: AuthJWT = Depends()):
             },
             {
                 "$and": [
-                    {"tag": {"$in": [Tag.gio_tin, Tag.chu_de]}},
+                    {"tag": {"$in": [NewsletterTag.ARCHIVE, NewsletterTag.SELFS]}},
                     {"user_id": ObjectId(user_id)},
                 ]
             },

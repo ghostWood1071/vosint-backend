@@ -9,7 +9,7 @@ import re
 from datetime import datetime, timedelta
 
 from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
-
+from core.config import settings
 db = get_collection_client("object")
 news_es = MyElasticSearch()
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
@@ -164,7 +164,7 @@ def add_news_to_object(object_id):
     # search for elastic
     if pattern != "":
         pipeline_dtos = news_es.search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=pattern,
             gte=_start_date,
             lte=_end_date,
