@@ -85,6 +85,49 @@ def get_news_by_category(user_id:str, text_search:str, category:str)->list[str]:
         "data": return_data
     }
 
+def get_news_from_cart(news_letter:any, text_search:str):
+    # cart is a type of newsletter
+    # newsletter has 3 types: gio_tin, linh_vuc, chu_de
+    ls = []
+    return_data = None
+    try:
+        for new_id in news_letter["news_id"]:
+            ls.append(str(new_id))
+    except:
+        pass
+    if ls == []:
+        return_data = []
+    list_id = ls
+
+    if text_search == "" or text_search == None:
+        _ids = [ObjectId(item) for item in list_id]
+        return_data = get_news_category(_ids)
+    return {
+        "list_id": list_id,
+        "return_data": return_data
+    }
+
+def get_source_names(type, id_source):
+    #id_source la id_nguon_nhom_nguon
+    list_source_name = None
+    if type == "source":
+        name = MongoRepository().get_one(
+            collection_name="info", filter_spec={"_id": id_source}
+        )["name"]
+        list_source_name = []
+        list_source_name.append('"' + name + '"')
+    elif type == "source_group":
+        source_group = MongoRepository().get_one(
+            collection_name="Source", filter_spec={"_id": id_source}
+        )
+        name = source_group.get("news")
+        list_source_name = []
+        for i in name:
+            list_source_name.append('"' + i["name"] + '"')
+    return list_source_name
+
+
+#--------------- build query ---------------------
 def get_date(start_date, end_date):
     try:
         start_date = (
@@ -111,59 +154,48 @@ def get_date(start_date, end_date):
         pass
     return start_date, end_date
 
-def get_news_from_cart(news_letter:any, text_search:str):
-    # cart is a type of newsletter
-    # newsletter has 3 types: gio_tin, linh_vuc, chu_de
-    ls = []
-    return_data = None
-    try:
-        for new_id in news_letter["news_id"]:
-            ls.append(str(new_id))
-    except:
-        pass
-    if ls == []:
-        return_data = []
-    list_id = ls
-
-    if text_search == "" or text_search == None:
-        _ids = [ObjectId(item) for item in list_id]
-        return_data = get_news_category(_ids)
-    return {
-        "list_id": list_id,
-        "return_data": return_data
-    }
-    
-def build_keyword(keyword_source, first_flat, exclude_source = None):
+def build_keyword(keyword_source, first_flat):
     query = ""
-    # keyword_source =news_letter[lang_key]["required_keyword"] if user_define else news_letter["required_keyword_extract"]
     try:
         for key_line in keyword_source:
             if first_flat == 1:
                 first_flat = 0
                 query += "("
             else:
-                query += "| ("
+                query += " + ("
             include_keys = key_line.split(",")
             for key in include_keys:
-                query += "+" + '"' + key + '"'
+                #query += "+" + '"' + key + '"'
+                key = key.strip(" ")
+                query += f'"{key}" | '
+            query = query.strip("| ")
             query += ")"
     except:
         pass
-    if exclude_source is not None:
-        try:
-            # exclude_keys = news_letter[lang_key]["exclusion_keyword"].split(",")
-            exclude_keys = exclude_source.split(",")
-            for key in exclude_keys:
-                query_vi += "-" + '"' + key + '"'
-        except:
-            pass
     return query, first_flat
+
+def build_exclude_keywords(newsletter, *langs:list[str]):
+    query_set = []
+    query  = ""
+    for lang in langs:
+        lang_key = language_dict.get(lang)
+        exclude_phrase = newsletter[lang_key].get("exclusion_keyword")
+        if exclude_phrase not in [None, ""]:
+            exclude_keys = [f'"{key.strip(" ")}"' for key in exclude_phrase.split(",")]
+            exclude_query = " + ".join(exclude_keys)
+            if exclude_query != "":
+                query_set.append(exclude_query)
+    if len(query_set) > 0:
+        query = f' - ({" + ".join(query_set)})'
+    return query
+    
+            
 
 def build_keyword_by_lang(newsletter, lang, first_flat):
     lang_key = language_dict.get(lang)
     key_source = newsletter[lang_key]["required_keyword"]
-    exclude_keys = newsletter[lang_key]["exclusion_keyword"]
-    return build_keyword(key_source, first_flat, exclude_keys)
+    # exclude_keys = newsletter[lang_key]["exclusion_keyword"]
+    return build_keyword(key_source, first_flat)
 
 def combine_keyword(*keywords):
     first_lang = 1
@@ -176,25 +208,6 @@ def combine_keyword(*keywords):
             else:
                 query += "| (" + keyword + ")"
     return query
-
-def get_source_names(type, id_source):
-    #id_source la id_nguon_nhom_nguon
-    list_source_name = None
-    if type == "source":
-        name = MongoRepository().get_one(
-            collection_name="info", filter_spec={"_id": id_source}
-        )["name"]
-        list_source_name = []
-        list_source_name.append('"' + name + '"')
-    elif type == "source_group":
-        source_group = MongoRepository().get_one(
-            collection_name="Source", filter_spec={"_id": id_source}
-        )
-        name = source_group.get("news")
-        list_source_name = []
-        for i in name:
-            list_source_name.append('"' + i["name"] + '"')
-    return list_source_name
 
 def validate_read(pipeline_dtos, is_get_read_state):
     for i in range(len(pipeline_dtos)):
@@ -230,7 +243,8 @@ def build_search_query_by_keyword(news_letter):
         ### cn
         query_en, first_flat = build_keyword_by_lang(news_letter, "en", first_flat)
         ## combine all keyword
-        query = combine_keyword(query_vi, query_cn, query_ru, query_en)
+        exclude_query = build_exclude_keywords(news_letter, "vi", "cn", "ru", "en")
+        query = combine_keyword(query_vi, query_cn, query_ru, query_en) + exclude_query
     return query
 
 def get_news_from_newsletter_id__(
@@ -323,7 +337,7 @@ def get_news_from_newsletter_id__(
         )
     else: #text_search != None and list_source_name != None
         if text_search !=None and text_search != "":
-            query = f'({query}) +("{text_search}")'
+            query = f'({query}) + ("{text_search}")'
 
         if list_source_name == None:
             pipeline_dtos = my_es.search_main(
