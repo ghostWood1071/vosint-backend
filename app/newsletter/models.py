@@ -4,11 +4,9 @@ from typing import List, Optional
 from bson.objectid import ObjectId
 from pydantic import BaseModel, Field
 
-
-class Tag(str, Enum):
-    gio_tin = "gio_tin"
-    linh_vuc = "linh_vuc"
-    chu_de = "chu_de"
+class NewsletterTag(str, Enum):
+    SELFS = "selfs"
+    ARCHIVE = "archives"
 
 
 class NewsLetterModel(BaseModel):
@@ -16,7 +14,7 @@ class NewsLetterModel(BaseModel):
     user_id: str = Field(default_factory=ObjectId)
     parent_id: str = Field(default_factory=ObjectId)
     title: str
-    tag: Tag = Tag.gio_tin
+    tag: NewsletterTag = NewsletterTag.ARCHIVE
     news_id: List[str]
     required_keyword: List[str]
     exclusion_keyword: str
@@ -39,7 +37,7 @@ class NewsSampleModel(BaseModel):
 class NewsLetterCreateModel(BaseModel):
     parent_id: str | None
     title: str
-    tag: Tag
+    tag: NewsletterTag
     required_keyword: Optional[list[str]]
     exclusion_keyword: Optional[str]
     keyword_vi: Optional[object]
@@ -53,7 +51,7 @@ class NewsLetterCreateModel(BaseModel):
 class NewsLetterUpdateModel(BaseModel):
     parent_id: str | None
     title: str | None
-    tag: Optional[Tag]
+    tag: Optional[NewsletterTag]
     required_keyword: Optional[list[str]]
     exclusion_keyword: Optional[str]
     keyword_vi: Optional[object]

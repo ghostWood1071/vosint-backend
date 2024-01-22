@@ -37,6 +37,8 @@ class Settings:
 
     ELASTIC_CONNECT: str = ""  # = "http://localhost:9200"
 
+    ELASTIC_NEWS_INDEX: str = ""
+
     ROOT_PATH: str = ""  # = ""
 
     SUMMARIZE_API: str = ""  # = "http://sumthesis.aiacademy.edu.vn/ext"

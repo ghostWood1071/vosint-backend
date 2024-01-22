@@ -149,17 +149,19 @@ def get_date(start_date, end_date):
 
 def build_keyword(keyword_source, first_flat, exclude_source = None):
     query = ""
-    # keyword_source =news_letter[lang_key]["required_keyword"] if user_define else news_letter["required_keyword_extract"]
     try:
         for key_line in keyword_source:
             if first_flat == 1:
                 first_flat = 0
                 query += "("
             else:
-                query += "| ("
+                query += " | ("
             include_keys = key_line.split(",")
             for key in include_keys:
-                query += "+" + '"' + key + '"'
+                #query += "+" + '"' + key + '"'
+                key = key.strip(" ")
+                query += f'"{key}" + '
+            query = query.strip("+ ")
             query += ")"
     except:
         pass
@@ -168,7 +170,7 @@ def build_keyword(keyword_source, first_flat, exclude_source = None):
             # exclude_keys = news_letter[lang_key]["exclusion_keyword"].split(",")
             exclude_keys = exclude_source.split(",")
             for key in exclude_keys:
-                query_vi += "-" + '"' + key + '"'
+                query_vi += " - " + '"' + key + '"'
         except:
             pass
     return query, first_flat

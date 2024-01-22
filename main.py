@@ -59,7 +59,7 @@ def auth_exception_handler(request: Request, exc: AuthJWTException):
 async def on_startup():
     Scheduler.instance().add_job_update_error_source()
     Scheduler.instance().add_job_clear_activity()
-    init_index()
+    # init_index()
     await init_db.connect_db()
     await start_all_jobs()
 

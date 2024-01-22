@@ -13,7 +13,8 @@ from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_cart,
     build_search_query_by_keyword
 )
-
+from app.newsletter.models import NewsletterTag
+from core.config import settings
 from elasticsearch import helpers
 
 client = get_collection_client("News")
@@ -314,7 +315,7 @@ async def statistics_sentiments(filter_spec, params):
             collection_name="newsletter", filter_spec={"_id": news_letter_id}
         )
         # nếu không là giỏ tin
-        if news_letter_id != "" and news_letter["tag"] != "gio_tin":
+        if news_letter_id != "" and news_letter["tag"] != NewsletterTag.ARCHIVE:
             #lay tin theo tu khoa trich tu van ban mau
             query = build_search_query_by_keyword(news_letter)
             if params.get("text_search") not in [None, ""]:
@@ -326,7 +327,7 @@ async def statistics_sentiments(filter_spec, params):
     if news_letter_id != "" and news_letter_id != None:
     #if params["text_search"] != None and params["text_search"] != "":
         total_docs = news_es.count_search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
             gte=params["start_date"],
             lte=params["end_date"],
@@ -335,7 +336,7 @@ async def statistics_sentiments(filter_spec, params):
         )
 
         total_positive = news_es.count_search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
             gte=params["start_date"],
             lte=params["end_date"],
@@ -346,7 +347,7 @@ async def statistics_sentiments(filter_spec, params):
         )
 
         total_negative = news_es.count_search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
             gte=params["start_date"],
             lte=params["end_date"],
@@ -357,7 +358,7 @@ async def statistics_sentiments(filter_spec, params):
         )
 
         total_normal = news_es.count_search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
             gte=params["start_date"],
             lte=params["end_date"],

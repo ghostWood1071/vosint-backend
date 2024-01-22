@@ -3,7 +3,8 @@ from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 from vosint_ingestion.features.elasticsearch.elastic_query_builder import *
 from bson import ObjectId
 from typing import *
-
+from app.newsletter.models import NewsletterTag
+from core.config import settings
 
 my_es = MyElasticSearch()
 
@@ -27,7 +28,7 @@ def get_news_from_newsletter_id__(
 ):
     
     query = None
-    index_name = "vosint"
+    index_name = settings.ELASTIC_NEWS_INDEX
 
     # date-------------------------------------------
     start_date, end_date = get_date(start_date, end_date)
@@ -57,14 +58,14 @@ def get_news_from_newsletter_id__(
         )
     
     # nếu là giỏ tin
-    if news_letter_id != "" and news_letter["tag"] == "gio_tin":
+    if news_letter_id != "" and news_letter["tag"] == NewsletterTag.ARCHIVE:
         result_search = get_news_from_cart(news_letter, text_search)
         if result_search.get("return_data") is not None:
             return result_search.get("return_data")
         list_id = result_search.get("list_id")
 
     # nếu không là giỏ tin
-    if news_letter_id != "" and news_letter["tag"] != "gio_tin":
+    if news_letter_id != "" and news_letter["tag"] != NewsletterTag.ARCHIVE:
         #lay tin theo tu khoa trich tu van ban mau
         query = build_search_query_by_keyword(news_letter)
 
