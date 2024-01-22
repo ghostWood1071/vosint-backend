@@ -83,15 +83,10 @@ async def read(title: str = "", authorize: AuthJWT = Depends()):
                 ]
             },
             {
-                "$or": [
-                    {
-                        "$and": [
-                            {"tag": {"$in": [Tag.gio_tin, Tag.chu_de]}},
-                            {"user_id": ObjectId(user_id)},
-                        ]
-                    },
-                    {"tag": Tag.linh_vuc},
-                ],
+                "$and": [
+                    {"tag": {"$in": [Tag.gio_tin, Tag.chu_de]}},
+                    {"user_id": ObjectId(user_id)},
+                ]
             },
         ],
     }
