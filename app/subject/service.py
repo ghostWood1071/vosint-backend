@@ -14,27 +14,34 @@ def get_subjects(text_search:str, page_size:int, page_index:int)->List[Any]:
                 "skip": skip,
                 "limit": page_size
             },
-            "order": "sort_order"
+            "order": "sort_order",
         }
+
+
         if text_search not in [None, ""]:
-            search_params["name"] = {
-                "$regex": text_search
-            }
+            # search_params["name"] = {
+            #     "$regex": text_search
+            # }
+            search_params.update({
+                "filter_spec": {"name": {"$regex": text_search, "$options": "i"}}
+            })
+
         
-        
-        result = MongoRepository().find(**search_params)
+        result, total_docs = MongoRepository().find(**search_params)
         for line in result:
             line["_id"] = str(line["_id"])
-        return result 
+
+        return { "data": result, "total_records": total_docs }
     except Exception as e:
         traceback.print_exc()
         raise e
 
 def get_subject(subject_id:str)->Any:
     try:
-        result = MongoRepository().find("subjects", filter_spec={"_id": ObjectId(subject_id)})
+        result, _ = MongoRepository().find("subjects", filter_spec={"_id": ObjectId(subject_id)})
         if len(result) == 0:
             raise Exception(f"subject {subject_id} no found")
+
         result[0]["_id"] = str(result[0]["_id"])
         return result[0]
     except Exception as e:
