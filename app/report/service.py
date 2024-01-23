@@ -74,6 +74,9 @@ async def create_report(report):
     return created_rp
 
 async def update_report(id: str, data):
+    for heading in data.get("headings"):
+        if heading.get("news"):
+            heading.pop("news")
     updated_rp = await report_client.update_one({"_id": ObjectId(id)}, {"$set": data})
     return updated_rp
 
@@ -85,11 +88,7 @@ async def remove_heading_from_report(id_rp, id_heading: str):
     report_filter = {"_id": ObjectId(id_rp)}
     update_action = {
         "$pull": {
-            "headings": {
-                "$elemMatch": {
-                    "id": id_heading
-                }
-            }
+            "headings": {"id": id_heading}
         }
     }
     await report_client.update_one(report_filter, update_action)
