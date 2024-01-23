@@ -73,7 +73,10 @@ async def get_posts(
     start_date="",
     end_date="",
     sac_thai="",
+    auth:AuthJWT = Depends()
 ):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
     return await exec_posts(
         collection_name,
         order,
@@ -83,6 +86,7 @@ async def get_posts(
         start_date,
         end_date,
         sac_thai,
+        user_id
     )
 
 

@@ -1224,10 +1224,15 @@ async def exec_posts(
     start_date="",
     end_date="",
     sac_thai="",
+    user_id = ""
 ):
-    filter_spec = {}
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)})
+    following_ids = [] if user.get("following") is None else user.get("following")
+    following_ids = [ObjectId(x) for x in following_ids]
+    filter_spec = {"id_social":  {"$in": following_ids}}
     skip = int(page_size) * (int(page_number) - 1)
-
+    
     # filter by text_search
     if text_search != "":
         filter_spec.update(
@@ -1273,7 +1278,7 @@ async def exec_posts(
         {
             "$facet": {
                 "data": [
-                    {"$match": filter_spec},
+                    {"$match":  filter_spec},
                     {
                         "$lookup": {
                             "from": "social_media",

@@ -63,7 +63,6 @@ async def get_report(id: str):
     for heading in report.get("headings"):
         for news_id in heading.get("news_ids"):
             heading["news"].append(news_dict.get(news_id))
-        heading.pop("news_ids")
     report["news"] = []
     for news_id in report.get("news_ids"):
         report["news"].append(news_dict.get(news_id))
