@@ -64,6 +64,7 @@ async def post_report(report: CreateReport = Body(...), auth: AuthJWT = Depends(
     user_id = auth.get_jwt_subject()
     report_dict = report.dict()
     report_dict["user_id"] = user_id
+    report_dict["news_ids"] = []
     report_created = await create_report(report_dict)
     return report_created.inserted_id
 
