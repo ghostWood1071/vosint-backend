@@ -106,7 +106,11 @@ class PipelineService:
         filter_spec = {}
         if text_search:
             text_search = norm_text(text_search)
-            filter_spec["text_search"] = {"$regex": text_search}
+            filter_spec["$or"] = [
+                {"text_search": {"$regex": text_search}},
+                {"schema.params.url": {"$regex": text_search}} 
+            ]
+            #filter_spec["text_search"] = {"$regex": text_search}
 
         # Filter enabled pipelines
         if isinstance(enabled, bool):
@@ -202,7 +206,7 @@ class PipelineService:
             ids = list(map(lambda p_id: ObjectId(p_id), ids))
             filter_spec["_id"] = {"$in": ids}
 
-        raw_pipelines = MongoRepository().find("pipelines", filter_spec, {"_id": 1})
+        raw_pipelines, _ = MongoRepository().find("pipelines", filter_spec, {"_id": 1})
         pipelines = [{"_id": str(pipeline.get("_id"))} for pipeline in raw_pipelines]
 
         # Map to dtos

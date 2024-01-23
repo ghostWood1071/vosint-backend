@@ -2,10 +2,10 @@
 import json
 from elasticsearch import Elasticsearch
 
-from elastic_main import My_ElasticSearch
+from elastic_main import MyElasticSearch
 from core.config import settings
 
-my_es = My_ElasticSearch(host=[settings.ELASTIC_CONNECT], user='USER', password='PASS', verify_certs=False)
+my_es = MyElasticSearch(host=[settings.ELASTIC_CONNECT], user='USER', password='PASS', verify_certs=False)
 
 # print(my_es.log_cluster_health())
 

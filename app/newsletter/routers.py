@@ -17,7 +17,7 @@ from .models import (
     NewsLetterCreateModel,
     NewsletterDeleteMany,
     NewsLetterUpdateModel,
-    Tag,
+    NewsletterTag
 )
 from .services import (
     create_news_ids_to_newsletter,
@@ -49,7 +49,7 @@ projection = {
     "pub_date": True,
 }
 
-
+#create news letter
 @router.post("")
 async def create(body: NewsLetterCreateModel, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
@@ -83,15 +83,10 @@ async def read(title: str = "", authorize: AuthJWT = Depends()):
                 ]
             },
             {
-                "$or": [
-                    {
-                        "$and": [
-                            {"tag": {"$in": [Tag.gio_tin, Tag.chu_de]}},
-                            {"user_id": ObjectId(user_id)},
-                        ]
-                    },
-                    {"tag": Tag.linh_vuc},
-                ],
+                "$and": [
+                    {"tag": {"$in": [NewsletterTag.ARCHIVE, NewsletterTag.SELFS]}},
+                    {"user_id": ObjectId(user_id)},
+                ]
             },
         ],
     }

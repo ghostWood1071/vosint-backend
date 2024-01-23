@@ -17,6 +17,7 @@ from app.vnanet.vn_new import router as VNNewRouter
 from vosint_ingestion.features.job.routers import router as Job
 from app.resource_monitor.routers import router as ResourceMonitorRouter
 from app.slave_activity.routers import router as SlaveActivityRouter
+from app.subject.router import router as SubjectRouter
 
 # from vosint_ingestion.features.nlp.routers import router as Nlp
 from vosint_ingestion.features.pipeline.routers import router as PipeLine
@@ -64,4 +65,5 @@ ROUTE_LIST = [
         "prefix": "/slave-activity",
     },
     {"route": DashboardRouter, "tags": ["Dashboard"], "prefix": "/dashboard"},
+    {"route": SubjectRouter, "tags": ["Subject (chủ đề)"], "prefix":"/subject" }
 ]

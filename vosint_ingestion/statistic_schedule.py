@@ -3,10 +3,9 @@ from bson.objectid import ObjectId
 from datetime import datetime
 from vosint_ingestion.models.mongorepository import MongoRepository
 
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 import pytz
+from app.newsletter.models import NewsletterTag
 
 
 def status_source_news(day_space: int = 3, start_date=None, end_date=None):
@@ -107,7 +106,7 @@ def get_news_from_newsletter_id__(
     query = None
     # index_name = "vosint"
     index_name = "vosint"
-    my_es = My_ElasticSearch()
+    my_es = MyElasticSearch()
 
     # date-------------------------------------------
     try:
@@ -179,7 +178,7 @@ def get_news_from_newsletter_id__(
         )
 
     # nếu là giỏ tin
-    if news_letter_id != "" and a["tag"] == "gio_tin":
+    if news_letter_id != "" and a["tag"] == NewsletterTag.ARCHIVE:
         ls = []
         kt_rong = 1
         try:
@@ -192,7 +191,7 @@ def get_news_from_newsletter_id__(
         list_id = ls
 
     # nếu không là giỏ tin
-    if news_letter_id != "" and a["tag"] != "gio_tin":
+    if news_letter_id != "" and a["tag"] != NewsletterTag.ARCHIVE:
         if a["is_sample"]:
             query = ""
             first_flat = 1

@@ -5,7 +5,7 @@ from datetime import datetime
 import requests
 from common.internalerror import *
 from elasticsearch import Elasticsearch
-from features.minh.Elasticsearch_main.elastic_main import My_ElasticSearch
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 from models import HBaseRepository, MongoRepository
 from models.mongorepository import MongoRepository
 from utils import get_time_now_string_y_m_now
@@ -19,7 +19,7 @@ from .baseaction import BaseAction
 
 
 
-my_es = My_ElasticSearch(host='http://192.168.1.99:9200', user='USER', password='PASS', verify_certs=False)
+my_es = MyElasticSearch(host='http://192.168.1.99:9200', user='USER', password='PASS', verify_certs=False)
 
 def call_tran(content = '', lang = 'en'):
     result = ''

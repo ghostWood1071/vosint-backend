@@ -3,11 +3,10 @@ from typing import List
 from bson import ObjectId
 
 from db.init_db import get_collection_client
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 import json
 import os
+from core.config import settings
 
 dashboard_client = get_collection_client("dashboard")
 object_client = get_collection_client("object")
@@ -23,7 +22,7 @@ topic_statistic_client = get_collection_client("top_statistic")
 report_client = get_collection_client("report")
 
 
-my_es = My_ElasticSearch()
+my_es = MyElasticSearch()
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -69,7 +68,7 @@ async def count_news_country_today():
     lte = datetime.now().strftime("%Y-%m-%dT00:00:00Z")
 
     pipeline_dtos = my_es.search_main(
-        index_name="vosint",
+        index_name= settings.ELASTIC_NEWS_INDEX,
         query=new_query,
         gte=gte,
         lte=lte,

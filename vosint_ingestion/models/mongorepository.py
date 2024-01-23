@@ -5,7 +5,8 @@ from utils import get_time_now_string
 from core.config import settings
 from typing import *
 import traceback
-
+from pymongo import ASCENDING, DESCENDING, TEXT
+from enum import Enum
 
 class MongoRepository:
     def __init__(self):
@@ -522,6 +523,34 @@ class MongoRepository:
             result = []
             for row in cur:
                 result.append(row)
+            
+            total_docs = collection.count_documents(filter_spec)
+
         finally:
             self.__close()
-        return result
+        return result, total_docs
+
+    
+    def create_index(self, collection_name:str,  field_name:str, type, options:Any = None):
+        if collection_name is None:
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["COLLECTION_NAME"], "msg": ["Collection name"]},
+            )
+        if field_name is None:
+            raise InternalError(
+                ERROR_REQUIRED,
+                params={"code": ["FIELD_NAME"], "msg": ["field name"]},
+            )
+        try:
+            self.__connect()
+            if options:
+                index_result = self.__db[collection_name].create_index([(field_name, type)], **options)
+            else:
+                index_result = self.__db[collection_name].create_index([(field_name, type)])
+            return index_result
+        except Exception as e:
+            traceback.print_exc()
+            return None
+        finally:
+            self.__close()

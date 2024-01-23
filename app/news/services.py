@@ -8,15 +8,18 @@ from db.init_db import get_collection_client
 
 from .utils import news_to_json
 from vosint_ingestion.models import MongoRepository
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
+from vosint_ingestion.features.job.services.get_news_from_elastic import (
+    get_news_from_cart,
+    build_search_query_by_keyword
 )
-
+from app.newsletter.models import NewsletterTag
+from core.config import settings
 from elasticsearch import helpers
 
 client = get_collection_client("News")
 events_client = get_collection_client("events")
-news_es = My_ElasticSearch()
+news_es = MyElasticSearch()
 
 
 async def find_news_by_filter(filter, projection=None):
@@ -92,7 +95,7 @@ async def find_news_by_ids(ids: List[str], projection: Dict["str", Any]):
 
 
 def add_keywords_to_elasticsearch(index, keywords, doc_ids):
-    es = My_ElasticSearch()
+    es = MyElasticSearch()
     actions = []
     for document_id in doc_ids:
         update_action = {
@@ -305,10 +308,27 @@ def get_timeline(
 
 
 async def statistics_sentiments(filter_spec, params):
-    if params["text_search"] != None and params["text_search"] != "":
+    news_letter_id = params.get("newsletter_id")
+    query = ""
+    if news_letter_id != "" and news_letter_id != None:
+        news_letter = MongoRepository().get_one(
+            collection_name="newsletter", filter_spec={"_id": news_letter_id}
+        )
+        # nếu không là giỏ tin
+        if news_letter_id != "" and news_letter["tag"] != NewsletterTag.ARCHIVE:
+            #lay tin theo tu khoa trich tu van ban mau
+            query = build_search_query_by_keyword(news_letter)
+            if params.get("text_search") not in [None, ""]:
+                query = f'({query}) +("{params.get("text_search")}")'
+    
+    if query == "":
+        query = params.get("text_search")
+
+    if news_letter_id != "" and news_letter_id != None:
+    #if params["text_search"] != None and params["text_search"] != "":
         total_docs = news_es.count_search_main(
-            index_name="vosint",
-            query=params["text_search"],
+            index_name=settings.ELASTIC_NEWS_INDEX,
+            query=query,
             gte=params["start_date"],
             lte=params["end_date"],
             lang=params["language_source"],
@@ -316,8 +336,8 @@ async def statistics_sentiments(filter_spec, params):
         )
 
         total_positive = news_es.count_search_main(
-            index_name="vosint",
-            query=params["text_search"],
+            index_name=settings.ELASTIC_NEWS_INDEX,
+            query=query,
             gte=params["start_date"],
             lte=params["end_date"],
             lang=params["language_source"],
@@ -327,8 +347,8 @@ async def statistics_sentiments(filter_spec, params):
         )
 
         total_negative = news_es.count_search_main(
-            index_name="vosint",
-            query=params["text_search"],
+            index_name=settings.ELASTIC_NEWS_INDEX,
+            query=query,
             gte=params["start_date"],
             lte=params["end_date"],
             lang=params["language_source"],
@@ -338,8 +358,8 @@ async def statistics_sentiments(filter_spec, params):
         )
 
         total_normal = news_es.count_search_main(
-            index_name="vosint",
-            query=params["text_search"],
+            index_name=settings.ELASTIC_NEWS_INDEX,
+            query=query,
             gte=params["start_date"],
             lte=params["end_date"],
             lang=params["language_source"],

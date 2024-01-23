@@ -5,11 +5,9 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
-
-my_es = My_ElasticSearch()
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
+from core.config import settings
+my_es = MyElasticSearch()
 from app.list_object.model import CreateObject, UpdateObject
 from app.list_object.service import (
     count_all_object,
@@ -251,7 +249,7 @@ async def get_news_by_object_id(
     #     query += '+(' + text_search + ')'
     query = query
 
-    pipeline_dtos = my_es.search_main(index_name="vosint", query=query)
+    pipeline_dtos = my_es.search_main(index_name=settings.ELASTIC_NEWS_INDEX, query=query)
 
     for i in range(len(pipeline_dtos)):
         try:

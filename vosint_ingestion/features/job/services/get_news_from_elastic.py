@@ -1,64 +1,18 @@
-from fastapi.responses import JSONResponse
 from models import MongoRepository
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
-from db.init_db import get_collection_client
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
+from vosint_ingestion.features.elasticsearch.elastic_query_builder import *
 from bson import ObjectId
+from typing import *
+from app.newsletter.models import NewsletterTag
+from core.config import settings
 
-my_es = My_ElasticSearch()
+my_es = MyElasticSearch()
 
-
-def get_news_category(_ids):
-    data, _ = MongoRepository().get_many(
-        collection_name="News",
-        order_spec=["pub_date", "created_at"],
-        filter_spec={"_id": {"$in": _ids}},
-    )
-
-    result = []
-    for item in data:
-        item["_id"] = str(item.get("_id"))
-        item["pub_date"] = str(item.get("pub_date"))
-
-        result.append(item)
-
-    result = get_optimized(result)
-
-    return result
-
-
-def get_optimized(result):
-    list_fields = [
-        "data:html",
-        "keywords",
-        "source_publishing_country",
-        "source_source_type",
-        "data:class_linhvuc",
-        "data:class_chude",
-        "created",
-        # "created_at",
-        "id_social",
-        "modified_at",
-    ]
-
-    limit_string = 270
-
-    for record in result:
-        try:
-            record["data:content"] = record["data:content"][0:limit_string]
-            record["data:content_translate"] = record["data:content_translate"][
-                0:limit_string
-            ]
-        except:
-            pass
-        for key in list_fields:
-            record.pop(key, None)
-    return result
-
+def build_all(user_id:str,  all_type:str):
+    pass
 
 def get_news_from_newsletter_id__(
-    list_id=None,
+    list_id=None, # a list of news id that can limit the result of elastic
     type=None,
     id_nguon_nhom_nguon=None,
     page_number=1,
@@ -74,264 +28,70 @@ def get_news_from_newsletter_id__(
     user_id=None,
     is_get_read_state=False,
     list_fields=None,
+    cat_type = None
 ):
-    # list_id = None
+    
     query = None
-    # index_name = "vosint"
-    index_name = "vosint"
+    index_name = settings.ELASTIC_NEWS_INDEX
 
     # date-------------------------------------------
-    try:
-        start_date = (
-            start_date.split("/")[2]
-            + "-"
-            + start_date.split("/")[1]
-            + "-"
-            + start_date.split("/")[0]
-            + "T00:00:00Z"
-        )
-    except:
-        pass
-
-    try:
-        end_date = (
-            end_date.split("/")[2]
-            + "-"
-            + end_date.split("/")[1]
-            + "-"
-            + end_date.split("/")[0]
-            + "T00:00:00Z"
-        )
-    except:
-        pass
-
-    # language----------------------------------------------------------
+    start_date, end_date = get_date(start_date, end_date)
+    # language--------------------------------------------------------
     if language_source:
         language_source_ = language_source.split(",")
         language_source = []
         for i in language_source_:
             language_source.append(i)
-
-    # tin quan trọng -------------------------------------------------
+    # lay tin quan trong ---tin quan trọng -------------------------------------------------
     if vital == "1":
-        mongo = MongoRepository().get_one(
-            collection_name="users", filter_spec={"_id": user_id}
-        )
-        ls = []
-        try:
-            for new_id in mongo["vital_list"]:
-                ls.append(str(new_id))
-        except:
-            pass
-        if ls == []:
-            return []
-        list_id = ls
-        if text_search == "" or text_search == None:
-            _ids = [ObjectId(item) for item in list_id]
-            data = get_news_category(_ids)
-            return data
-
-    # tin đánh dấu ---------------------------------------------------
+        result_search = get_news_by_category(user_id, text_search, "vital")
+        if result_search.get("data") is not None:
+            return result_search.get("data")
+        list_id = result_search.get("list_id")
+    # lay tin danh dau ---tin đánh dấu ---------------------------------------------------
     elif bookmarks == "1":
-        mongo = MongoRepository().get_one(
-            collection_name="users", filter_spec={"_id": user_id}
-        )
-        ls = []
-        kt_rong = 1
-        try:
-            for new_id in mongo["news_bookmarks"]:
-                ls.append(str(new_id))
-        except:
-            pass
-        if ls == []:
-            return []
-        list_id = ls
+        result_search = get_news_by_category(user_id, text_search, "bookmark")
+        if result_search.get("data") is not None:
+            return result_search.get("data")
+        list_id = result_search.get("list_id")
+        
 
-        if text_search == "" or text_search == None:
-            _ids = [ObjectId(item) for item in list_id]
-            data = get_news_category(_ids)
-            return data
+    # chu de/get newsletter --------------------------------------------------
+    # get a newsletter by id and compare the tag to determind its a cart or a subject
+    # input is a type: cart or subject, we just need to execute one 
+    query = "*"
+    query_phrase = []
+    news_letter_filter = {}
+    news_letters = []
+    if cat_type:
+        news_letter_filter["tag"] = cat_type
+    else:
+        news_letter_filter["_id"] = ObjectId(news_letter_id)
 
-    # get newsletter --------------------------------------------------
-    if news_letter_id != "" and news_letter_id != None:
-        a = MongoRepository().get_one(
-            collection_name="newsletter", filter_spec={"_id": news_letter_id}
+    
+    if news_letter_id not in  ["", None] or cat_type is not None:
+        news_letters, _ = MongoRepository().find(
+            collection_name="newsletter", filter_spec=news_letter_filter
         )
 
     # nếu là giỏ tin
-    if news_letter_id != "" and a["tag"] == "gio_tin":
-        ls = []
-        kt_rong = 1
-        try:
-            for new_id in a["news_id"]:
-                ls.append(str(new_id))
-        except:
-            pass
-        if ls == []:
-            return []
-        list_id = ls
+    if cat_type == NewsletterTag.ARCHIVE or len(news_letters) > 0:
+        result_search = get_news_from_cart(news_letters, text_search)
+        if result_search.get("return_data") is not None:
+            return result_search.get("return_data")
+        list_id = result_search.get("list_id")
 
-        if text_search == "" or text_search == None:
-            _ids = [ObjectId(item) for item in list_id]
-            data = get_news_category(_ids)
-            return data
+    for news_letter in news_letters:
+        if news_letter["tag"] == NewsletterTag.SELFS:
+            tmp_query = build_search_query_by_keyword(news_letter)
+            if tmp_query not in [None, ""]:
+                query_phrase.append(tmp_query)
+    
+    if len(query_phrase) > 0:
+        query = " | ".join([f'({x})' for x in query_phrase])
 
-    # nếu không là giỏ tin
-    if news_letter_id != "" and a["tag"] != "gio_tin":
-        if a["is_sample"]:
-            query = ""
-            first_flat = 1
-            try:
-                for i in a["required_keyword_extract"]:
-                    if first_flat == 1:
-                        first_flat = 0
-                        query += "("
-                    else:
-                        query += "| ("
-                    j = i.split(",")
+    list_source_name = get_source_names(type, id_nguon_nhom_nguon)
 
-                    for k in j:
-                        query += "+" + '"' + k + '"'
-                    query += ")"
-            except:
-                pass
-        else:
-            first_lang = 1
-            query = ""
-            ### vi
-            query_vi = ""
-            first_flat = 1
-            try:
-                for i in a["keyword_vi"]["required_keyword"]:
-                    if first_flat == 1:
-                        first_flat = 0
-                        query_vi += "("
-                    else:
-                        query_vi += "| ("
-                    j = i.split(",")
-
-                    for k in j:
-                        query_vi += "+" + '"' + k + '"'
-                    query_vi += ")"
-            except:
-                pass
-            try:
-                j = a["keyword_vi"]["exclusion_keyword"].split(",")
-                for k in j:
-                    query_vi += "-" + '"' + k + '"'
-            except:
-                pass
-
-            ### cn
-            query_cn = ""
-            first_flat = 1
-            try:
-                for i in a["keyword_cn"]["required_keyword"]:
-                    if first_flat == 1:
-                        first_flat = 0
-                        query_cn += "("
-                    else:
-                        query_cn += "| ("
-                    j = i.split(",")
-
-                    for k in j:
-                        query_cn += "+" + '"' + k + '"'
-                    query_cn += ")"
-            except:
-                pass
-            try:
-                j = a["keyword_cn"]["exclusion_keyword"].split(",")
-                for k in j:
-                    query_cn += "-" + '"' + k + '"'
-            except:
-                pass
-
-            ### cn
-            query_ru = ""
-            first_flat = 1
-            try:
-                for i in a["keyword_ru"]["required_keyword"]:
-                    if first_flat == 1:
-                        first_flat = 0
-                        query_ru += "("
-                    else:
-                        query_ru += "| ("
-                    j = i.split(",")
-
-                    for k in j:
-                        query_ru += "+" + '"' + k + '"'
-                    query_ru += ")"
-            except:
-                pass
-            try:
-                j = a["keyword_ru"]["exclusion_keyword"].split(",")
-                for k in j:
-                    query_ru += "-" + '"' + k + '"'
-            except:
-                pass
-
-            ### cn
-            query_en = ""
-            first_flat = 1
-            try:
-                for i in a["keyword_en"]["required_keyword"]:
-                    if first_flat == 1:
-                        first_flat = 0
-                        query_en += "("
-                    else:
-                        query_en += "| ("
-                    j = i.split(",")
-
-                    for k in j:
-                        query_en += "+" + '"' + k + '"'
-                    query_en += ")"
-            except:
-                pass
-            try:
-                j = a["keyword_en"]["exclusion_keyword"].split(",")
-                for k in j:
-                    query_en += "-" + '"' + k + '"'
-            except:
-                pass
-
-            if query_vi != "":
-                if first_lang == 1:
-                    first_lang = 0
-                    query += "(" + query_vi + ")"
-            if query_en != "":
-                if first_lang == 1:
-                    first_lang = 0
-                    query += "(" + query_en + ")"
-                else:
-                    query += "| (" + query_en + ")"
-            if query_ru != "":
-                if first_lang == 1:
-                    first_lang = 0
-                    query += "(" + query_ru + ")"
-                else:
-                    query += "| (" + query_ru + ")"
-            if query_cn != "":
-                if first_lang == 1:
-                    first_lang = 0
-                    query += "(" + query_cn + ")"
-                else:
-                    query += "| (" + query_cn + ")"
-
-    list_source_name = None
-    if type == "source":
-        name = MongoRepository().get_one(
-            collection_name="info", filter_spec={"_id": id_nguon_nhom_nguon}
-        )["name"]
-        list_source_name = []
-        list_source_name.append('"' + name + '"')
-    elif type == "source_group":
-        source_group = MongoRepository().get_one(
-            collection_name="Source", filter_spec={"_id": id_nguon_nhom_nguon}
-        )
-        name = source_group.get("news")
-        list_source_name = []
-        for i in name:
-            list_source_name.append('"' + i["name"] + '"')
     if text_search == None and list_source_name == None:
         pipeline_dtos = my_es.search_main(
             index_name=index_name,
@@ -341,9 +101,8 @@ def get_news_from_newsletter_id__(
             lang=language_source,
             sentiment=sac_thai,
             list_id=list_id,
-            # size=page_size,
             size=(int(page_number)) * int(page_size),
-            list_fields=list_fields,
+            list_fields=list_fields
         )
     elif text_search == None and list_source_name != None:
         pipeline_dtos = my_es.search_main(
@@ -355,41 +114,37 @@ def get_news_from_newsletter_id__(
             sentiment=sac_thai,
             list_id=list_id,
             list_source_name=list_source_name,
-            # size=page_size,
             size=(int(page_number)) * int(page_size),
-            list_fields=list_fields,
+            list_fields=list_fields
         )
-    else:
+    else: #text_search != None and list_source_name != None
+        if text_search !=None and text_search != "":
+            query = f'({query}) +("{text_search}")'
+
         if list_source_name == None:
             pipeline_dtos = my_es.search_main(
                 index_name=index_name,
-                query=text_search
-                if (text_search != "" or text_search != None)
-                else query,
+                query=query,
                 gte=start_date,
                 lte=end_date,
                 lang=language_source,
                 sentiment=sac_thai,
                 list_id=list_id,
-                # size=page_size,
                 size=(int(page_number)) * int(page_size),
-                list_fields=list_fields,
+                list_fields=list_fields
             )
         else:
             pipeline_dtos = my_es.search_main(
                 index_name=index_name,
-                query=text_search
-                if (text_search != "" or text_search != None)
-                else query,
+                query=query,
                 gte=start_date,
                 lte=end_date,
                 lang=language_source,
                 sentiment=sac_thai,
                 list_id=list_id,
                 list_source_name=list_source_name,
-                # size=page_size,
                 size=(int(page_number)) * int(page_size),
-                list_fields=list_fields,
+                list_fields=list_fields
             )
         if list_id == None:
             list_id = []
@@ -397,34 +152,7 @@ def get_news_from_newsletter_id__(
         for i in range(len(pipeline_dtos)):
             list_id.append(pipeline_dtos[i]["_source"]["id"])
 
-        pipeline_dtos = my_es.search_main(
-            index_name=index_name,
-            query=text_search,
-            gte=start_date,
-            lte=end_date,
-            lang=language_source,
-            sentiment=sac_thai,
-            list_id=list_id,
-            # list_source_name=list_source_name,
-            # size=page_size,
-            size=(int(page_number)) * int(page_size),
-            list_fields=list_fields,
-        )
-
-    for i in range(len(pipeline_dtos)):
-        try:
-            pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"]["id"]
-        except:
-            pass
-        pipeline_dtos[i] = pipeline_dtos[i]["_source"].copy()
-    if is_get_read_state:
-        news_ids = [ObjectId(row["id"]) for row in pipeline_dtos]
-        raw_isreads, _ = MongoRepository().get_many("News", {"_id": {"$in": news_ids}})
-        isread = {}
-        for raw_isread in raw_isreads:
-            isread[str(raw_isread["_id"])] = raw_isread.get("list_user_read")
-        for row in pipeline_dtos:
-            row["list_user_read"] = isread.get(row["_id"])
-
-    # print("dtos", pipeline_dtos)
+   
+    validate_read(pipeline_dtos, is_get_read_state)
+    
     return pipeline_dtos

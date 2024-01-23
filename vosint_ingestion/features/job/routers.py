@@ -9,22 +9,22 @@ from typing import List
 from models import MongoRepository
 from fastapi_jwt_auth import AuthJWT
 from fastapi.params import Body, Depends
-from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
-    My_ElasticSearch,
-)
+from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 from datetime import datetime
 
-my_es = My_ElasticSearch()
+my_es = MyElasticSearch()
 from pydantic import BaseModel
 from db.init_db import get_collection_client
 from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_newsletter_id__,
+    build_search_query_by_keyword
 )
 from core.config import settings
 from datetime import timedelta
 import asyncio
 import json
 import re
+from app.newsletter.models import NewsletterTag
 
 ttxvn_client = get_collection_client("ttxvn")
 
@@ -163,10 +163,15 @@ async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
     ]
     vital = ""
     bookmarks = ""
+    cat_type = None
+
     if elt.groupType == "vital":
         vital = "1"
     elif elt.groupType == "bookmarks":
         bookmarks = "1"
+    elif elt.groupType in [NewsletterTag.ARCHIVE, NewsletterTag.SELFS]:
+        cat_type = elt.groupType
+        
     result_elt = get_news_from_newsletter_id__(
         user_id=user_id,
         list_id=elt.newList,
@@ -184,6 +189,7 @@ async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
         bookmarks=bookmarks,
         is_get_read_state=True,
         list_fields=list_fields,
+        cat_type = cat_type
     )
 
     limit_string = 270
@@ -484,7 +490,7 @@ def get_event_from_newsletter_list_id(
 
         try:
             if news_letter_id != "" and news_letter_id != None:
-                if news_letter_id != "" and child_newsletter["tag"] == "gio_tin":
+                if news_letter_id != "" and child_newsletter["tag"] == NewsletterTag.ARCHIVE:
                     list_id = []
                     if child_newsletter.get("news_id") != None:
                         ls = [
@@ -493,7 +499,7 @@ def get_event_from_newsletter_list_id(
                     if ls == []:
                         return []
 
-                if news_letter_id != "" and child_newsletter["tag"] != "gio_tin":
+                if news_letter_id != "" and child_newsletter["tag"] != NewsletterTag.ARCHIVE:
                     if child_newsletter["is_sample"]:
                         query = ""
                         query = build_keyword_query(
@@ -527,7 +533,7 @@ def get_event_from_newsletter_list_id(
             plt_size = event_number * 2 if event_number else 100
 
             pipeline_dtos = my_es.search_main(
-                index_name="vosint",
+                index_name=settings.ELASTIC_NEWS_INDEX,
                 query=query,
                 gte=start_date,
                 lte=end_date,
@@ -691,7 +697,7 @@ def get_news_from_newsletter_id(
         collection_name="newsletter", filter_spec={"_id": news_letter_id}
     )
 
-    if news_letter_id != "" and a["tag"] == "gio_tin":
+    if news_letter_id != "" and a["tag"] == NewsletterTag.ARCHIVE:
         ls = []
         kt_rong = 1
         try:
@@ -726,7 +732,7 @@ def get_news_from_newsletter_id(
     #         query += '-'+'\"' + k + '\"'
     # except:
     #     pass
-    if news_letter_id != "" and a["tag"] != "gio_tin":
+    if news_letter_id != "" and a["tag"] != NewsletterTag.ARCHIVE:
         if a["is_sample"]:
             query = ""
             first_flat = 1
@@ -873,7 +879,7 @@ def get_news_from_newsletter_id(
     #     query += ' AND (' + text_search + ')'
     if text_search == None:
         pipeline_dtos = my_es.search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
             gte=start_date,
             lte=end_date,
@@ -883,7 +889,7 @@ def get_news_from_newsletter_id(
         )
     else:
         pipeline_dtos = my_es.search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
             gte=start_date,
             lte=end_date,
@@ -895,7 +901,7 @@ def get_news_from_newsletter_id(
         for i in range(len(pipeline_dtos)):
             list_id.append(pipeline_dtos[i]["_source"]["id"])
         pipeline_dtos = my_es.search_main(
-            index_name="vosint",
+            index_name=settings.ELASTIC_NEWS_INDEX,
             query=text_search,
             gte=start_date,
             lte=end_date,
@@ -989,7 +995,7 @@ def News_search(
         pass
     # print(end_date)
     pipeline_dtos = my_es.search_main(
-        index_name="vosint",
+        index_name=settings.ELASTIC_NEWS_INDEX,
         query=text_search,
         gte=start_date,
         lte=end_date,
@@ -1023,6 +1029,7 @@ def get_result_job(
     authorize: AuthJWT = Depends(),
     vital: str = "",
     bookmarks: str = "",
+    subject_id: str = None
 ):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -1100,6 +1107,7 @@ def get_result_job(
                     int(end_date.split("/")[0]),
                 )
                 query["$and"].append({"pub_date": {"$lte": end_date}})
+        
         if sac_thai != "" and sac_thai != "all":
             query["$and"].append({"data:class_sacthai": sac_thai})
         if language_source != "":
@@ -1112,6 +1120,9 @@ def get_result_job(
                 ls.append({"source_language": i})
 
             query["$and"].append({"$or": ls.copy()})
+        if subject_id not in ["", None]:
+            query["$and"].append({"subject_id": subject_id})
+        
         if news_letter_id != "":
             mongo = MongoRepository().get_one(
                 collection_name="newsletter", filter_spec={"_id": news_letter_id}
@@ -1164,21 +1175,9 @@ def get_result_job(
                         {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
                     )
         elif text_search != "":
-            # tmp = my_es.search_main(index_name="vosint", query=text_search)
-            # # print(text_search)
-            # # print(tmp)
-            # list_link = []
-            # for k in tmp:
-            #     list_link.append({"data:url": k["_source"]["data:url"]})
-            # if len(list_link) != 0:
-            #     query["$and"].append({"$or": list_link.copy()})
-            # else:
-            #     query["$and"].append(
-            #         {"khong_lay_gi": "bggsjdgsjgdjádjkgadgưđạgjágdjágdjkgạdgágdjka"}
-            #     )
 
             pipeline_dtos = my_es.search_main(
-                index_name="vosint",
+                index_name=settings.ELASTIC_NEWS_INDEX,
                 query=text_search,
                 gte=start_date,
                 lte=end_date,
@@ -1190,9 +1189,7 @@ def get_result_job(
             total_record = len(pipeline_dtos)
             for i in range(len(pipeline_dtos)):
                 try:
-                    pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"][
-                        "id"
-                    ]
+                    pipeline_dtos[i]["_source"]["_id"] = pipeline_dtos[i]["_source"]["id"]
                 except:
                     pass
                 pipeline_dtos[i] = pipeline_dtos[i]["_source"].copy()
@@ -1212,32 +1209,6 @@ def get_result_job(
                 * int(page_size) : (int(page_number))
                 * int(page_size)
             ]
-            # return {"result": result, "total_record": len(pipeline_dtos)}
-
-            # query["$and"].append(
-            #     {
-            #         "$or": [
-            #             {
-            #                 "data:title": {
-            #                     # "$regex": rf"\b{text_search}\b",
-            #                     # "$options": "i",
-            #                     # "$regex": text_search,
-            #                     "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
-            #                     "$options": "iu",
-            #                 }
-            #             },
-            #             {
-            #                 "data:content": {
-            #                     # "$regex": rf"\b{text_search}\b",
-            #                     # "$options": "i",
-            #                     # "$regex": text_search,
-            #                     "$regex": rf"(?<![\p{{L}}\p{{N}}]){re.escape(text_search.strip())}(?![\p{{L}}\p{{N}}])",
-            #                     "$options": "iu",
-            #                 }
-            #             },
-            #         ]
-            #     },
-            # )
     except:
         query = {}
     if str(query) == "{'$and': []}":
@@ -1283,12 +1254,6 @@ def get_result_job(
         if (text_search == None or text_search == "")
         else {"result": result, "total_record": total_record}
     )
-
-    # return JSONResponse(
-    #     job_controller.get_result_job(
-    #         "News", order, page_number, page_size, filter=query
-    #     )
-    # )
 
 
 @router.get("/api/get_table")
