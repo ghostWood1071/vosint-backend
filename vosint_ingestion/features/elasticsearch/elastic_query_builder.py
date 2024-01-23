@@ -78,18 +78,19 @@ def get_news_by_category(user_id:str, text_search:str, category:str)->list[str]:
         "data": return_data
     }
 
-def get_news_from_cart(news_letter:any, text_search:str):
+def get_news_from_cart(news_letters:any, text_search:str):
     # cart is a type of newsletter
     # newsletter has 3 types: gio_tin, linh_vuc, chu_de
     ls = []
     return_data = None
-    try:
-        for new_id in news_letter["news_id"]:
-            ls.append(str(new_id))
-    except:
-        pass
+    for news_letter in news_letters:
+        try:
+            for new_id in news_letter["news_id"]:
+                ls.append(str(new_id))
+        except:
+            pass
     if ls == []:
-        return_data = []
+        return_data = None
     list_id = ls
 
     if text_search == "" or text_search == None:

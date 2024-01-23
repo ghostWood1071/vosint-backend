@@ -163,10 +163,14 @@ async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
     ]
     vital = ""
     bookmarks = ""
+    cat_type = None
+
     if elt.groupType == "vital":
         vital = "1"
     elif elt.groupType == "bookmarks":
         bookmarks = "1"
+    elif elt.groupType in [NewsletterTag.ARCHIVE, NewsletterTag.SELFS]:
+        cat_type = elt.groupType
         
     result_elt = get_news_from_newsletter_id__(
         user_id=user_id,
@@ -185,6 +189,7 @@ async def get_news_from_elt(elt: elt, authorize: AuthJWT = Depends()):
         bookmarks=bookmarks,
         is_get_read_state=True,
         list_fields=list_fields,
+        cat_type = cat_type
     )
 
     limit_string = 270

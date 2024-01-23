@@ -206,7 +206,7 @@ class PipelineService:
             ids = list(map(lambda p_id: ObjectId(p_id), ids))
             filter_spec["_id"] = {"$in": ids}
 
-        raw_pipelines = MongoRepository().find("pipelines", filter_spec, {"_id": 1})
+        raw_pipelines, _ = MongoRepository().find("pipelines", filter_spec, {"_id": 1})
         pipelines = [{"_id": str(pipeline.get("_id"))} for pipeline in raw_pipelines]
 
         # Map to dtos
