@@ -76,11 +76,12 @@ def get_news_from_newsletter_id__(
 
     # nếu là giỏ tin
     if cat_type == NewsletterTag.ARCHIVE or len(news_letters) > 0:
-        result_search = get_news_from_cart(news_letters, text_search)
-        if result_search.get("return_data") is not None:
-            return result_search.get("return_data")
-        list_id = result_search.get("list_id")
-
+        if news_letters[0].get("tag") == NewsletterTag.ARCHIVE:
+            result_search = get_news_from_cart(news_letters, text_search)
+            if result_search.get("return_data") is not None:
+                return result_search.get("return_data")
+            list_id = result_search.get("list_id")
+    #khong phai la gio tin
     for news_letter in news_letters:
         if news_letter["tag"] == NewsletterTag.SELFS:
             tmp_query = build_search_query_by_keyword(news_letter)
