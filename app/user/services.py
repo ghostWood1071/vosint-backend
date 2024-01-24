@@ -123,6 +123,8 @@ def user_entity(user) -> dict:
     news_bookmarks = []
     vital_list = []
     interested_list = []
+    subject_list = []
+    follow_list=[]
 
     if "vital_list" in user:
         for news_id in user["vital_list"]:
@@ -136,6 +138,14 @@ def user_entity(user) -> dict:
         for object_id in user["interested_list"]:
             interested_list.append(str(object_id))
 
+    if "subject_ids" in user:
+        for subject_id in user["subject_ids"]:
+            subject_list.append(str(subject_id))
+
+    if "following" in user:
+        for follow_id in user["following"]:
+            follow_list.append(str(follow_id))
+
     return {
         "_id": str(user["_id"]),
         "username": user["username"],
@@ -145,4 +155,7 @@ def user_entity(user) -> dict:
         "vital_list": vital_list,
         "interested_list": interested_list,
         "avatar_url": user["avatar_url"] if "avatar_url" in user else None,
+        
+        "subject_list": subject_list,
+        "follow_list": follow_list,
     }
