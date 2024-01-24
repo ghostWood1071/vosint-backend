@@ -1,17 +1,28 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from typing import *
 from .models import Subject
 from .service import *
 import traceback
 from fastapi import HTTPException
+from fastapi_jwt_auth import AuthJWT
 
 router = APIRouter()
+
+@router.get("/get-my-subjects")
+def route_get_subjects(search_text:str="", page_size:int=10, page_index:int=1, auth:AuthJWT = Depends())->Any:
+    try: 
+        auth.jwt_required()
+        user_id = auth.get_jwt_subject()
+        data = get_my_subjects(search_text, page_size, page_index, user_id)
+        return data
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail = str(e))
 
 @router.get("/get-subjects")
 def route_get_subjects(search_text:str="", page_size:int=10, page_index:int=1)->Any:
     try: 
         data = get_subjects(search_text, page_size, page_index)
-        
         return data
     except Exception as e:
         traceback.print_exc()
@@ -52,3 +63,26 @@ def route_delete_subject(sub_ids:list[str])->int:
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail = str(e))
+    
+@router.post("/follow-subject")
+def route_follow_subject(subject_id:str, auth:AuthJWT= Depends()):
+    try:
+        auth.jwt_required()
+        user_id = auth.get_jwt_subject()
+        data = follow_subject(subject_id, user_id)
+        return data
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail = str(e))
+    
+@router.post("/unfollow-subject")
+def route_follow_subject(subject_id:str, auth:AuthJWT= Depends()):
+    try:
+        auth.jwt_required()
+        user_id = auth.get_jwt_subject()
+        data = unfollow_subject(subject_id, user_id)
+        return data
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail = str(e))
+    

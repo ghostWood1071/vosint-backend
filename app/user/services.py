@@ -1,10 +1,5 @@
-import re
 from typing import List
-
 from bson.objectid import ObjectId
-
-from app.list_object.service import object_to_json
-from app.user.models import InterestedModel
 from db.init_db import get_collection_client
 
 client = get_collection_client("users")
