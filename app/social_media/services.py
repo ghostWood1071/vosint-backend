@@ -1224,10 +1224,15 @@ async def exec_posts(
     start_date="",
     end_date="",
     sac_thai="",
+    user_id = ""
 ):
-    filter_spec = {}
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)})
+    following_ids = [] if user.get("following") is None else user.get("following")
+    following_ids = [ObjectId(x) for x in following_ids]
+    filter_spec = {"id_social":  {"$in": following_ids}}
     skip = int(page_size) * (int(page_number) - 1)
-
+    
     # filter by text_search
     if text_search != "":
         filter_spec.update(
@@ -1273,7 +1278,7 @@ async def exec_posts(
         {
             "$facet": {
                 "data": [
-                    {"$match": filter_spec},
+                    {"$match":  filter_spec},
                     {
                         "$lookup": {
                             "from": "social_media",
@@ -1301,4 +1306,34 @@ async def exec_posts(
 
     data = result[0]["data"] if result[0]["data"] else []
     total_record = result[0]["total"][0]["count"] if result[0]["total"] else 0
+   
     return {"result": data, "total_record": total_record}
+
+async def follow_account(social_id:str, user_id:str):
+    user_client = get_collection_client("users")
+    result = await user_client.update_one(
+        {
+            "_id": ObjectId(user_id)
+        },
+        {
+            "$addToSet": {
+                "following": social_id
+            }
+        }
+    )
+    return result.modified_count
+
+async def unfollow_account(social_id:str, user_id:str):
+    user_client = get_collection_client("users")
+    result = await user_client.update_one(
+        {
+            "_id": ObjectId(user_id)
+        },
+        {
+            "$pull": {
+                "following": social_id
+            }
+        }
+    )
+    return result.modified_count
+    

@@ -47,6 +47,8 @@ from .services import (
     exec_influencer,
     exec_influencer_priority,
     exec_influential_post,
+    follow_account,
+    unfollow_account
 )
 from word_exporter import export_social_word
 from datetime import datetime
@@ -73,7 +75,10 @@ async def get_posts(
     start_date="",
     end_date="",
     sac_thai="",
+    auth:AuthJWT = Depends()
 ):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
     return await exec_posts(
         collection_name,
         order,
@@ -83,6 +88,7 @@ async def get_posts(
         start_date,
         end_date,
         sac_thai,
+        user_id
     )
 
 
@@ -435,3 +441,17 @@ async def export_to_word(news_ids: List[str], platform: str = "facebook"):
 @router.get("/post-detail/{_id}")
 async def get_post_detail(_id: str):
     return await post_detail(_id)
+
+# chuc nang follow cua nguoi dungf cuoi
+# nguoi dung phai follow tai khoan mang xa hoi de doc tin cua ho
+@router.post("/follow-account")
+async def follow_account_route(social_id: str, auth: AuthJWT = Depends()):
+    auth.jwt_required()
+    user_id =  auth.get_jwt_subject()
+    return await follow_account(social_id, user_id)
+
+@router.post("/unfollow-account")
+async def follow_account_route(social_id: str, auth: AuthJWT = Depends()):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await unfollow_account(social_id, user_id)

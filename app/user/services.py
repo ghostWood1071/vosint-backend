@@ -1,16 +1,16 @@
-import re
 from typing import List
-
 from bson.objectid import ObjectId
-
-from app.list_object.service import object_to_json
-from app.user.models import InterestedModel
 from db.init_db import get_collection_client
 
 client = get_collection_client("users")
 
 
 async def create_user(user):
+    subject_client = get_collection_client("subjects")
+    subject_ids = []
+    async for subject in subject_client.find ({}, {"_id": True}):
+        subject_ids.append(str(subject["_id"]))
+    user["subject_ids"] = subject_ids
     created_user = await client.insert_one(user)
     return await client.find_one({"id": created_user.inserted_id})
 
@@ -123,6 +123,8 @@ def user_entity(user) -> dict:
     news_bookmarks = []
     vital_list = []
     interested_list = []
+    subject_list = []
+    follow_list=[]
 
     if "vital_list" in user:
         for news_id in user["vital_list"]:
@@ -136,6 +138,14 @@ def user_entity(user) -> dict:
         for object_id in user["interested_list"]:
             interested_list.append(str(object_id))
 
+    if "subject_ids" in user:
+        for subject_id in user["subject_ids"]:
+            subject_list.append(str(subject_id))
+
+    if "following" in user:
+        for follow_id in user["following"]:
+            follow_list.append(str(follow_id))
+
     return {
         "_id": str(user["_id"]),
         "username": user["username"],
@@ -145,4 +155,7 @@ def user_entity(user) -> dict:
         "vital_list": vital_list,
         "interested_list": interested_list,
         "avatar_url": user["avatar_url"] if "avatar_url" in user else None,
+        
+        "subject_list": subject_list,
+        "follow_list": follow_list,
     }
