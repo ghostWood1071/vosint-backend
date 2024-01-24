@@ -46,7 +46,7 @@ async def find_report_by_filter(filter, projection=None):
 
     return list_report
 
-async def get_report(id: str):
+async def get_report(id: str, get_all:bool):
     report = await report_client.find_one({"_id": ObjectId(id)})
     news_ids = report.get("news_ids").copy()
     for heading in report.get("headings"):
@@ -58,7 +58,8 @@ async def get_report(id: str):
     news_dict = {}
     async for news in new_client.find(news_filter, news_projection):
         news["_id"] = str(news["_id"])
-        news["data:content"] = ".".join(news["data:content"].split(".")[:11])
+        if not get_all:
+            news["data:content"] = ".".join(news["data:content"].split(".")[:11])
         news_dict[news["_id"]] = news
     for heading in report.get("headings"):
         for news_id in heading.get("news_ids"):

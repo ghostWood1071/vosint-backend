@@ -52,9 +52,9 @@ async def read_reports(
 
 #get report detail
 @router.get("/{id}")
-async def read_report(id: str, auth: AuthJWT = Depends()):
+async def read_report(id: str, get_all:bool = False ,auth: AuthJWT = Depends()):
     auth.jwt_required()
-    report = await get_report(id)
+    report = await get_report(id, get_all)
     return report
 
 # add new report 
