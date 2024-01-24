@@ -1306,4 +1306,34 @@ async def exec_posts(
 
     data = result[0]["data"] if result[0]["data"] else []
     total_record = result[0]["total"][0]["count"] if result[0]["total"] else 0
+   
     return {"result": data, "total_record": total_record}
+
+async def follow_account(social_id:str, user_id:str):
+    user_client = get_collection_client("users")
+    result = await user_client.update_one(
+        {
+            "_id": ObjectId(user_id)
+        },
+        {
+            "$addToSet": {
+                "following": social_id
+            }
+        }
+    )
+    return result.modified_count
+
+async def unfollow_account(social_id:str, user_id:str):
+    user_client = get_collection_client("users")
+    result = await user_client.update_one(
+        {
+            "_id": ObjectId(user_id)
+        },
+        {
+            "$pull": {
+                "following": social_id
+            }
+        }
+    )
+    return result.modified_count
+    

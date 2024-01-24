@@ -59,7 +59,8 @@ async def get_report(id: str, get_all:bool):
     async for news in new_client.find(news_filter, news_projection):
         news["_id"] = str(news["_id"])
         sentences = news["data:content"].split(".")
-        news["data:content"] = ".".join(sentences[:11])
+        if not get_all:
+            news["data:content"] = ".".join(sentences[:11])
         news["read_more"] = len(sentences) > 10
         news_dict[news["_id"]] = news
     for heading in report.get("headings"):

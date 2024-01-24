@@ -6,6 +6,11 @@ client = get_collection_client("users")
 
 
 async def create_user(user):
+    subject_client = get_collection_client("subjects")
+    subject_ids = []
+    async for subject in subject_client.find ({}, {"_id": True}):
+        subject_ids.append(str(subject["_id"]))
+    user["subject_ids"] = subject_ids
     created_user = await client.insert_one(user)
     return await client.find_one({"id": created_user.inserted_id})
 
