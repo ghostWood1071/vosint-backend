@@ -24,6 +24,7 @@ class CreateReport(BaseModel):
     title: str = Field()
     headings: Optional[Any]
     user_id: str = Field(default_factory=ObjectId)
+    date_created: str = ""
 
 
 class GetEvents(BaseModel):

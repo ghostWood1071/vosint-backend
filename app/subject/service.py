@@ -4,6 +4,34 @@ from .models import Subject
 from bson.objectid import ObjectId
 import traceback
 
+def get_my_subjects(text_search:str, page_size:int, page_index:int, user_id:str)->List[Any]:
+    user = MongoRepository().get_one("users", {"_id": ObjectId(user_id)})
+    subject_following = [] if user.get("subject_ids") is None else  user.get("subject_ids")
+    user_subject_filter = {"_id": {"$in": [ObjectId(x) for x in subject_following]}}
+    try:
+        skip = page_size*(page_index-1)
+        search_params = {
+            "collection_name": "subjects",
+            "filter_spec": user_subject_filter, 
+            "pagination": {
+                "skip": skip,
+                "limit": page_size
+            },
+            "order": "sort_order",
+        }
+
+        if text_search not in [None, ""]:
+            search_params["filter_spec"]["name"] = {"$regex": text_search, "$options": "i"}
+        
+        result, total_docs = MongoRepository().find(**search_params)
+        for line in result:
+            line["_id"] = str(line["_id"])
+
+        return { "data": result, "total_records": total_docs }
+    except Exception as e:
+        traceback.print_exc()
+        raise e
+
 def get_subjects(text_search:str, page_size:int, page_index:int)->List[Any]:
     try:
         skip = page_size*(page_index-1)
@@ -17,15 +45,8 @@ def get_subjects(text_search:str, page_size:int, page_index:int)->List[Any]:
             "order": "sort_order",
         }
 
-
         if text_search not in [None, ""]:
-            # search_params["name"] = {
-            #     "$regex": text_search
-            # }
-            search_params.update({
-                "filter_spec": {"name": {"$regex": text_search, "$options": "i"}}
-            })
-
+            search_params["filter_spec"]["name"] = {"$regex": text_search, "$options": "i"}
         
         result, total_docs = MongoRepository().find(**search_params)
         for line in result:
@@ -85,6 +106,44 @@ def insert_subject(doc:dict[Any])->Any:
             doc.pop("sub_id")
         inserted_id = MongoRepository().insert_one("subjects", doc)
         return inserted_id
+    except Exception as e:
+        traceback.print_exc()
+        raise e
+    
+def follow_subject(subject_id:str, user_id:str):
+    update_params = {
+        "collection_name": "users",
+        "filter_spec": {
+            "_id": ObjectId(user_id)
+        },
+        "action": {
+            "$addToSet": {
+                "subject_ids": subject_id
+            }
+        }
+    }
+    try:
+        result =  MongoRepository().update_many(**update_params)
+        return result
+    except Exception as e:
+        traceback.print_exc()
+        raise e
+    
+def unfollow_subject(subject_id:str, user_id:str):
+    update_params = {
+        "collection_name": "users",
+        "filter_spec": {
+            "_id": ObjectId(user_id)
+        },
+        "action": {
+            "$pull": {
+                "subject_ids": subject_id
+            }
+        }
+    }
+    try:
+        result =  MongoRepository().update_many(**update_params)
+        return result
     except Exception as e:
         traceback.print_exc()
         raise e

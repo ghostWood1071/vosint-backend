@@ -58,7 +58,9 @@ async def get_report(id: str):
     news_dict = {}
     async for news in new_client.find(news_filter, news_projection):
         news["_id"] = str(news["_id"])
-        news["data:content"] = ".".join(news["data:content"].split(".")[:11])
+        sentences = news["data:content"].split(".")
+        news["data:content"] = ".".join(sentences[:11])
+        news["read_more"] = len(sentences) > 10
         news_dict[news["_id"]] = news
     for heading in report.get("headings"):
         for news_id in heading.get("news_ids"):
@@ -70,6 +72,7 @@ async def get_report(id: str):
     return report
 
 async def create_report(report):
+    report["date_created"] = datetime.strptime(report["date_created"], "%d/%M/%Y")
     created_rp = await report_client.insert_one(report)
     return created_rp
 
