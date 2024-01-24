@@ -10,13 +10,17 @@ categories = {
 language_dict = {k:f'keyword_{k}' for k in ['vi', 'en', 'ru', 'cn'] }
 
 #---------------- get related things ---------------------
-def get_news_category(_ids):
+def get_news_category(_ids, subject_ids=None):
+    filter_spec = {
+        "_id": {"$in": _ids}
+    }
+    if subject_ids:
+        filter_spec["subject_id"] = {"$in": subject_ids}
     data, _ = MongoRepository().get_many(
         collection_name="News",
         order_spec=["pub_date", "created_at"],
-        filter_spec={"_id": {"$in": _ids}},
+        filter_spec=filter_spec,
     )
-
     result = []
     for item in data:
         item["_id"] = str(item.get("_id"))
@@ -56,14 +60,12 @@ def get_optimized(result):
             record.pop(key, None)
     return result
 
-def get_news_by_category(user_id:str, text_search:str, category:str)->list[str]:
-    mongo = MongoRepository().get_one(
-            collection_name="users", filter_spec={"_id": user_id}
-        )
+def get_news_by_category(text_search:str, category:str, user)->list[str]:
+    subject_ids = [] if user.get("subject_ids") is None else user.get("subject_ids")
     ls = []
     return_data = None
     try:
-        for new_id in mongo[categories.get(category)]:
+        for new_id in user[categories.get(category)]:
             ls.append(str(new_id))
     except:
         pass
@@ -72,7 +74,7 @@ def get_news_by_category(user_id:str, text_search:str, category:str)->list[str]:
     list_id = ls
     if text_search == "" or text_search == None:
         _ids = [ObjectId(item) for item in list_id]
-        return_data = get_news_category(_ids)
+        return_data = get_news_category(_ids, subject_ids)
     return {
         "list_id": list_id, 
         "data": return_data

@@ -33,7 +33,8 @@ def get_news_from_newsletter_id__(
     
     query = None
     index_name = settings.ELASTIC_NEWS_INDEX
-
+    user = MongoRepository().get_one(collection_name="users", filter_spec={"_id": ObjectId(user_id)})
+    subject_ids = [] if user.get("subject_ids") is None else user.get("subject_ids")
     # date-------------------------------------------
     start_date, end_date = get_date(start_date, end_date)
     # language--------------------------------------------------------
@@ -44,13 +45,13 @@ def get_news_from_newsletter_id__(
             language_source.append(i)
     # lay tin quan trong ---tin quan trọng -------------------------------------------------
     if vital == "1":
-        result_search = get_news_by_category(user_id, text_search, "vital")
+        result_search = get_news_by_category(text_search, "vital", user)
         if result_search.get("data") is not None:
             return result_search.get("data")
         list_id = result_search.get("list_id")
     # lay tin danh dau ---tin đánh dấu ---------------------------------------------------
     elif bookmarks == "1":
-        result_search = get_news_by_category(user_id, text_search, "bookmark")
+        result_search = get_news_by_category(text_search, "bookmark", user)
         if result_search.get("data") is not None:
             return result_search.get("data")
         list_id = result_search.get("list_id")
@@ -92,7 +93,7 @@ def get_news_from_newsletter_id__(
         query = " | ".join([f'({x})' for x in query_phrase])
 
     list_source_name = get_source_names(type, id_nguon_nhom_nguon)
-
+    subject_query = " + ".join([f'"{x}"' for x in subject_ids])
     if text_search == None and list_source_name == None:
         pipeline_dtos = my_es.search_main(
             index_name=index_name,
@@ -103,7 +104,8 @@ def get_news_from_newsletter_id__(
             sentiment=sac_thai,
             list_id=list_id,
             size=(int(page_number)) * int(page_size),
-            list_fields=list_fields
+            list_fields=list_fields,
+            subject_id = subject_query
         )
     elif text_search == None and list_source_name != None:
         pipeline_dtos = my_es.search_main(
@@ -116,12 +118,12 @@ def get_news_from_newsletter_id__(
             list_id=list_id,
             list_source_name=list_source_name,
             size=(int(page_number)) * int(page_size),
-            list_fields=list_fields
+            list_fields=list_fields,
+            subject_id = subject_query
         )
     else: #text_search != None and list_source_name != None
         if text_search !=None and text_search != "":
             query = f'({query}) +("{text_search}")'
-
         if list_source_name == None:
             pipeline_dtos = my_es.search_main(
                 index_name=index_name,
@@ -132,7 +134,8 @@ def get_news_from_newsletter_id__(
                 sentiment=sac_thai,
                 list_id=list_id,
                 size=(int(page_number)) * int(page_size),
-                list_fields=list_fields
+                list_fields=list_fields,
+                subject_id = subject_query
             )
         else:
             pipeline_dtos = my_es.search_main(
@@ -145,7 +148,8 @@ def get_news_from_newsletter_id__(
                 list_id=list_id,
                 list_source_name=list_source_name,
                 size=(int(page_number)) * int(page_size),
-                list_fields=list_fields
+                list_fields=list_fields,
+                subject_id = subject_query
             )
         if list_id == None:
             list_id = []
