@@ -309,6 +309,14 @@ def get_timeline(
 
 async def statistics_sentiments(filter_spec, params):
     news_letter_id = params.get("newsletter_id")
+    user =MongoRepository().get_one("users", {"_id" :ObjectId(params.get("user_id"))})
+    subject_ids = [] if user.get("subject_ids") is None else user.get("subject_ids")
+    if filter_spec.get("$and") is None:
+        filter_spec["$and"] = []
+    filter_spec["$and"].append({
+        "subject_id": {"$in": subject_ids}
+    })
+    subject_query = "+".join([f'"{x}"' for x in subject_ids])
     query = ""
     if news_letter_id != "" and news_letter_id != None:
         news_letter = MongoRepository().get_one(
@@ -333,6 +341,7 @@ async def statistics_sentiments(filter_spec, params):
             lte=params["end_date"],
             lang=params["language_source"],
             sentiment=params["sentiment"],
+            subject_id=subject_query
         )
 
         total_positive = news_es.count_search_main(
@@ -344,6 +353,7 @@ async def statistics_sentiments(filter_spec, params):
             sentiment="1"
             if params["sentiment"] == "" or params["sentiment"] == "1"
             else 9999,
+            subject_id = subject_query
         )
 
         total_negative = news_es.count_search_main(
@@ -355,18 +365,10 @@ async def statistics_sentiments(filter_spec, params):
             sentiment="2"
             if params["sentiment"] == "" or params["sentiment"] == "2"
             else 9999,
+            subject_id = subject_query
         )
 
-        total_normal = news_es.count_search_main(
-            index_name=settings.ELASTIC_NEWS_INDEX,
-            query=query,
-            gte=params["start_date"],
-            lte=params["end_date"],
-            lang=params["language_source"],
-            sentiment="0"
-            if params["sentiment"] == "" or params["sentiment"] == "0"
-            else 9999,
-        )
+        total_normal = total_docs - (total_negative + total_positive)
 
     else:
         # Get total documents
