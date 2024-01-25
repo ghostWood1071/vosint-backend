@@ -76,7 +76,7 @@ def get_news_from_newsletter_id__(
         )
 
     # nếu là giỏ tin
-    if cat_type == NewsletterTag.ARCHIVE or len(news_letters) > 0:
+    if cat_type == NewsletterTag.ARCHIVE and len(news_letters) > 0:
         if news_letters[0].get("tag") == NewsletterTag.ARCHIVE:
             result_search = get_news_from_cart(news_letters, text_search)
             if result_search.get("return_data") is not None:
@@ -93,7 +93,7 @@ def get_news_from_newsletter_id__(
         query = " | ".join([f'({x})' for x in query_phrase])
 
     list_source_name = get_source_names(type, id_nguon_nhom_nguon)
-    subject_query = " + ".join([f'"{x}"' for x in subject_ids])
+    subject_query = " | ".join([f'"{x}"' for x in subject_ids])
     if text_search == None and list_source_name == None:
         pipeline_dtos = my_es.search_main(
             index_name=index_name,
