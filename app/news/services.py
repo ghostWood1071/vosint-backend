@@ -306,7 +306,11 @@ def get_timeline(
             row["new_list"] = [row["new_list"]]
     return {"data": data, "total_records": total_records}
 
-    
+def check_type_newsletters(newsletters:list[Any], type_name:str):
+    if len(newsletters) == 0:
+        return False
+    checks = [newsletter.get("tag") == type_name for newsletter in newsletters]
+    return all(checks)
 
 async def statistics_sentiments(filter_spec, params):
     news_letter_id = params.get("newsletter_id")
@@ -356,12 +360,14 @@ async def statistics_sentiments(filter_spec, params):
             news_ids = bookmarks_ids
 
     if news_letter_id not in ["", None] or newsletter_type not in ["", None]:
-        news_letter_filter = {"tag": newsletter_type} if newsletter_type not in ["", None] else {"_id": news_letter_id}
+        news_letter_filter = {"tag": newsletter_type} if newsletter_type not in ["", None] else {"_id": ObjectId(news_letter_id)}
         news_letters, _ = MongoRepository().find(
             collection_name="newsletter", filter_spec=news_letter_filter
         )
+        
         # nếu không là giỏ tin
-        if newsletter_type == NewsletterTag.SELFS:
+        all_selfs = check_type_newsletters(news_letters, NewsletterTag.SELFS)
+        if newsletter_type == NewsletterTag.SELFS or all_selfs:
             tmp_phrase_search = []
             for news_letter in news_letters:
                 query_tmp = build_search_query_by_keyword(news_letter)
@@ -369,8 +375,8 @@ async def statistics_sentiments(filter_spec, params):
                     tmp_phrase_search.append(f'({query_tmp})')
             if len(tmp_phrase_search) > 0:
                 query = " | ".join(tmp_phrase_search)
-           
-        if newsletter_type == NewsletterTag.ARCHIVE:
+        all_archives = check_type_newsletters(news_letters, NewsletterTag.ARCHIVE)
+        if newsletter_type == NewsletterTag.ARCHIVE or all_archives:
             for newsletter in news_letters:
                 if newsletter.get("news_id") is not None:
                     news_ids.extend(newsletter.get("news_id"))

@@ -155,7 +155,8 @@ def user_entity(user) -> dict:
         "vital_list": vital_list,
         "interested_list": interested_list,
         "avatar_url": user["avatar_url"] if "avatar_url" in user else None,
-        
+        "languages": [] if user.get("languages") is None else user.get("languages"),
+        "sources": [] if user.get("sources") is None else user.get("sources"),
         "subject_list": subject_list,
         "follow_list": follow_list,
     }
@@ -172,7 +173,7 @@ async def follow_language(lang_code:str, user_id:str):
             "languages": lang_code
         }
     })
-    return result.updated_count
+    return result.modified_count
 
 async def unfollow_language(lang_code:str, user_id:str):
     lang_code = lang_code.strip(" ")
@@ -186,7 +187,7 @@ async def unfollow_language(lang_code:str, user_id:str):
             "languages": lang_code
         }
     })
-    return result.updated_count
+    return result.modified_count
 
 
 async def follow_source(source_id:str, user_id:str):
@@ -195,10 +196,10 @@ async def follow_source(source_id:str, user_id:str):
     },
     {
         "$addToSet":{
-            "languages": source_id
+            "sources": source_id
         }
     })
-    return result.updated_count
+    return result.modified_count
 
 async def unfollow_source(source_id:str, user_id:str):
     result = await client.update_one({
@@ -206,7 +207,7 @@ async def unfollow_source(source_id:str, user_id:str):
     },
     {
         "$pull":{
-            "languages": source_id
+            "sources": source_id
         }
     })
-    return result.updated_count
+    return result.modified_count
