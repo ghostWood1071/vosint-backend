@@ -420,7 +420,7 @@ class MyElasticSearch:
         if subject_id in [None, ""]:
             _subject_id = "*"
         else:
-            _subject_id = subject_id
+            _subject_id = self.query_process(subject_id)
         
         if lang is None or lang == "":
             # print("Lang is none")
@@ -519,6 +519,7 @@ class MyElasticSearch:
         list_id=None,
         text_search=None,
         ids=None,
+        subject_id=None
     ):
         # print(ids)
         """Tìm kiếm document theo query
@@ -548,6 +549,12 @@ class MyElasticSearch:
             _sentiment = "*"
         else:
             _sentiment = sentiment
+        
+        if subject_id in [None, ""]:
+            _subject_id = "*"
+        else:
+            _subject_id = self.query_process(subject_id)
+
         if lang is None or lang == "":
             # print("Lang is none")
             _lang = "*"
@@ -567,6 +574,12 @@ class MyElasticSearch:
                             "query_string": {
                                 "query": _lang_query,
                                 "default_field": "source_language",
+                            }
+                        },
+                        {
+                            "query_string": {
+                                "query": _subject_id,
+                                "default_field": "subject_id",
                             }
                         },
                         {

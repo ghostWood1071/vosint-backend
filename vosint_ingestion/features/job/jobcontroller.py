@@ -97,17 +97,10 @@ class JobController:
         return result
 
     def get_result_job(self, News, order, page_number, page_size, filter):
-        # Receives request data
-        # order = request.args.get('order')
-        # order = request.args.get('order')
-        # page_number = request.args.get('page_number')
         page_number = int(page_number) if page_number is not None else None
-        # page_size = request.args.get('page_size')
         page_size = int(page_size) if page_size is not None else None
-
         # Create sort condition
         order_spec = order.split(",") if order else []
-
         # Calculate pagination information
         page_number = page_number if page_number else 1
         page_size = page_size if page_size else 20
