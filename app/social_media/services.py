@@ -1102,18 +1102,8 @@ async def statistic_sentiment(name: str, start_date: str, end_date: str):
         end_date = end_date.replace(hour=23, minute=59, second=59)
         end_date = str(end_date).replace("-", "/")
 
-    # if start_date == "" and end_date == "":
-    #     end_date = datetime.now()
-    #     start_date = end_date - timedelta(days=6)
-
-    #     end_date = end_date.replace(hour=23, minute=59, second=59)
-
-    #     end_date = str(end_date).replace("-", "/")
-    #     start_date = str(start_date).replace("-", "/")
-
     filter_spec = {
         "$and": [
-            # {"created_at": {"$gte": start_date, "$lte": end_date}},
             {"sentiment": {"$exists": True}},
         ]
     }
@@ -1131,7 +1121,6 @@ async def statistic_sentiment(name: str, start_date: str, end_date: str):
                 "value": {"$sum": 1},
             }
         },
-        # {"$match": {"_id": {"$nin": [None, ""]}}},
     ]
 
     collection_client = (
