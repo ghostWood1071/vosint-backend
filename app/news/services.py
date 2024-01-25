@@ -333,7 +333,7 @@ async def statistics_sentiments(filter_spec, params):
 
     query = "*"
     news_ids = []
-    if params.get("vital") == 1:
+    if params.get("vital") == '1':
         vital_ids = [] if user.get("vital_list") is None else user.get("vital_list")
         vital_filter = [ObjectId(x) for x in vital_ids]
         if len(vital_ids) > 0: 
@@ -344,7 +344,7 @@ async def statistics_sentiments(filter_spec, params):
             })
             news_ids = vital_ids
     
-    if params.get("news_bookmarks") == 1:
+    if params.get("bookmarks") == '1':
         bookmarks_ids = [] if user.get("news_bookmarks") is None else user.get("news_bookmarks")
         bookmarks_filter = [ObjectId(x) for x in bookmarks_ids]
         if len(bookmarks_ids) > 0: 
@@ -353,7 +353,7 @@ async def statistics_sentiments(filter_spec, params):
             filter_spec["$and"].append({
                 "_id": {"$in": bookmarks_filter}
             })
-            news_ids = vital_ids
+            news_ids = bookmarks_ids
 
     if news_letter_id not in ["", None] or newsletter_type not in ["", None]:
         news_letter_filter = {"tag": newsletter_type} if newsletter_type not in ["", None] else {"_id": news_letter_id}

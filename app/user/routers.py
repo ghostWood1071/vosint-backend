@@ -26,6 +26,7 @@ from .services import (
     update_user,
     update_vital_user,
     user_entity,
+    follow_language,
 )
 
 router = APIRouter()
@@ -384,3 +385,19 @@ async def upload_avatar(file: UploadFile = File(...), authorize: AuthJWT = Depen
     return JSONResponse(
         status_code=status.HTTP_202_ACCEPTED, content=f"static/{file.filename}"
     )
+
+@router.post("/follow-language")
+async def follow_language_route(lang_code, auth:AuthJWT = Depends()):
+    pass
+
+@router.post("/unfollow-language")
+async def follow_language_route(lang_code, auth:AuthJWT = Depends()):
+    pass
+
+@router.post("/follow-source")
+async def follow_language_route(source_id, auth:AuthJWT = Depends()):
+    pass
+
+@router.post("/unfollow-source")
+async def follow_language_route(source_id, auth:AuthJWT = Depends()):
+    pass

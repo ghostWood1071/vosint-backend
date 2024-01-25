@@ -159,3 +159,54 @@ def user_entity(user) -> dict:
         "subject_list": subject_list,
         "follow_list": follow_list,
     }
+
+async def follow_language(lang_code:str, user_id:str):
+    lang_code = lang_code.strip(" ")
+    if lang_code not in ["cn", "en", "ru", "vi"]:
+        raise Exception("language code not accepted")
+    result = await client.update_one({
+        "_id": ObjectId(user_id),
+    },
+    {
+        "$addToSet":{
+            "languages": lang_code
+        }
+    })
+    return result.updated_count
+
+async def unfollow_language(lang_code:str, user_id:str):
+    lang_code = lang_code.strip(" ")
+    if lang_code not in ["cn", "en", "ru", "vi"]:
+        raise Exception("language code not accepted")
+    result = await client.update_one({
+        "_id": ObjectId(user_id),
+    },
+    {
+        "$pull":{
+            "languages": lang_code
+        }
+    })
+    return result.updated_count
+
+
+async def follow_source(source_id:str, user_id:str):
+    result = await client.update_one({
+        "_id": ObjectId(user_id),
+    },
+    {
+        "$addToSet":{
+            "languages": source_id
+        }
+    })
+    return result.updated_count
+
+async def unfollow_source(source_id:str, user_id:str):
+    result = await client.update_one({
+        "_id": ObjectId(user_id),
+    },
+    {
+        "$pull":{
+            "languages": source_id
+        }
+    })
+    return result.updated_count
