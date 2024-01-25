@@ -135,64 +135,6 @@ def check_news_contain(
     return check_news_contain_keywords(object_ids, news_ids, new_keywords)
 
 
-@router.post("/remove-news-from-object")
-def remove_news_from_objects(object_ids: List[str], news_ids: List[str]):
-    remove_news_from_object(news_ids, object_ids)
-    return JSONResponse({"result": "updated sucess"}, 200)
-
-
-@router.post("/add-news-to-object")
-def add_news_to_objects(object_ids: List[str], news_ids: List[str]):
-    result = add_news_to_object(object_ids, news_ids)
-    return JSONResponse({"result": "updated sucess"}, 200)
-
-
-@router.get("/get_time_line")
-def get_timeline_data(
-    text_search="",
-    page_number=None,
-    page_size=None,
-    start_date: str = "",
-    end_date: str = "",
-    sac_thai: str = "",
-    language_source: str = "",
-    object_id: str = "",
-):
-    # try:
-    #     start_date = (
-    #         start_date.split("/")[2]
-    #         + "-"
-    #         + start_date.split("/")[1]
-    #         + "-"
-    #         + start_date.split("/")[0]
-    #         + "T00:00:00Z"
-    #     )
-    # except:
-    #     pass
-    # try:
-    #     end_date = (
-    #         end_date.split("/")[2]
-    #         + "-"
-    #         + end_date.split("/")[1]
-    #         + "-"
-    #         + end_date.split("/")[0]
-    #         + "T00:00:00Z"
-    #     )
-    # except:
-    #     pass
-    data = get_timeline(
-        text_search,
-        page_number,
-        page_size,
-        start_date,
-        end_date,
-        sac_thai,
-        language_source,
-        object_id,
-    )
-    # return data
-    return JSONResponse({"count": data["total_records"], "results": data["data"]}, 200)
-
 
 @router.get("/get-statistics-sentiments")
 async def get_statistics_sentiments(
@@ -205,6 +147,8 @@ async def get_statistics_sentiments(
     authorize: AuthJWT = Depends(),
     vital: str = "",
     bookmarks: str = "",
+    subject_id: str = None,
+    newsletter_type:str = None
 ):
     authorize.jwt_required()
     user_id = authorize.get_jwt_subject()
@@ -212,7 +156,7 @@ async def get_statistics_sentiments(
     try:
         query = {}
         query["$and"] = []
-
+        
         if start_date != "" and end_date != "":
             start_date = datetime(
                 int(start_date.split("/")[2]),
@@ -292,7 +236,11 @@ async def get_statistics_sentiments(
             "start_date": start_date,
             "end_date": end_date,
             "newsletter_id": news_letter_id,
-            "user_id": user_id
+            "user_id": user_id, 
+            "subject_id": subject_id,
+            "vital": vital, 
+            "bookmarks": bookmarks,
+            "newsletter_type": newsletter_type
         },
     )
 

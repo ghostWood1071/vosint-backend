@@ -559,7 +559,7 @@ def get_result_job(
                     )
         elif text_search != "":
             if subject_id in ["", None]:
-                subject_id = " + ".join([f'"{x}"' for x in subject_ids])
+                subject_id = " | ".join([f'"{x}"' for x in subject_ids])
             pipeline_dtos = my_es.search_main(
                 index_name=settings.ELASTIC_NEWS_INDEX,
                 query=text_search,
