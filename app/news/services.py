@@ -306,34 +306,89 @@ def get_timeline(
             row["new_list"] = [row["new_list"]]
     return {"data": data, "total_records": total_records}
 
+    
 
 async def statistics_sentiments(filter_spec, params):
     news_letter_id = params.get("newsletter_id")
+    text_search = params.get("text_search")
+    newsletter_type = params.get("newsletter_type")
+    #--- build subject query --- 
     user =MongoRepository().get_one("users", {"_id" :ObjectId(params.get("user_id"))})
-    subject_ids = [] if user.get("subject_ids") is None else user.get("subject_ids")
-    if filter_spec.get("$and") is None:
-        filter_spec["$and"] = []
-    filter_spec["$and"].append({
-        "subject_id": {"$in": subject_ids}
-    })
-    subject_query = "+".join([f'"{x}"' for x in subject_ids])
-    query = ""
-    if news_letter_id != "" and news_letter_id != None:
-        news_letter = MongoRepository().get_one(
-            collection_name="newsletter", filter_spec={"_id": news_letter_id}
+    if params.get("subject_id") is None:
+        subject_ids = [] if user.get("subject_ids") is None else user.get("subject_ids")
+        if filter_spec.get("$and") is None:
+            filter_spec["$and"] = []
+        filter_spec["$and"].append({
+            "subject_id": {"$in": subject_ids}
+        })
+        subject_query = " | ".join([f'"{x}"' for x in subject_ids])
+    else:
+        if filter_spec.get("$and") is None:
+            filter_spec["$and"] = []
+        filter_spec["$and"].append({
+            "subject_id":  params.get("subject_id")
+        })
+        subject_query = f'"{params.get("subject_id")}"'
+    # --------------------------
+
+    query = "*"
+    news_ids = []
+    if params.get("vital") == 1:
+        vital_ids = [] if user.get("vital_list") is None else user.get("vital_list")
+        vital_filter = [ObjectId(x) for x in vital_ids]
+        if len(vital_ids) > 0: 
+            if filter_spec.get("$and") is None:
+                filter_spec["$and"] = []
+            filter_spec["$and"].append({
+                "_id": {"$in": vital_filter}
+            })
+            news_ids = vital_ids
+    
+    if params.get("news_bookmarks") == 1:
+        bookmarks_ids = [] if user.get("news_bookmarks") is None else user.get("news_bookmarks")
+        bookmarks_filter = [ObjectId(x) for x in bookmarks_ids]
+        if len(bookmarks_ids) > 0: 
+            if filter_spec.get("$and") is None:
+                filter_spec["$and"] = []
+            filter_spec["$and"].append({
+                "_id": {"$in": bookmarks_filter}
+            })
+            news_ids = vital_ids
+
+    if news_letter_id not in ["", None] or newsletter_type not in ["", None]:
+        news_letter_filter = {"tag": newsletter_type} if newsletter_type not in ["", None] else {"_id": news_letter_id}
+        news_letters, _ = MongoRepository().find(
+            collection_name="newsletter", filter_spec=news_letter_filter
         )
         # nếu không là giỏ tin
-        if news_letter_id != "" and news_letter["tag"] != NewsletterTag.ARCHIVE:
-            #lay tin theo tu khoa trich tu van ban mau
-            query = build_search_query_by_keyword(news_letter)
-            if params.get("text_search") not in [None, ""]:
-                query = f'({query}) +("{params.get("text_search")}")'
+        if newsletter_type == NewsletterTag.SELFS:
+            tmp_phrase_search = []
+            for news_letter in news_letters:
+                query_tmp = build_search_query_by_keyword(news_letter)
+                if query_tmp not in [None, ""]:
+                    tmp_phrase_search.append(f'({query_tmp})')
+            if len(tmp_phrase_search) > 0:
+                query = " | ".join(tmp_phrase_search)
+           
+        if newsletter_type == NewsletterTag.ARCHIVE:
+            for newsletter in news_letters:
+                if newsletter.get("news_id") is not None:
+                    news_ids.extend(newsletter.get("news_id"))
+            if text_search in ["", None]:
+                if filter_spec.get("$and") is None:
+                    filter_spec["$and"] = []
+                filter_spec["$and"].append({
+                    "_id": {"$in": news_ids}
+                })
+            else:
+                news_ids = [str(x) for x in news_ids]
     
-    if query == "":
-        query = params.get("text_search")
-
-    if news_letter_id != "" and news_letter_id != None:
-    #if params["text_search"] != None and params["text_search"] != "":
+    if text_search not in [None, ""]:
+        if query !=  "*":
+            query = f'({query}) + ("{text_search}")'
+        else:
+            query = text_search
+    if news_letter_id not in ["",None] or text_search not in ["", None] or newsletter_type not in ["", None]:
         total_docs = news_es.count_search_main(
             index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
@@ -341,7 +396,8 @@ async def statistics_sentiments(filter_spec, params):
             lte=params["end_date"],
             lang=params["language_source"],
             sentiment=params["sentiment"],
-            subject_id=subject_query
+            subject_id=subject_query,
+            list_id=news_ids
         )
 
         total_positive = news_es.count_search_main(
@@ -353,7 +409,8 @@ async def statistics_sentiments(filter_spec, params):
             sentiment="1"
             if params["sentiment"] == "" or params["sentiment"] == "1"
             else 9999,
-            subject_id = subject_query
+            subject_id = subject_query,
+            list_id=news_ids
         )
 
         total_negative = news_es.count_search_main(
@@ -365,7 +422,8 @@ async def statistics_sentiments(filter_spec, params):
             sentiment="2"
             if params["sentiment"] == "" or params["sentiment"] == "2"
             else 9999,
-            subject_id = subject_query
+            subject_id = subject_query,
+            list_id=news_ids
         )
 
         total_normal = total_docs - (total_negative + total_positive)
@@ -376,8 +434,7 @@ async def statistics_sentiments(filter_spec, params):
 
         # Get total sentiments
         check_array = filter_spec.get("$and") or []
-        # Remove the object with the specified field
-        removed_object = None
+
         updated_conditions = []
         for condition in check_array:
             if "data:class_sacthai" in condition:
@@ -413,20 +470,7 @@ async def statistics_sentiments(filter_spec, params):
                 **{"$and": [*updated_conditions, {"data:class_sacthai": "2"}]},
             }
         )
-        total_normal = await client.count_documents(
-            {
-                **filter_spec,
-                **{"$and": [*updated_conditions, {"data:class_sacthai": "9999"}]},
-            }
-            if any(
-                "data:class_sacthai" in obj and obj["data:class_sacthai"] != "0"
-                for obj in check_array
-            )
-            else {
-                **filter_spec,
-                **{"$and": [*updated_conditions, {"data:class_sacthai": "0"}]},
-            }
-        )
+        total_normal = total_docs - (total_positive + total_negative)
 
     total_sentiments = {
         "total_positive": total_positive,
