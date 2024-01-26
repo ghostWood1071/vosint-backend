@@ -193,7 +193,32 @@ def build_exclude_keywords(newsletter, *langs:list[str]):
         query = f' - ({" + ".join(query_set)})'
     return query
     
-            
+def build_language(user_lang, lang_search):
+    #khong theo doi, langsearch: None (k filter) => None
+    lang_count = {
+        "vi": 0,
+        "en": 0,
+        "cn": 0,
+        "ru": 0
+    }
+    if len(user_lang) == 0:
+        return None
+    if lang_search in [None, ""] and len(user_lang) == 0:
+        return None
+    if lang_search in [None, ""] and len(user_lang) > 0:
+        return user_lang
+    
+    for lang in lang_search:
+        lang_count[lang] += 1
+    for lang in user_lang:
+        lang_count[lang] += 1
+    result = [x[0] for x in lang_count.items() if x[1]>1]
+    if len(result) == 0:
+        return None
+    return result
+        
+    
+         
 
 def build_keyword_by_lang(newsletter, lang, first_flat):
     lang_key = language_dict.get(lang)

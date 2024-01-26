@@ -380,7 +380,7 @@ class MyElasticSearch:
         lang=None,
         gte=None,
         lte=None,
-        list_source_name=None,
+        list_source_id=None,
         size=100,
         list_id=None,
         text_search=None,
@@ -422,27 +422,11 @@ class MyElasticSearch:
         else:
             _subject_id = self.query_process(subject_id)
         
-        if lang is None or lang == "":
-            # print("Lang is none")
-            _lang = "*"
-        else:
-            _lang = lang
-        ### request template
-        # print(type(_lang))
-        _lang_query = " OR ".join(_lang)
-        # print(_sentiment)
-        # print(_lang_query)
         simple_filter = {
             "query": {
                 "bool": {
                     "must": [
                         {"query_string": {"query": _query_string, "fields": _fields}},
-                        {
-                            "query_string": {
-                                "query": _lang_query,
-                                "default_field": "source_language",
-                            }
-                        },
                         {
                             "query_string": {
                                 "query": _sentiment,
@@ -467,26 +451,34 @@ class MyElasticSearch:
         if list_fields:
             simple_filter["_source"] = list_fields
 
-        if list_source_name != None:
-            _id_query_source_name = " OR ".join(list_source_name)
-            a = {
+        if lang != None and lang != "":
+            _lang_query = " OR ".join(lang)
+            lang_filter = {
                 "query_string": {
-                    "query": _id_query_source_name,
-                    "default_field": "source_name",
+                    "query": _lang_query,
+                    "default_field": "source_language",
                 }
             }
-            simple_filter["query"]["bool"]["must"].append(a)
+            simple_filter["query"]["bool"]["must"].append(lang_filter)
+
+        if list_source_id != None:
+            _id_query_source_id = f'NOT ({" OR ".join(list_source_id)})'
+            source_filter = {
+                "query_string": {
+                    "query": _id_query_source_id,
+                    "default_field": "source_id",
+                }
+            }
+            simple_filter["query"]["bool"]["must"].append(source_filter)
 
         if list_id != None and list_id != []:
             _id_query_list_id = " OR ".join(list_id)
-            a = {"query_string": {"query": _id_query_list_id, "default_field": "id"}}
+            id_filter = {"query_string": {"query": _id_query_list_id, "default_field": "id"}}
 
-            simple_filter["query"]["bool"]["must"].append(a)
+            simple_filter["query"]["bool"]["must"].append(id_filter)
 
         if ids is not None:
             simple_filter["query"]["bool"]["should"] = {"terms": {"_id": ids}}
-
-        print(json.dumps(simple_filter))
 
         searched = self.es.search(index=index_name, body=simple_filter)
 
@@ -514,7 +506,7 @@ class MyElasticSearch:
         lang=None,
         gte=None,
         lte=None,
-        list_source_name=None,
+        list_source_id=None,
         size=100,
         list_id=None,
         text_search=None,
@@ -555,27 +547,11 @@ class MyElasticSearch:
         else:
             _subject_id = self.query_process(subject_id)
 
-        if lang is None or lang == "":
-            # print("Lang is none")
-            _lang = "*"
-        else:
-            _lang = lang
-        ### request template
-        # print(type(_lang))
-        _lang_query = " OR ".join(_lang)
-        # print(_sentiment)
-        # print(_lang_query)
         simple_filter = {
             "query": {
                 "bool": {
                     "must": [
                         {"query_string": {"query": _query_string, "fields": _fields}},
-                        {
-                            "query_string": {
-                                "query": _lang_query,
-                                "default_field": "source_language",
-                            }
-                        },
                         {
                             "query_string": {
                                 "query": _subject_id,
@@ -596,158 +572,40 @@ class MyElasticSearch:
             "size": size,
             "track_total_hits": True,
         }
-
-        searched = self.es.search(index=index_name, body=simple_filter)
-        return searched["hits"]["total"]["value"]
-
-    def search_main_ttxvn(
-        self,
-        index_name,
-        query="*",
-        k=None,
-        sentiment=None,
-        lang=None,
-        gte=None,
-        lte=None,
-        list_source_name=None,
-        size=100,
-        list_id=None,
-        text_search=None,
-    ):
-        """Tìm kiếm document theo query
-        Args:
-            index_name (str): Tên index
-            query (str): "Nga" + "Việt Nam" - "Trung Quốc"
-            k (int, optional): Số lượng tối đa đầu ra. Defaults to None.
-            fields (list[str], optional): Các trường tìm kiếm. Defaults to None.
-            gte (str, optional), lte (str, optional): Khoảng thời gian tìm kiếm
-        Returns:
-            Log : list[doc] | None
-        """
-        if query is None or query == "":
-            query = "*"
-        _query_string = self.query_process(query)
-        # print(_query_string)
-        _fields = ["Title^2", "content"]
-        if gte is None:
-            _gte = "1990-03-28T00:00:00Z"
-        else:
-            _gte = gte
-        if lte is None:
-            _lte = "2090-03-28T00:00:00Z"
-        else:
-            _lte = lte
-        if sentiment is None:
-            _sentiment = "*"
-        else:
-            _sentiment = sentiment
-        if lang is None:
-            # print("Lang is none")
-            _lang = "*"
-        else:
-            _lang = lang
-        ### request template
-        # print(type(_lang))
-        _lang_query = " OR ".join(_lang)
-        # print(_sentiment)
-        # print(_lang_query)
-        simple_filter = {
-            "query": {
-                "bool": {
-                    "must": [
-                        {"query_string": {"query": _query_string, "fields": _fields}}
-                    ],
-                    "filter": {"range": {"PublishDate": {"gte": _gte, "lte": _lte}}},
-                }
-            },
-            "sort": [{"PublishDate": {"order": "desc"}}],
-            "size": size,
-            "track_total_hits": True,
-        }
-        if list_source_name != None:
-            _id_query_source_name = " OR ".join(list_source_name)
-            a = {
+        
+        if lang != None and lang != "":
+            _lang_query = " OR ".join(lang)
+            lang_filter = {
                 "query_string": {
-                    "query": _id_query_source_name,
-                    "default_field": "source_name",
+                    "query": _lang_query,
+                    "default_field": "source_language",
                 }
             }
-            simple_filter["query"]["bool"]["must"].append(a)
+            simple_filter["query"]["bool"]["must"].append(lang_filter)
+
+        if list_source_id != None:
+            _id_query_source_id = f'NOT ({" OR ".join(list_source_id)})'
+            source_filter = {
+                "query_string": {
+                    "query": _id_query_source_id,
+                    "default_field": "source_id",
+                }
+            }
+            simple_filter["query"]["bool"]["must"].append(source_filter)
 
         if list_id != None and list_id != []:
             _id_query_list_id = " OR ".join(list_id)
-            a = {"query_string": {"query": _id_query_list_id, "default_field": "id"}}
-            simple_filter["query"]["bool"]["must"].append(a)
+            id_filter = {"query_string": {"query": _id_query_list_id, "default_field": "id"}}
 
-        # if text_search != None:
-        #     # text_search = self.query_process(text_search)
-        #     # _id_query_list_id = " OR ".join(list_id)
-        #     a = {
-        #         "query_string":{
-        #             "query": text_search,
-        #             "default_field": ["data:title", "data:content"]
-        #         }
-        #     }
-        #     simple_filter["query"]["bool"]["must"].append(a)
+            simple_filter["query"]["bool"]["must"].append(id_filter)
 
-        print(simple_filter)
-
-        searched = self.es.search(index=index_name, body=simple_filter)
-        result = []
-        hits = searched["hits"]["hits"]
-        if hits:
-            for hit in hits:
-                result.append(hit)
-        else:
-            # print("Không tìm thấy Document nào")
-            return []
-
-        if k == None:
-            # return ("Tìm thấy {k} Document match với query của bạn \n\n Result : {R}".format(k=len(result), R=result))
-            return result
-        else:
-            return result[:k]
-
-    def count_search_main_ttxvn(
-        self,
-        index_name,
-        query="*",
-        gte=None,
-        lte=None,
-        size=100,
-        text_search=None,
-    ):
-        if query is None or query == "":
-            query = "*"
-        _query_string = self.query_process(query)
-        # print(_query_string)
-        _fields = ["Title^2", "content"]
-        if gte is None:
-            _gte = "1990-03-28T00:00:00Z"
-        else:
-            _gte = gte
-        if lte is None:
-            _lte = "2090-03-28T00:00:00Z"
-        else:
-            _lte = lte
-
-        simple_filter = {
-            "query": {
-                "bool": {
-                    "must": [
-                        {"query_string": {"query": _query_string, "fields": _fields}}
-                    ],
-                    "filter": {"range": {"PublishDate": {"gte": _gte, "lte": _lte}}},
-                }
-            },
-            "sort": [{"PublishDate": {"order": "desc"}}],
-            "size": size,
-            "track_total_hits": True,
-        }
+        if ids is not None:
+            simple_filter["query"]["bool"]["should"] = {"terms": {"_id": ids}}
 
         searched = self.es.search(index=index_name, body=simple_filter)
         return searched["hits"]["total"]["value"]
 
+    
     def query(self, index_name="", query=""):
         searched = self.es.search(index=index_name, body=query)
         # print(searched)
