@@ -405,10 +405,10 @@ async def follow_language_route(lang_code, auth:AuthJWT = Depends()):
 async def follow_language_route(source_id, auth:AuthJWT = Depends()):
     auth.jwt_required()
     user_id = auth.get_jwt_subject()
-    return await follow_source(source_id, user_id)
+    return await unfollow_source(source_id, user_id)
 
 @router.post("/unfollow-source")
 async def unfollow_language_route(source_id, auth:AuthJWT = Depends()):
     auth.jwt_required()
     user_id = auth.get_jwt_subject()
-    return await unfollow_source(source_id, user_id)
+    return await follow_source(source_id, user_id)
