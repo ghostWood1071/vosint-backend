@@ -8,8 +8,6 @@ from core.config import settings
 
 my_es = MyElasticSearch()
 
-def build_all(user_id:str,  all_type:str):
-    pass
 
 def get_news_from_newsletter_id__(
     list_id=None, # a list of news id that can limit the result of elastic
@@ -34,6 +32,7 @@ def get_news_from_newsletter_id__(
     query = None
     index_name = settings.ELASTIC_NEWS_INDEX
     user = MongoRepository().get_one(collection_name="users", filter_spec={"_id": ObjectId(user_id)})
+    ignore_sources = [] if user.get("sources") is None else user.get("sources")
     subject_ids = [] if user.get("subject_ids") is None else user.get("subject_ids")
     # date-------------------------------------------
     start_date, end_date = get_date(start_date, end_date)
@@ -43,6 +42,11 @@ def get_news_from_newsletter_id__(
         language_source = []
         for i in language_source_:
             language_source.append(i)
+    language_source = build_language(user.get("languages"), language_source)
+    if language_source is None:
+        return []
+    
+    
     # lay tin quan trong ---tin quan trọng -------------------------------------------------
     if vital == "1":
         result_search = get_news_by_category(text_search, "vital", user)
@@ -95,70 +99,30 @@ def get_news_from_newsletter_id__(
     if len(query_phrase) > 0:
         query = " | ".join([f'({x})' for x in query_phrase])
 
-    list_source_name = get_source_names(type, id_nguon_nhom_nguon)
     subject_query = " | ".join([f'"{x}"' for x in subject_ids])
-    if text_search == None and list_source_name == None:
-        pipeline_dtos = my_es.search_main(
-            index_name=index_name,
-            query=query,
-            gte=start_date,
-            lte=end_date,
-            lang=language_source,
-            sentiment=sac_thai,
-            list_id=list_id,
-            size=(int(page_number)) * int(page_size),
-            list_fields=list_fields,
-            subject_id = subject_query
-        )
-    elif text_search == None and list_source_name != None:
-        pipeline_dtos = my_es.search_main(
-            index_name=index_name,
-            query=query,
-            gte=start_date,
-            lte=end_date,
-            lang=language_source,
-            sentiment=sac_thai,
-            list_id=list_id,
-            list_source_name=list_source_name,
-            size=(int(page_number)) * int(page_size),
-            list_fields=list_fields,
-            subject_id = subject_query
-        )
-    else: #text_search != None and list_source_name != None
-        if text_search !=None and text_search != "":
-            query = f'({query}) +("{text_search}")'
-        if list_source_name == None:
-            pipeline_dtos = my_es.search_main(
-                index_name=index_name,
-                query=query,
-                gte=start_date,
-                lte=end_date,
-                lang=language_source,
-                sentiment=sac_thai,
-                list_id=list_id,
-                size=(int(page_number)) * int(page_size),
-                list_fields=list_fields,
-                subject_id = subject_query
-            )
-        else:
-            pipeline_dtos = my_es.search_main(
-                index_name=index_name,
-                query=query,
-                gte=start_date,
-                lte=end_date,
-                lang=language_source,
-                sentiment=sac_thai,
-                list_id=list_id,
-                list_source_name=list_source_name,
-                size=(int(page_number)) * int(page_size),
-                list_fields=list_fields,
-                subject_id = subject_query
-            )
-        if list_id == None:
-            list_id = []
 
-        for i in range(len(pipeline_dtos)):
-            list_id.append(pipeline_dtos[i]["_source"]["id"])
+    if text_search !=None and text_search != "":
+            query = f'({query}) + ("{text_search}")'
+
+    pipeline_dtos = my_es.search_main(
+        index_name=index_name,
+        query=query,
+        gte=start_date,
+        lte=end_date,
+        lang=language_source,
+        sentiment=sac_thai,
+        list_id=list_id,
+        size=(int(page_number)) * int(page_size),
+        list_fields=list_fields,
+        subject_id = subject_query, 
+        list_source_id= ignore_sources
+    )
+        
+    if list_id == None:
+        list_id = []
+
+    for i in range(len(pipeline_dtos)):
+        list_id.append(pipeline_dtos[i]["_source"]["id"])
 
    
     validate_read(pipeline_dtos, is_get_read_state)

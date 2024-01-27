@@ -19,6 +19,7 @@ from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_newsletter_id__,
     build_search_query_by_keyword
 )
+from vosint_ingestion.features.elasticsearch.elastic_query_builder import build_language
 from core.config import settings
 from datetime import timedelta
 import asyncio
@@ -421,10 +422,19 @@ def get_result_job(
     user_id = authorize.get_jwt_subject()
     user = MongoRepository().get_one(collection_name="users", filter_spec={"_id": ObjectId(user_id)})
     subject_ids = [] if user.get("subject_ids") is None else user.get("subject_ids")
+    user_langs =  [] if user.get("languages") is None else user.get("languages")
+    if len(user_langs) == 0:
+        return {
+            "success": True,
+            "total_record": 0,
+            "result": []
+        }
+    user_ignore_sources = [] if user.get("sources") is None else user.get("sources")
     try:
         query = {}
         query["$and"] = []
 
+        # -----------date time filter -----------------
         if start_date != "" and end_date != "":
             if text_search != "":
                 start_date = (
@@ -494,24 +504,35 @@ def get_result_job(
                     int(end_date.split("/")[0]),
                 )
                 query["$and"].append({"pub_date": {"$lte": end_date}})
-        
+        # -----------sentiment filter -----------------
         if sac_thai != "" and sac_thai != "all":
             query["$and"].append({"data:class_sacthai": sac_thai})
+        # -----------languages filter -----------------
         if language_source != "":
-            language_source_ = language_source.split(",")
-            language_source = []
-            for i in language_source_:
-                language_source.append(i)
-            ls = []
-            for i in language_source:
-                ls.append({"source_language": i})
-
-            query["$and"].append({"$or": ls.copy()})
+            language_source = [x.strip() for x in language_source.split(",")]
+            language_source = build_language(user.get("languages"), language_source)
+            if language_source is not None:
+                query["$and"].append({"source_language": {"$in": language_source.copy()}})
+            else:
+                return {
+                    "success": True,
+                    "total_record": 0,
+                    "result": []
+                }
+        else:
+            if len(user_langs) > 0:
+                query["$and"].append({"source_language": {"$in": user_langs}})
+                language_source = user_langs
+        # -----------subject filter -------------------
         if subject_id not in ["", None]:
             query["$and"].append({"subject_id": subject_id})
         else:
             query["$and"].append({"subject_id": {"$in": subject_ids}})
         
+        if len(user_ignore_sources) > 0:
+            query["$and"].append({
+                "source_id": {"$nin": user_ignore_sources}
+            })
         if news_letter_id != "":
             mongo = MongoRepository().get_one(
                 collection_name="newsletter", filter_spec={"_id": news_letter_id}
@@ -568,7 +589,8 @@ def get_result_job(
                 lang=language_source,
                 sentiment=sac_thai,
                 size=(int(page_number)) * int(page_size),
-                subject_id = subject_id
+                subject_id = subject_id, 
+                list_source_id=user_ignore_sources
             )
 
             total_record = len(pipeline_dtos)
@@ -594,7 +616,7 @@ def get_result_job(
                 * int(page_size) : (int(page_number))
                 * int(page_size)
             ]
-    except:
+    except Exception as e:
         query = {}
     if str(query) == "{'$and': []}":
         query = {}

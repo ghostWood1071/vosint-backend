@@ -11,7 +11,8 @@ from vosint_ingestion.models import MongoRepository
 from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 from vosint_ingestion.features.job.services.get_news_from_elastic import (
     get_news_from_cart,
-    build_search_query_by_keyword
+    build_search_query_by_keyword,
+    build_language
 )
 from app.newsletter.models import NewsletterTag
 from core.config import settings
@@ -306,14 +307,22 @@ def get_timeline(
             row["new_list"] = [row["new_list"]]
     return {"data": data, "total_records": total_records}
 
-    
+def check_type_newsletters(newsletters:list[Any], type_name:str):
+    if len(newsletters) == 0:
+        return False
+    checks = [newsletter.get("tag") == type_name for newsletter in newsletters]
+    return all(checks)
 
 async def statistics_sentiments(filter_spec, params):
     news_letter_id = params.get("newsletter_id")
     text_search = params.get("text_search")
     newsletter_type = params.get("newsletter_type")
+    all_selfs = None
+    all_archives = None
     #--- build subject query --- 
     user =MongoRepository().get_one("users", {"_id" :ObjectId(params.get("user_id"))})
+    user_lang = [] if user.get("languages") is None else user.get("languages")
+    user_ignore_sources = [] if user.get("sources") is None else user.get("sources")
     if params.get("subject_id") is None:
         subject_ids = [] if user.get("subject_ids") is None else user.get("subject_ids")
         if filter_spec.get("$and") is None:
@@ -330,10 +339,34 @@ async def statistics_sentiments(filter_spec, params):
         })
         subject_query = f'"{params.get("subject_id")}"'
     # --------------------------
-
+    # --- build languages query ---
+    language_source = params.get("language_source")
+    language_source = build_language(user_lang, language_source) 
+    if language_source is None:
+        return {
+            "total_positive": 0,
+            "total_negative": 0,
+            "total_normal": 0,
+        }
+    else:
+        if filter_spec.get("$and") is None:
+            filter_spec["$and"] = []
+        filter_spec["$and"].append({
+            "source_language": {"$in": language_source}
+        })
+    
+    # ---------------------------
+    # --- build ignore source query ---
+    if len(user_ignore_sources) > 0:
+        if filter_spec.get("$and") is None:
+            filter_spec["$and"] = []
+        filter_spec["$and"].append({
+            "source_id": {"$nin": user_ignore_sources}
+        })
+         
     query = "*"
     news_ids = []
-    if params.get("vital") == 1:
+    if params.get("vital") == '1':
         vital_ids = [] if user.get("vital_list") is None else user.get("vital_list")
         vital_filter = [ObjectId(x) for x in vital_ids]
         if len(vital_ids) > 0: 
@@ -344,7 +377,7 @@ async def statistics_sentiments(filter_spec, params):
             })
             news_ids = vital_ids
     
-    if params.get("news_bookmarks") == 1:
+    if params.get("bookmarks") == '1':
         bookmarks_ids = [] if user.get("news_bookmarks") is None else user.get("news_bookmarks")
         bookmarks_filter = [ObjectId(x) for x in bookmarks_ids]
         if len(bookmarks_ids) > 0: 
@@ -353,15 +386,17 @@ async def statistics_sentiments(filter_spec, params):
             filter_spec["$and"].append({
                 "_id": {"$in": bookmarks_filter}
             })
-            news_ids = vital_ids
+            news_ids = bookmarks_ids
 
     if news_letter_id not in ["", None] or newsletter_type not in ["", None]:
-        news_letter_filter = {"tag": newsletter_type} if newsletter_type not in ["", None] else {"_id": news_letter_id}
+        news_letter_filter = {"tag": newsletter_type} if newsletter_type not in ["", None] else {"_id": ObjectId(news_letter_id)}
         news_letters, _ = MongoRepository().find(
             collection_name="newsletter", filter_spec=news_letter_filter
         )
+        
         # nếu không là giỏ tin
-        if newsletter_type == NewsletterTag.SELFS:
+        all_selfs = check_type_newsletters(news_letters, NewsletterTag.SELFS)
+        if newsletter_type == NewsletterTag.SELFS or all_selfs:
             tmp_phrase_search = []
             for news_letter in news_letters:
                 query_tmp = build_search_query_by_keyword(news_letter)
@@ -369,8 +404,8 @@ async def statistics_sentiments(filter_spec, params):
                     tmp_phrase_search.append(f'({query_tmp})')
             if len(tmp_phrase_search) > 0:
                 query = " | ".join(tmp_phrase_search)
-           
-        if newsletter_type == NewsletterTag.ARCHIVE:
+        all_archives = check_type_newsletters(news_letters, NewsletterTag.ARCHIVE)
+        if newsletter_type == NewsletterTag.ARCHIVE or all_archives:
             for newsletter in news_letters:
                 if newsletter.get("news_id") is not None:
                     news_ids.extend(newsletter.get("news_id"))
@@ -388,7 +423,9 @@ async def statistics_sentiments(filter_spec, params):
             query = f'({query}) + ("{text_search}")'
         else:
             query = text_search
-    if news_letter_id not in ["",None] or text_search not in ["", None] or newsletter_type not in ["", None]:
+    
+       
+    if text_search not in ["", None] or all_selfs:
         total_docs = news_es.count_search_main(
             index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
@@ -397,7 +434,8 @@ async def statistics_sentiments(filter_spec, params):
             lang=params["language_source"],
             sentiment=params["sentiment"],
             subject_id=subject_query,
-            list_id=news_ids
+            list_id=news_ids,
+            list_source_id=user_ignore_sources
         )
 
         total_positive = news_es.count_search_main(
@@ -410,7 +448,8 @@ async def statistics_sentiments(filter_spec, params):
             if params["sentiment"] == "" or params["sentiment"] == "1"
             else 9999,
             subject_id = subject_query,
-            list_id=news_ids
+            list_id=news_ids,
+            list_source_id=user_ignore_sources
         )
 
         total_negative = news_es.count_search_main(
@@ -423,7 +462,8 @@ async def statistics_sentiments(filter_spec, params):
             if params["sentiment"] == "" or params["sentiment"] == "2"
             else 9999,
             subject_id = subject_query,
-            list_id=news_ids
+            list_id=news_ids,
+            list_source_id=user_ignore_sources
         )
 
         total_normal = total_docs - (total_negative + total_positive)
