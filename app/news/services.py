@@ -10,18 +10,30 @@ from .utils import news_to_json
 from vosint_ingestion.models import MongoRepository
 from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 from vosint_ingestion.features.job.services.get_news_from_elastic import (
-    get_news_from_cart,
     build_search_query_by_keyword,
     build_language
 )
 from app.newsletter.models import NewsletterTag
 from core.config import settings
-from elasticsearch import helpers
+import nltk
+from nltk.tokenize import word_tokenize
+from langdetect import detect
+from pyvi import ViTokenizer
+import re
+import jieba
 
 client = get_collection_client("News")
-events_client = get_collection_client("events")
 news_es = MyElasticSearch()
 
+all_punctuation = ['*', '%', '(', ')', '+', '[', '\\', '!', '@', '`', ']', '^', ',', '.', '/', '<', '=', '>', '?', '&', "'", '-', ':', ';', '_', '{', '|', '}', '~', '"', '#', '$']
+punctuation_regex = re.compile(f"[{''.join(re.escape(char) for char in all_punctuation)}]")
+nltk.download('punkt') 
+lang_dict = {
+    "vi": "vietnamese",
+    "cn": "chinese",
+    "en": "english",
+    "ru": "russian"
+}
 
 async def find_news_by_filter(filter, projection=None):
     news = []
@@ -94,30 +106,6 @@ async def find_news_by_ids(ids: List[str], projection: Dict["str", Any]):
         news_list.append(news)
     return news_list
 
-
-def add_keywords_to_elasticsearch(index, keywords, doc_ids):
-    es = MyElasticSearch()
-    actions = []
-    for document_id in doc_ids:
-        update_action = {
-            "_op_type": "update",
-            "_index": index,
-            "_id": document_id,
-            "script": {
-                "source": """
-                if (ctx._source.{keywords} == null) {{
-                    ctx._source.{keywords} = [];
-                }}
-                ctx._source.{keywords}.addAll(params.values_to_add);
-            """,
-                "params": {"values_to_add": keywords},
-            },
-        }
-    actions.append(update_action)
-    ressult = helpers.bulk(es.es, actions)
-    print(ressult)
-
-
 def get_check_news_contain_list(news_ids, keywords):
     object_filter = [ObjectId(object_id) for object_id in news_ids]
     news, _ = MongoRepository().get_many("News", {"_id": {"$in": object_filter}})
@@ -134,7 +122,6 @@ def get_check_news_contain_list(news_ids, keywords):
                 item["is_contain"] = True
                 break
     return news
-
 
 def check_news_contain_keywords(
     object_ids: List[str], news_ids: List[str], new_keywords: List[str] = []
@@ -155,163 +142,12 @@ def check_news_contain_keywords(
     result = get_check_news_contain_list(news_ids, keywords)
     return result
 
-
-def remove_news_from_object(news_ids: List[str], object_ids: List[str]):
-    object_filter = {"_id": {"$in": [ObjectId(object_id) for object_id in object_ids]}}
-    news_id_values = [news_id for news_id in news_ids]
-    object_filter["news_list"] = {"$all": news_id_values}
-    result = MongoRepository().update_many(
-        "object", object_filter, {"$pull": {"news_list": {"$in": news_id_values}}}
-    )
-    return result
-
-
-def add_news_to_object(object_ids: List[str], news_ids: List[str]):
-    object_filter = {"_id": {"$in": [ObjectId(object_id) for object_id in object_ids]}}
-    news_id_values = [news_id for news_id in news_ids]
-    object_filter["news_list"] = {"$not": {"$all": news_id_values}}
-    result = MongoRepository().update_many(
-        "object", object_filter, {"$push": {"news_list": {"$each": news_id_values}}}
-    )
-    return result
-
-
-def get_timeline(
-    text_search="",
-    page_number=None,
-    page_size=None,
-    start_date: str = "",
-    end_date: str = "",
-    sac_thai: str = "",
-    language_source: str = "",
-    object_id: str = "",
-):
-    filter_spec = {}
-    skip = int(page_size) * (int(page_number) - 1)
-    if text_search != "" and object_id == "":
-        filter_spec.update({"$text": {"$search": text_search.strip()}})
-
-    if end_date != None and end_date != "":
-        _end_date = datetime.strptime(end_date, "%d/%m/%Y")
-        filter_spec.update({"date_created": {"$lte": _end_date}})
-    if start_date != None and start_date != "":
-        _start_date = datetime.strptime(start_date, "%d/%m/%Y")
-
-        if filter_spec.get("date_created") == None:
-            filter_spec.update({"date_created": {"$gte": _start_date}})
-        else:
-            filter_spec["date_created"].update({"$gte": _start_date})
-    if sac_thai != None and sac_thai != "":
-        filter_spec.update({"data:class_sacthai": sac_thai})
-    if language_source != None and language_source != "":
-        filter_spec.update({"source_language": language_source})
-
-    data = []
-
-    if object_id != "":
-        filter_search = {}
-        if text_search != "":
-            filter_search.update({"$text": {"$search": text_search.strip()}})
-
-        query = [
-            {"$match": filter_search},
-            # {"$addFields": {"score": {"$meta": "textScore"}}},
-            {
-                "$facet": {
-                    "data": [
-                        {"$match": filter_spec},
-                        {"$unwind": "$new_list"},
-                        {
-                            "$lookup": {
-                                "from": "object",
-                                "let": {"news_id": "$new_list"},
-                                "pipeline": [
-                                    {
-                                        "$match": {
-                                            "news_list": {"$ne": None},
-                                            "$expr": {
-                                                "$in": ["$$news_id", "$news_list"]
-                                            },
-                                        }
-                                    }
-                                ],
-                                "as": "result",
-                            }
-                        },
-                        {
-                            "$match": {
-                                "result": {"$ne": []},
-                                "result._id": ObjectId(object_id),
-                            },
-                        },
-                        {"$project": {"result": 0}},
-                        {"$skip": skip},
-                        {
-                            "$limit": int(page_size),
-                        },
-                        {"$sort": {"date_created": -1}},
-                    ],
-                    "total": [
-                        {"$match": filter_spec},
-                        {"$unwind": "$new_list"},
-                        {
-                            "$lookup": {
-                                "from": "object",
-                                "let": {"news_id": "$new_list"},
-                                "pipeline": [
-                                    {
-                                        "$match": {
-                                            "news_list": {"$ne": None},
-                                            "$expr": {
-                                                "$in": ["$$news_id", "$news_list"]
-                                            },
-                                        }
-                                    }
-                                ],
-                                "as": "result",
-                            }
-                        },
-                        {
-                            "$match": {
-                                "result": {"$ne": []},
-                                "result._id": ObjectId(object_id),
-                            },
-                        },
-                        {"$project": {"result": 0}},
-                        {"$count": "count"},
-                    ],
-                }
-            },
-        ]
-
-        # if len(filter_spec.keys()) > 2:
-        #     print(1)
-        # query.insert(0, {"$match": filter_spec})
-
-        data = MongoRepository().aggregate("events", query)
-        total_records = data[0]["total"][0]["count"] if data[0]["total"] else 0
-        data = data[0]["data"] if data[0]["data"] else []
-
-    else:
-        data, total_records = MongoRepository().get_many(
-            "events",
-            filter_spec,
-            ["date_created"],
-            {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)},
-        )
-
-    for row in data:
-        row["_id"] = str(row["_id"])
-        row["date_created"] = str(row.get("date_created"))
-        if row.get("new_list") != None and type(row.get("new_list")) == str:
-            row["new_list"] = [row["new_list"]]
-    return {"data": data, "total_records": total_records}
-
 def check_type_newsletters(newsletters:list[Any], type_name:str):
     if len(newsletters) == 0:
         return False
     checks = [newsletter.get("tag") == type_name for newsletter in newsletters]
     return all(checks)
+
 
 async def statistics_sentiments(filter_spec, params):
     news_letter_id = params.get("newsletter_id")
@@ -521,33 +357,99 @@ async def statistics_sentiments(filter_spec, params):
     return {"total_records": total_docs, "total_sentiments": total_sentiments}
 
 
-async def count_ttxvn(filter_spec, params):
-    total_docs = news_es.count_search_main_ttxvn(
-        index_name="vosint_ttxvn",
-        query=params["text_search"],
-        gte=params["start_date"] or None,
-        lte=params["end_date"] or None,
-        # lang=params["language_source"],
-        # sentiment=params["sentiment"],
-    )
+async def collect_keyword(subject_name:str, keyword:str, user_id:str, collect_time:str):
+    search_client = get_collection_client("search_history")
+    collected_time = datetime.strptime(collect_time, "%d/%m/%Y %H:%M:%S")
+    keyword = punctuation_regex.sub("", keyword)
+    language = detect(keyword)
+    words = []
+    if language in ["en", "ru"]:
+       words = word_tokenize(keyword, language=lang_dict.get(language))
+    elif "cn" in language:
+       words = jieba.lcut(keyword)
+    else:
+       sentence = ViTokenizer.tokenize(keyword) 
+       words = [x.replace("_", " ") for x in sentence.split(" ") if "_" in x]
+    insert_result = await search_client.insert_one({
+        "subject_name": subject_name,
+        "keywords": words,
+        "user_id": user_id,
+        "time": collected_time
+    })
+    return str(insert_result.inserted_id)
 
-    return {"total_records": total_docs}
+async def get_keywords_in_selfs_newsletter():
+    pipeline = [
+        {
+            '$match': {
+                'tag': 'selfs'
+            }
+        }, {
+            '$project': {
+                'include_keywords': {
+                    '$reduce': {
+                        'input': '$keyword_vi.required_keyword', 
+                        'initialValue': '', 
+                        'in': {
+                            '$concat': [
+                                '$$value', '$$this', ','
+                            ]
+                        }
+                    }
+                }, 
+                'exclude_keywords': '$keyword_vi.exclusion_keyword'
+            }
+        }, {
+            '$project': {
+                'phrase': {
+                    '$concat': [
+                        '$include_keywords', '$exclude_keywords'
+                    ]
+                }
+            }
+        }, {
+            '$project': {
+                'keywords': {
+                    '$split': [
+                        '$phrase', ','
+                    ]
+                }
+            }
+        }
+    ]
+    newsletter_client = get_collection_client("newsletter")
+    keywords = []
+    async for line in newsletter_client.aggregate(pipeline):
+        keywords.extend(line.get("keywords"))
+    return keywords
 
-
-def read_ttxvn(news_ids: List[str], user_id):
-    news_ids_list = [ObjectId(news_id) for news_id in news_ids]
-    filter_spec = {
-        "_id": {"$in": news_ids_list},
-        "list_user_read": {"$not": {"$all": [user_id]}},
+async def get_keywords_from_search_history(start_date, end_date):
+    key_filter = {
+        "$and": []
     }
-    update_command = {"$push": {"list_user_read": user_id}}
-    collection = "ttxvn"
-    return MongoRepository().update_many(collection, filter_spec, update_command)
+    if start_date is None and end_date is None:
+        key_filter.pop("$and")
+    if start_date != None:
+        key_filter["$and"].append({"time": {"$gte": start_date}})
+    if end_date != None:
+        key_filter["$and"].append({"time": {"$lte": start_date}})
+    history_client = get_collection_client("search_history")
+    keywords = []
+    async for line in history_client.find(key_filter):
+        keywords.extend(line.get("keywords"))
+    return keywords
 
-
-def unread_ttxvn(news_ids: List[str], user_id):
-    news_ids_list = [ObjectId(news_id) for news_id in news_ids]
-    filter_spec = {"_id": {"$in": news_ids_list}}
-    update_command = {"$pull": {"list_user_read": {"$in": [user_id]}}}
-    collection = "ttxvn"
-    return MongoRepository().update_many(collection, filter_spec, update_command)
+async def get_keyword_frequences(start_date, end_date):
+    if start_date is not None:
+        start_date = datetime.strptime(start_date, "%d/%m/%Y %H:%M:%S")
+    if end_date is not None:
+        end_date = datetime.strptime(end_date, "%d/%m/%Y %H:%M:%S")
+    self_keys = await get_keywords_in_selfs_newsletter()
+    his_keys = await get_keywords_from_search_history(start_date, end_date)
+    self_keys.extend(his_keys)
+    return_data = {}
+    for key in self_keys:
+        if return_data.get(key) is None:
+            return_data[key] = 0
+        return_data[key] += 1
+    return list(return_data.items())
