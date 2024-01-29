@@ -96,6 +96,8 @@ def get_news_from_newsletter_id__(
         news_letters, _ = MongoRepository().find(
             collection_name="newsletter", filter_spec=news_letter_filter
         )
+        if len(news_letters) == 0:
+            return []
 
     # nếu là giỏ tin
     if cat_type == NewsletterTag.ARCHIVE or len(news_letters) > 0:
