@@ -268,7 +268,7 @@ async def get_top_five_by_self_route(start_date: str = None, end_date:str = None
     user_id = auth.get_jwt_subject()
     return await get_top_five_by_self(start_date, end_date, user_id)
 
-@router.get("get-survey-search-history")
+@router.get("/get-survey-search-history")
 async def get_survey_search_history_route(start_date:str, end_date:str, auth:AuthJWT=Depends()):
     auth.jwt_required()
     user_id = auth.get_jwt_subject()
@@ -278,6 +278,6 @@ async def get_survey_search_history_route(start_date:str, end_date:str, auth:Aut
         end_date = datetime.strptime(end_date, "%d/%m/%Y %H:%M:%S")
     return await get_keywords_from_search_history(start_date, end_date, user_id)
 
-@router.get("disable-search-history")
+@router.get("/disable-search-history")
 async def disable_search_history_route(his_id:str):
     return await disable_keyword_history(his_id)
