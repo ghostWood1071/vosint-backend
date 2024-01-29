@@ -446,7 +446,7 @@ async def get_keywords_from_search_history(start_date, end_date, user_id:str = N
     if start_date != None:
         key_filter["$and"].append({"time": {"$gte": start_date}})
     if end_date != None:
-        key_filter["$and"].append({"time": {"$lte": start_date}})
+        key_filter["$and"].append({"time": {"$lte": end_date}})
     history_client = get_collection_client("search_history")
     keywords = []
     if user_id is not None:
