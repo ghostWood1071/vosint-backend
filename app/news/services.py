@@ -357,19 +357,28 @@ async def statistics_sentiments(filter_spec, params):
     return {"total_records": total_docs, "total_sentiments": total_sentiments}
 
 
-async def collect_keyword(subject_name:str, keyword:str, user_id:str, collect_time:str):
+async def collect_keyword(subject_name:str, keyword:Any, user_id:str, collect_time:str):
     search_client = get_collection_client("search_history")
     collected_time = datetime.strptime(collect_time, "%d/%m/%Y %H:%M:%S")
-    keyword = punctuation_regex.sub("", keyword)
-    language = detect(keyword)
     words = []
-    if language in ["en", "ru"]:
-       words = word_tokenize(keyword, language=lang_dict.get(language))
-    elif "cn" in language:
-       words = jieba.lcut(keyword)
+    try:
+        keyword = eval(keyword)
+    except Exception as e:
+        pass
+    if isinstance(keyword, str):
+        keyword = punctuation_regex.sub("", keyword)
+        language = detect(keyword)
+        if language in ["en", "ru"]:
+            words = word_tokenize(keyword, language=lang_dict.get(language))
+        elif "cn" in language:
+            words = jieba.lcut(keyword)
+        else:
+            sentence = ViTokenizer.tokenize(keyword) 
+        words = [x.replace("_", " ") for x in sentence.split(" ") if "_" in x]
+    elif isinstance(keyword, list):
+        words = keyword.copy()
     else:
-       sentence = ViTokenizer.tokenize(keyword) 
-       words = [x.replace("_", " ") for x in sentence.split(" ") if "_" in x]
+        raise TypeError("key word must be string or list of string")
     insert_result = await search_client.insert_one({
         "subject_name": subject_name,
         "keywords": words,
@@ -439,7 +448,7 @@ async def get_keywords_from_search_history(start_date, end_date):
         keywords.extend(line.get("keywords"))
     return keywords
 
-async def get_keyword_frequences(start_date, end_date):
+async def get_keyword_frequences(start_date, end_date, top):
     if start_date is not None:
         start_date = datetime.strptime(start_date, "%d/%m/%Y %H:%M:%S")
     if end_date is not None:
@@ -452,7 +461,8 @@ async def get_keyword_frequences(start_date, end_date):
         if return_data.get(key) is None:
             return_data[key] = 0
         return_data[key] += 1
-    return list(return_data.items())
+    result = [ {"label": x[0], "value":x[1]} for x in sorted(return_data.items(), key=lambda item: item[1])[:10]]
+    return result
 
 async def get_top_seven_by_self(start_date, end_date, user_id = ""):
     # defined ----------------------------
