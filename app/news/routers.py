@@ -268,7 +268,7 @@ async def get_top_five_by_self_route(start_date: str = None, end_date:str = None
     return await get_top_five_by_self(start_date, end_date, user_id)
 
 @router.get("get-survey-search-history")
-async def get_survey_search_history_route(start_date:str, end_date:str, auth:AuthJWT):
+async def get_survey_search_history_route(start_date:str, end_date:str, auth:AuthJWT=Depends()):
     auth.jwt_required()
     user_id = auth.get_jwt_subject()
     if start_date is not None:
