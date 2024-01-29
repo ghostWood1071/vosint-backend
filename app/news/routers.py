@@ -18,7 +18,8 @@ from .services import (
     collect_keyword,
     get_keyword_frequences,
     get_top_seven_by_self,
-    get_top_five_by_self
+    get_top_five_by_self,
+    get_keywords_from_search_history
 )
 from .utils import news_to_json
 from fastapi import Response
@@ -266,3 +267,12 @@ async def get_top_five_by_self_route(start_date: str = None, end_date:str = None
     user_id = auth.get_jwt_subject()
     return await get_top_five_by_self(start_date, end_date, user_id)
 
+@router.get("get_survey_search_history")
+async def get_survey_search_history_route(start_date:str, end_date:str, auth:AuthJWT):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    if start_date is not None:
+        start_date = datetime.strptime(start_date, "%d/%m/%Y %H:%M:%S")
+    if end_date is not None:
+        end_date = datetime.strptime(end_date, "%d/%m/%Y %H:%M:%S")
+    return await get_keywords_from_search_history(start_date, end_date, user_id)

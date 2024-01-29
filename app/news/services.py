@@ -432,10 +432,13 @@ async def get_keywords_in_selfs_newsletter():
         keywords.extend(line.get("keywords"))
     return keywords
 
-async def get_keywords_from_search_history(start_date, end_date):
+async def get_keywords_from_search_history(start_date, end_date, user_id:str = None):
     key_filter = {
         "$and": []
     }
+    if user_id is not None:
+        key_filter["$and"].append({"user_id": user_id})
+        key_filter["$and"].append({"subject_name": {"$ne": ""}})
     if start_date is None and end_date is None:
         key_filter.pop("$and")
     if start_date != None:
@@ -444,8 +447,12 @@ async def get_keywords_from_search_history(start_date, end_date):
         key_filter["$and"].append({"time": {"$lte": start_date}})
     history_client = get_collection_client("search_history")
     keywords = []
-    async for line in history_client.find(key_filter):
-        keywords.extend(line.get("keywords"))
+    if user_id is not None:
+        async for line in history_client.find(key_filter):
+            keywords.append(line)
+    else:
+        async for line in history_client.find(key_filter):
+            keywords.extend(line.get("keywords"))
     return keywords
 
 async def get_keyword_frequences(start_date, end_date, top):
@@ -461,7 +468,7 @@ async def get_keyword_frequences(start_date, end_date, top):
         if return_data.get(key) is None:
             return_data[key] = 0
         return_data[key] += 1
-    result = [ {"label": x[0], "value":x[1]} for x in sorted(return_data.items(), key=lambda item: item[1])[:10]]
+    result = [ {"label": x[0], "value":x[1]} for x in sorted(return_data.items(), key=lambda item: item[1])[:top]]
     return result
 
 async def get_top_seven_by_self(start_date, end_date, user_id = ""):
