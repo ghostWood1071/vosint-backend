@@ -246,7 +246,12 @@ async def statistics_sentiments(filter_spec, params):
         news_letters, _ = MongoRepository().find(
             collection_name="newsletter", filter_spec=news_letter_filter
         )
-        
+        if len(news_letters) == 0:
+            return {
+                "total_positive": 0,
+                "total_negative": 0,
+                "total_normal": 0,
+            }
         # nếu không là giỏ tin
         all_selfs = check_type_newsletters(news_letters, NewsletterTag.SELFS)
         if newsletter_type == NewsletterTag.SELFS or all_selfs:
