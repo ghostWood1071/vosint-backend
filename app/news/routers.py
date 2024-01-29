@@ -16,7 +16,9 @@ from .services import (
     check_news_contain_keywords,
     statistics_sentiments,
     collect_keyword,
-    get_keyword_frequences
+    get_keyword_frequences,
+    get_top_seven_by_self,
+    get_top_five_by_self
 )
 from .utils import news_to_json
 from fastapi import Response
@@ -250,3 +252,17 @@ async def collect_keyword_route(subject_name: str = "", keyword:str="", collect_
 @router.get("/get-keyword-frequences")
 async def get_keyword_frequnences_route(start_date: str = None, end_date:str = None):
     return await get_keyword_frequences(start_date, end_date)
+
+# ------------ statistic news -------------------
+@router.get("/get-top-seven-by-self")
+async def get_top_seven_by_self_route(start_date: str = None, end_date:str = None, auth:AuthJWT = Depends()):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await get_top_seven_by_self(start_date, end_date, user_id)
+
+@router.get("/get-top-five-by-self")
+async def get_top_five_by_self_route(start_date: str = None, end_date:str = None, auth:AuthJWT = Depends()):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await get_top_five_by_self(start_date, end_date, user_id)
+

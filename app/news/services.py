@@ -1,5 +1,5 @@
 # import datetime
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from typing import *
 from bson.objectid import ObjectId
@@ -453,3 +453,122 @@ async def get_keyword_frequences(start_date, end_date):
             return_data[key] = 0
         return_data[key] += 1
     return list(return_data.items())
+
+async def get_top_seven_by_self(start_date, end_date, user_id = ""):
+    # defined ----------------------------
+    query = {}
+    query["$and"] = []
+
+    sub_params = {
+        "text_search": "",
+        "sentiment": "",
+        "language_source": "",
+        "newsletter_id": "",
+        "subject_id": None,
+        "vital": "",
+        "bookmarks": ""
+    }
+
+    # handle date -------------------------        
+    if start_date != "" and end_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+
+        start_date = start_date.replace(hour=0, minute=0, second=0)
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        query["$and"].append({"pub_date": {"$gte": start_date, "$lte": end_date}})
+
+    output_array = []
+    current_date = start_date
+    while current_date <= end_date:
+        response = await statistics_sentiments(query, {
+            "start_date": current_date,
+            "end_date": current_date,
+            "user_id": user_id,
+            "newsletter_type": "selfs",
+
+            **sub_params
+        })
+        output_array.append({"label": current_date.strftime("%d/%m/%Y"), "value": response.get("total_records")})
+        current_date += timedelta(days=1)
+
+    return output_array
+
+async def get_top_five_by_self(start_date, end_date, user_id):
+    newsletter_client = get_collection_client("newsletter")
+    selfs_array = [{"_id": str(record.get("_id")), "title": record.get("title")} for record in await newsletter_client.find({"tag": "selfs"},projection={'_id': 1, "title": 1}).to_list(None)]
+
+    # defined ----------------------------
+    query = {}
+    query["$and"] = []
+
+    sub_params = {
+        "text_search": "",
+        "sentiment": "",
+        "language_source": "",
+        "subject_id": None,
+        "vital": "",
+        "bookmarks": "",
+        "newsletter_type": None
+    }
+
+    sub_params_total = {
+        "text_search": "",
+        "sentiment": "",
+        "language_source": "",
+        "start_date": "",
+        "end_date": "",
+        "newsletter_id": "",
+        "subject_id": None,
+        "vital": "",
+        "bookmarks": "",
+        "newsletter_type": "selfs"
+    }
+
+    # handle date -------------------------        
+    if start_date != "" and end_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+
+        start_date = start_date.replace(hour=0, minute=0, second=0)
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        query["$and"].append({"pub_date": {"$gte": start_date, "$lte": end_date}})
+
+
+    # calculate --------------------------
+    # response_total = await statistics_sentiments({}, {
+    #     "user_id": user_id,
+    #     **sub_params_total
+    # })
+    # total = response_total.get("total_records")
+
+    output_array = []
+    for record in selfs_array:
+        response = await statistics_sentiments(query, {
+            "start_date": start_date,
+            "end_date": end_date,
+            "user_id": user_id,
+            "newsletter_id": record.get("_id"),
+
+            **sub_params
+        })
+
+        output_array.append({"label": record.get("title"), "value": response.get("total_records")})
+
+    return sorted(output_array, key=lambda x: x['value'], reverse=True)[:5]
