@@ -14,13 +14,13 @@ from .services import (
     unread_news,
     find_news_by_ids,
     check_news_contain_keywords,
-    remove_news_from_object,
-    add_news_to_object,
-    get_timeline,
     statistics_sentiments,
-    count_ttxvn,
-    read_ttxvn,
-    unread_ttxvn,
+    collect_keyword,
+    get_keyword_frequences,
+    get_top_seven_by_self,
+    get_top_five_by_self,
+    get_keywords_from_search_history,
+    disable_keyword_history
 )
 from .utils import news_to_json
 from fastapi import Response
@@ -135,7 +135,6 @@ def check_news_contain(
     return check_news_contain_keywords(object_ids, news_ids, new_keywords)
 
 
-
 @router.get("/get-statistics-sentiments")
 async def get_statistics_sentiments(
     text_search="",
@@ -245,82 +244,40 @@ async def get_statistics_sentiments(
     )
 
 
-@router.get("/get-count-ttxvn")
-async def get_count_ttxvn(
-    text_search="",
-    start_date: str = "",
-    end_date: str = "",
-    authorize: AuthJWT = Depends(),
-):
-    authorize.jwt_required()
-    user_id = authorize.get_jwt_subject()
-    try:
-        query = {}
-        query["$and"] = []
+@router.post("/collect-keyword")
+async def collect_keyword_route(subject_name: str = "", keywords:Any=None, collect_time:str = "",auth:AuthJWT = Depends()):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    inserted_id = await collect_keyword(subject_name, keywords, user_id, collect_time)
+    return inserted_id
 
-        if start_date != "" and end_date != "":
-            start_date = datetime(
-                int(start_date.split("/")[2]),
-                int(start_date.split("/")[1]),
-                int(start_date.split("/")[0]),
-            )
-            end_date = datetime(
-                int(end_date.split("/")[2]),
-                int(end_date.split("/")[1]),
-                int(end_date.split("/")[0]),
-            )
-            end_date = end_date.replace(hour=23, minute=59, second=59)
+@router.post("/get-keyword-frequences")
+async def get_keyword_frequnences_route(start_date: str = None, end_date:str = None, top: int = 10):
+    return await get_keyword_frequences(start_date, end_date, top)
 
-            query["$and"].append(
-                {"PublishDate": {"$gte": start_date, "$lte": end_date}}
-            )
-        elif start_date != "":
-            start_date = datetime(
-                int(start_date.split("/")[2]),
-                int(start_date.split("/")[1]),
-                int(start_date.split("/")[0]),
-            )
-            query["$and"].append({"PublishDate": {"$gte": start_date}})
-        elif end_date != "":
-            end_date = datetime(
-                int(end_date.split("/")[2]),
-                int(end_date.split("/")[1]),
-                int(end_date.split("/")[0]),
-            )
-            end_date = end_date.replace(hour=23, minute=59, second=59)
+# ------------ statistic news -------------------
+@router.get("/get-top-seven-by-self")
+async def get_top_seven_by_self_route(start_date: str = None, end_date:str = None, auth:AuthJWT = Depends()):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await get_top_seven_by_self(start_date, end_date, user_id)
 
-            query["$and"].append({"PublishDate": {"$lte": end_date}})
+@router.get("/get-top-five-by-self")
+async def get_top_five_by_self_route(start_date: str = None, end_date:str = None, auth:AuthJWT = Depends()):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await get_top_five_by_self(start_date, end_date, user_id)
 
-    except:
-        query = {}
-    if str(query) == "{'$and': []}":
-        query = {}
+@router.get("/get-survey-search-history")
+async def get_survey_search_history_route(start_date:str, end_date:str, auth:AuthJWT=Depends()):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    if start_date is not None:
+        start_date = datetime.strptime(start_date, "%d/%m/%Y %H:%M:%S")
+    if end_date is not None:
+        end_date = datetime.strptime(end_date, "%d/%m/%Y %H:%M:%S")
+    return await get_keywords_from_search_history(start_date, end_date, user_id)
 
-    return await count_ttxvn(
-        query,
-        params={
-            "text_search": text_search,
-            "start_date": start_date,
-            "end_date": end_date,
-        },
-    )
-
-
-@router.post("/ttxvn/read")
-def read_news_ttxvn(news_ids: List[str], authorize: AuthJWT = Depends()):
-    authorize.jwt_required()
-    user_id = authorize.get_jwt_subject()
-    result = read_ttxvn(news_ids, user_id)
-    return result
-
-
-@router.post("/ttxvn/unread")
-def unread_news_ttxvn(
-    news_ids: List[str],
-    authorize: AuthJWT = Depends(),
-):
-    authorize.jwt_required()
-    user_id = authorize.get_jwt_subject()
-    print(news_ids, user_id)
-    result = unread_ttxvn(news_ids, user_id)
-    return result
+@router.post("/disable-search-history")
+async def disable_search_history_route(his_id:str):
+    return await disable_keyword_history(his_id)

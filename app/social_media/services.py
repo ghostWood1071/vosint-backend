@@ -298,7 +298,12 @@ async def check_unread_socials(post_ids: List[str], social_platform: str, user_i
     return MongoRepository().update_many(collection, filter_spec, update_command)
 
 
-async def feature_keywords(k: int, start_date: str, end_date: str, name: str):
+async def feature_keywords(k: int, start_date: str, end_date: str, name: str, user_id: str):
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)})
+    following_ids = [] if user.get("following") is None else user.get("following")
+    following_ids = [ObjectId(x) for x in following_ids]
+
     start_date = datetime(
         int(start_date.split("/")[2]),
         int(start_date.split("/")[1]),
@@ -317,7 +322,10 @@ async def feature_keywords(k: int, start_date: str, end_date: str, name: str):
     end_date = str(end_date).replace("-", "/")
 
     pipeline = [
-        {"$match": {"created_at": {"$gte": start_date, "$lte": end_date}}},
+        {"$match": {"$and": [
+            {"created_at": {"$gte": start_date, "$lte": end_date}},
+            {"id_social":  {"$in": following_ids}}
+        ]}},
         {"$unwind": {"path": "$keywords"}},
         {
             "$group": {"_id": "$keywords", "value": {"$sum": 1}},
@@ -368,7 +376,7 @@ async def social_personal(id: str):
     return result
 
 
-async def statistic_interaction(name: str, start_date: str, end_date: str):
+async def statistic_interaction(name: str, start_date: str, end_date: str, user_id: str):
     # date_current = datetime.now()
     # date_ago = date_current - timedelta(days=6)
 
@@ -376,6 +384,13 @@ async def statistic_interaction(name: str, start_date: str, end_date: str):
 
     # date_current = str(date_current).replace("-", "/")
     # date_ago = str(date_ago).replace("-", "/")
+
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)})
+    following_ids = [] if user.get("following") is None else user.get("following")
+    following_ids = [ObjectId(x) for x in following_ids]
+    filter_spec = {"id_social":  {"$in": following_ids}}
+
     if start_date != "":
         start_date = datetime(
             int(start_date.split("/")[2]),
@@ -394,7 +409,7 @@ async def statistic_interaction(name: str, start_date: str, end_date: str):
         end_date = end_date.replace(hour=23, minute=59, second=59)
         end_date = str(end_date).replace("-", "/")
 
-    filter_spec = {}
+    # filter_spec = {}
     if start_date != "" or end_date != "":
         filter_spec.update({"created_at": {"$gte": start_date, "$lte": end_date}})
 
@@ -452,9 +467,18 @@ async def statistic_interaction(name: str, start_date: str, end_date: str):
     return result
 
 
-async def active_member(name: str):
+async def active_member(name: str, user_id: str):
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)})
+    following_ids = [] if user.get("following") is None else user.get("following")
+    following_ids = [ObjectId(x) for x in following_ids]
+    filter_spec = {"id_social":  {"$in": following_ids}}
+
     # person post the most
     pipeline = [
+        {
+            "$match": filter_spec
+        },
         {
             "$group": {"_id": "$id_social", "value": {"$sum": 1}},
         },
@@ -487,8 +511,13 @@ async def active_member(name: str):
 
 
 # get influencer
-async def exec_influencer(name: str, start_date: str, end_date: str):
-    filter_spec = {}
+async def exec_influencer(name: str, start_date: str, end_date: str, user_id: str):
+    # filter_spec = {}
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)})
+    following_ids = [] if user.get("following") is None else user.get("following")
+    following_ids = [ObjectId(x) for x in following_ids]
+    filter_spec = {"id_social":  {"$in": following_ids}}
 
     # handle filter with date
     if start_date:
@@ -612,9 +641,14 @@ async def exec_influencer_priority(name: str):
 
 
 async def exec_influential_post(
-    name: str = "facebook", start_date: str = "", end_date: str = ""
+    name: str = "facebook", start_date: str = "", end_date: str = "", user_id: str=""
 ):
-    filter_spec = {}
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)})
+    following_ids = [] if user.get("following") is None else user.get("following")
+    following_ids = [ObjectId(x) for x in following_ids]
+    filter_spec = {"id_social":  {"$in": following_ids}}
+    # filter_spec = {}
     if start_date:
         start_date = datetime(
             int(start_date.split("/")[2]),
@@ -1084,7 +1118,13 @@ async def total_post_priority(id_social: str, start_date: str, end_date: str):
     return data[0] if len(data) > 0 else []
 
 
-async def statistic_sentiment(name: str, start_date: str, end_date: str):
+async def statistic_sentiment(name: str, start_date: str, end_date: str, user_id: str):
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)})
+    following_ids = [] if user.get("following") is None else user.get("following")
+    following_ids = [ObjectId(x) for x in following_ids]
+    # filter_spec = {"id_social":  {"$in": following_ids}}
+
     if start_date != "":
         start_date = datetime(
             int(start_date.split("/")[2]),
@@ -1108,10 +1148,16 @@ async def statistic_sentiment(name: str, start_date: str, end_date: str):
         ]
     }
 
+    filter_spec["$and"].append(
+        {"id_social":  {"$in": following_ids}}
+    )
+
     if start_date != "" and end_date != "":
         filter_spec["$and"].append(
             {"created_at": {"$gte": start_date, "$lte": end_date}}
         )
+
+    print(filter_spec)
 
     pipeline = [
         {"$match": filter_spec},

@@ -100,28 +100,41 @@ async def get_social_personal(id: str):
 
 @router.get("/get-feature-keywords")
 async def get_feature_keywords(
-    k: int = 10, start_date: str = "", end_date: str = "", name: str = "facebook"
+    k: int = 10, start_date: str = "", end_date: str = "", name: str = "facebook",
+    auth:AuthJWT = Depends()
 ):
-    return await feature_keywords(k, start_date, end_date, name)
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await feature_keywords(k, start_date, end_date, name, user_id)
 
 
 @router.get("/get-statistic-interaction")
 async def get_statistic_interaction(
-    name: str = "", start_date: str = "", end_date: str = ""
+    name: str = "", start_date: str = "", end_date: str = "",
+    auth:AuthJWT = Depends()
 ):
-    return await statistic_interaction(name, start_date, end_date)
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await statistic_interaction(name, start_date, end_date, user_id)
 
 
 @router.get("/get-active-member")
-async def get_active_member(name: str = "facebook"):
-    return await active_member(name)
+async def get_active_member(name: str = "facebook",
+    auth:AuthJWT = Depends()
+):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await active_member(name, user_id)
 
 
 @router.get("/get-influencer")
 async def get_influencer(
-    name: str = "facebook", start_date: str = "", end_date: str = ""
+    name: str = "facebook", start_date: str = "", end_date: str = "",
+    auth:AuthJWT = Depends()
 ):
-    return await exec_influencer(name, start_date, end_date)
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await exec_influencer(name, start_date, end_date, user_id)
 
 
 @router.get("/get-influencer-priority")
@@ -131,9 +144,12 @@ async def get_influencer_priority(name: str = "facebook"):
 
 @router.get("/get-influential-post")
 async def get_influential_post(
-    name: str = "facebook", start_date: str = "", end_date: str = ""
+    name: str = "facebook", start_date: str = "", end_date: str = "",
+    auth:AuthJWT = Depends()
 ):
-    return await exec_influential_post(name, start_date, end_date)
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await exec_influential_post(name, start_date, end_date, user_id)
 
 
 # priority
@@ -187,9 +203,12 @@ async def get_active_member_priority():
 # statistic
 @router.get("/get-statistic-sentiment")
 async def get_statistic_sentiment(
-    name: str = "facebook", start_date: str = "", end_date: str = ""
+    name: str = "facebook", start_date: str = "", end_date: str = "",
+    auth:AuthJWT = Depends()
 ):
-    return await statistic_sentiment(name, start_date, end_date)
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await statistic_sentiment(name, start_date, end_date, user_id)
 
 
 @router.post("/create-priority")

@@ -66,11 +66,11 @@ def get_news_from_newsletter_id__(
     # input is a type: cart or subject, we just need to execute one 
     query = "*"
     query_phrase = []
-    news_letter_filter = {}
+    news_letter_filter = {"user_id": ObjectId(user_id)}
     news_letters = []
     if cat_type:
         news_letter_filter["tag"] = cat_type
-    else:
+    elif news_letter_id not in [None, ""]:
         news_letter_filter["_id"] = ObjectId(news_letter_id)
 
     

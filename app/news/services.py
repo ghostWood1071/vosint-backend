@@ -1,5 +1,5 @@
 # import datetime
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from typing import *
 from bson.objectid import ObjectId
@@ -10,18 +10,30 @@ from .utils import news_to_json
 from vosint_ingestion.models import MongoRepository
 from vosint_ingestion.features.elasticsearch.elastic_main import MyElasticSearch
 from vosint_ingestion.features.job.services.get_news_from_elastic import (
-    get_news_from_cart,
     build_search_query_by_keyword,
     build_language
 )
 from app.newsletter.models import NewsletterTag
 from core.config import settings
-from elasticsearch import helpers
+import nltk
+from nltk.tokenize import word_tokenize
+from langdetect import detect
+from pyvi import ViTokenizer
+import re
+import jieba
 
 client = get_collection_client("News")
-events_client = get_collection_client("events")
 news_es = MyElasticSearch()
 
+all_punctuation = ['*', '%', '(', ')', '+', '[', '\\', '!', '@', '`', ']', '^', ',', '.', '/', '<', '=', '>', '?', '&', "'", '-', ':', ';', '_', '{', '|', '}', '~', '"', '#', '$']
+punctuation_regex = re.compile(f"[{''.join(re.escape(char) for char in all_punctuation)}]")
+nltk.download('punkt') 
+lang_dict = {
+    "vi": "vietnamese",
+    "cn": "chinese",
+    "en": "english",
+    "ru": "russian"
+}
 
 async def find_news_by_filter(filter, projection=None):
     news = []
@@ -94,30 +106,6 @@ async def find_news_by_ids(ids: List[str], projection: Dict["str", Any]):
         news_list.append(news)
     return news_list
 
-
-def add_keywords_to_elasticsearch(index, keywords, doc_ids):
-    es = MyElasticSearch()
-    actions = []
-    for document_id in doc_ids:
-        update_action = {
-            "_op_type": "update",
-            "_index": index,
-            "_id": document_id,
-            "script": {
-                "source": """
-                if (ctx._source.{keywords} == null) {{
-                    ctx._source.{keywords} = [];
-                }}
-                ctx._source.{keywords}.addAll(params.values_to_add);
-            """,
-                "params": {"values_to_add": keywords},
-            },
-        }
-    actions.append(update_action)
-    ressult = helpers.bulk(es.es, actions)
-    print(ressult)
-
-
 def get_check_news_contain_list(news_ids, keywords):
     object_filter = [ObjectId(object_id) for object_id in news_ids]
     news, _ = MongoRepository().get_many("News", {"_id": {"$in": object_filter}})
@@ -134,7 +122,6 @@ def get_check_news_contain_list(news_ids, keywords):
                 item["is_contain"] = True
                 break
     return news
-
 
 def check_news_contain_keywords(
     object_ids: List[str], news_ids: List[str], new_keywords: List[str] = []
@@ -155,163 +142,17 @@ def check_news_contain_keywords(
     result = get_check_news_contain_list(news_ids, keywords)
     return result
 
-
-def remove_news_from_object(news_ids: List[str], object_ids: List[str]):
-    object_filter = {"_id": {"$in": [ObjectId(object_id) for object_id in object_ids]}}
-    news_id_values = [news_id for news_id in news_ids]
-    object_filter["news_list"] = {"$all": news_id_values}
-    result = MongoRepository().update_many(
-        "object", object_filter, {"$pull": {"news_list": {"$in": news_id_values}}}
-    )
-    return result
-
-
-def add_news_to_object(object_ids: List[str], news_ids: List[str]):
-    object_filter = {"_id": {"$in": [ObjectId(object_id) for object_id in object_ids]}}
-    news_id_values = [news_id for news_id in news_ids]
-    object_filter["news_list"] = {"$not": {"$all": news_id_values}}
-    result = MongoRepository().update_many(
-        "object", object_filter, {"$push": {"news_list": {"$each": news_id_values}}}
-    )
-    return result
-
-
-def get_timeline(
-    text_search="",
-    page_number=None,
-    page_size=None,
-    start_date: str = "",
-    end_date: str = "",
-    sac_thai: str = "",
-    language_source: str = "",
-    object_id: str = "",
-):
-    filter_spec = {}
-    skip = int(page_size) * (int(page_number) - 1)
-    if text_search != "" and object_id == "":
-        filter_spec.update({"$text": {"$search": text_search.strip()}})
-
-    if end_date != None and end_date != "":
-        _end_date = datetime.strptime(end_date, "%d/%m/%Y")
-        filter_spec.update({"date_created": {"$lte": _end_date}})
-    if start_date != None and start_date != "":
-        _start_date = datetime.strptime(start_date, "%d/%m/%Y")
-
-        if filter_spec.get("date_created") == None:
-            filter_spec.update({"date_created": {"$gte": _start_date}})
-        else:
-            filter_spec["date_created"].update({"$gte": _start_date})
-    if sac_thai != None and sac_thai != "":
-        filter_spec.update({"data:class_sacthai": sac_thai})
-    if language_source != None and language_source != "":
-        filter_spec.update({"source_language": language_source})
-
-    data = []
-
-    if object_id != "":
-        filter_search = {}
-        if text_search != "":
-            filter_search.update({"$text": {"$search": text_search.strip()}})
-
-        query = [
-            {"$match": filter_search},
-            # {"$addFields": {"score": {"$meta": "textScore"}}},
-            {
-                "$facet": {
-                    "data": [
-                        {"$match": filter_spec},
-                        {"$unwind": "$new_list"},
-                        {
-                            "$lookup": {
-                                "from": "object",
-                                "let": {"news_id": "$new_list"},
-                                "pipeline": [
-                                    {
-                                        "$match": {
-                                            "news_list": {"$ne": None},
-                                            "$expr": {
-                                                "$in": ["$$news_id", "$news_list"]
-                                            },
-                                        }
-                                    }
-                                ],
-                                "as": "result",
-                            }
-                        },
-                        {
-                            "$match": {
-                                "result": {"$ne": []},
-                                "result._id": ObjectId(object_id),
-                            },
-                        },
-                        {"$project": {"result": 0}},
-                        {"$skip": skip},
-                        {
-                            "$limit": int(page_size),
-                        },
-                        {"$sort": {"date_created": -1}},
-                    ],
-                    "total": [
-                        {"$match": filter_spec},
-                        {"$unwind": "$new_list"},
-                        {
-                            "$lookup": {
-                                "from": "object",
-                                "let": {"news_id": "$new_list"},
-                                "pipeline": [
-                                    {
-                                        "$match": {
-                                            "news_list": {"$ne": None},
-                                            "$expr": {
-                                                "$in": ["$$news_id", "$news_list"]
-                                            },
-                                        }
-                                    }
-                                ],
-                                "as": "result",
-                            }
-                        },
-                        {
-                            "$match": {
-                                "result": {"$ne": []},
-                                "result._id": ObjectId(object_id),
-                            },
-                        },
-                        {"$project": {"result": 0}},
-                        {"$count": "count"},
-                    ],
-                }
-            },
-        ]
-
-        # if len(filter_spec.keys()) > 2:
-        #     print(1)
-        # query.insert(0, {"$match": filter_spec})
-
-        data = MongoRepository().aggregate("events", query)
-        total_records = data[0]["total"][0]["count"] if data[0]["total"] else 0
-        data = data[0]["data"] if data[0]["data"] else []
-
-    else:
-        data, total_records = MongoRepository().get_many(
-            "events",
-            filter_spec,
-            ["date_created"],
-            {"skip": int(page_size) * (int(page_number) - 1), "limit": int(page_size)},
-        )
-
-    for row in data:
-        row["_id"] = str(row["_id"])
-        row["date_created"] = str(row.get("date_created"))
-        if row.get("new_list") != None and type(row.get("new_list")) == str:
-            row["new_list"] = [row["new_list"]]
-    return {"data": data, "total_records": total_records}
-
 def check_type_newsletters(newsletters:list[Any], type_name:str):
     if len(newsletters) == 0:
         return False
     checks = [newsletter.get("tag") == type_name for newsletter in newsletters]
     return all(checks)
+
+async def lol(filter_spec):
+    data = []
+    async for line in client.find(filter_spec):
+        data.append(line)
+    return data
 
 async def statistics_sentiments(filter_spec, params):
     news_letter_id = params.get("newsletter_id")
@@ -368,28 +209,28 @@ async def statistics_sentiments(filter_spec, params):
     news_ids = []
     if params.get("vital") == '1':
         vital_ids = [] if user.get("vital_list") is None else user.get("vital_list")
-        vital_filter = [ObjectId(x) for x in vital_ids]
         if len(vital_ids) > 0: 
             if filter_spec.get("$and") is None:
                 filter_spec["$and"] = []
             filter_spec["$and"].append({
-                "_id": {"$in": vital_filter}
+                "_id": {"$in": vital_ids}
             })
-            news_ids = vital_ids
+            news_ids = [str(x) for x in vital_ids]
     
     if params.get("bookmarks") == '1':
         bookmarks_ids = [] if user.get("news_bookmarks") is None else user.get("news_bookmarks")
-        bookmarks_filter = [ObjectId(x) for x in bookmarks_ids]
+        bookmarks_filter = [str(x) for x in bookmarks_ids]
         if len(bookmarks_ids) > 0: 
             if filter_spec.get("$and") is None:
                 filter_spec["$and"] = []
             filter_spec["$and"].append({
-                "_id": {"$in": bookmarks_filter}
+                "_id": {"$in": bookmarks_ids}
             })
-            news_ids = bookmarks_ids
+            news_ids = bookmarks_filter
 
     if news_letter_id not in ["", None] or newsletter_type not in ["", None]:
         news_letter_filter = {"tag": newsletter_type} if newsletter_type not in ["", None] else {"_id": ObjectId(news_letter_id)}
+        news_letter_filter["user_id"] = ObjectId(params.get("user_id"))
         news_letters, _ = MongoRepository().find(
             collection_name="newsletter", filter_spec=news_letter_filter
         )
@@ -425,7 +266,7 @@ async def statistics_sentiments(filter_spec, params):
             query = text_search
     
        
-    if text_search not in ["", None] or all_selfs:
+    if text_search not in ["", None] or all_selfs or newsletter_type == NewsletterTag.SELFS:
         total_docs = news_es.count_search_main(
             index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
@@ -470,8 +311,9 @@ async def statistics_sentiments(filter_spec, params):
 
     else:
         # Get total documents
+        
         total_docs = await client.count_documents(filter_spec)
-
+        xxx = await lol(filter_spec)
         # Get total sentiments
         check_array = filter_spec.get("$and") or []
 
@@ -521,33 +363,242 @@ async def statistics_sentiments(filter_spec, params):
     return {"total_records": total_docs, "total_sentiments": total_sentiments}
 
 
-async def count_ttxvn(filter_spec, params):
-    total_docs = news_es.count_search_main_ttxvn(
-        index_name="vosint_ttxvn",
-        query=params["text_search"],
-        gte=params["start_date"] or None,
-        lte=params["end_date"] or None,
-        # lang=params["language_source"],
-        # sentiment=params["sentiment"],
-    )
+async def collect_keyword(subject_name:str, keyword:Any, user_id:str, collect_time:str):
+    search_client = get_collection_client("search_history")
+    collected_time = datetime.strptime(collect_time, "%d/%m/%Y %H:%M:%S")
+    words = []
+    try:
+        keyword = eval(keyword)
+    except Exception as e:
+        pass
+    if isinstance(keyword, str):
+        keyword = punctuation_regex.sub("", keyword)
+        language = detect(keyword)
+        if language in ["en", "ru"]:
+            words = word_tokenize(keyword, language=lang_dict.get(language))
+        elif "cn" in language:
+            words = jieba.lcut(keyword)
+        else:
+            sentence = ViTokenizer.tokenize(keyword) 
+        words = [x.replace("_", " ") for x in sentence.split(" ") if "_" in x]
+    elif isinstance(keyword, list):
+        words = keyword.copy()
+    else:
+        raise TypeError("key word must be string or list of string")
+    insert_result = await search_client.insert_one({
+        "subject_name": subject_name,
+        "keywords": words,
+        "user_id": user_id,
+        "time": collected_time,
+        "enable": True
+    })
+    return str(insert_result.inserted_id)
 
-    return {"total_records": total_docs}
+async def get_keywords_in_selfs_newsletter():
+    pipeline = [
+        {
+            '$match': {
+                'tag': 'selfs'
+            }
+        }, {
+            '$project': {
+                'include_keywords': {
+                    '$reduce': {
+                        'input': '$keyword_vi.required_keyword', 
+                        'initialValue': '', 
+                        'in': {
+                            '$concat': [
+                                '$$value', '$$this', ','
+                            ]
+                        }
+                    }
+                }, 
+                'exclude_keywords': '$keyword_vi.exclusion_keyword'
+            }
+        }, {
+            '$project': {
+                'phrase': {
+                    '$concat': [
+                        '$include_keywords', '$exclude_keywords'
+                    ]
+                }
+            }
+        }, {
+            '$project': {
+                'keywords': {
+                    '$split': [
+                        '$phrase', ','
+                    ]
+                }
+            }
+        }
+    ]
+    newsletter_client = get_collection_client("newsletter")
+    keywords = []
+    async for line in newsletter_client.aggregate(pipeline):
+        keywords.extend(line.get("keywords"))
+    return keywords
 
-
-def read_ttxvn(news_ids: List[str], user_id):
-    news_ids_list = [ObjectId(news_id) for news_id in news_ids]
-    filter_spec = {
-        "_id": {"$in": news_ids_list},
-        "list_user_read": {"$not": {"$all": [user_id]}},
+async def get_keywords_from_search_history(start_date, end_date, user_id:str = None):
+    key_filter = {
+        "$and": []
     }
-    update_command = {"$push": {"list_user_read": user_id}}
-    collection = "ttxvn"
-    return MongoRepository().update_many(collection, filter_spec, update_command)
+    if user_id is not None:
+        key_filter["$and"].append({"user_id": user_id})
+        key_filter["$and"].append({"subject_name": {"$ne": ""}})
+        key_filter["$and"].append({"enable": True})
+    if start_date is None and end_date is None:
+        key_filter.pop("$and")
+    if start_date != None:
+        key_filter["$and"].append({"time": {"$gte": start_date}})
+    if end_date != None:
+        key_filter["$and"].append({"time": {"$lte": end_date}})
+    history_client = get_collection_client("search_history")
+    keywords = []
+    if user_id is not None:
+        async for line in history_client.find(key_filter):
+            keywords.append(line)
+    else:
+        async for line in history_client.find(key_filter):
+            keywords.extend(line.get("keywords"))
+    return keywords
+
+async def disable_keyword_history(his_id:str):
+    his_client = get_collection_client("search_history")
+    result = await his_client.update_one({"_id": ObjectId(his_id)}, {"$set": {"enable": False}})
+    return result.modified_count
+
+async def get_keyword_frequences(start_date, end_date, top):
+    if start_date is not None:
+        start_date = datetime.strptime(start_date, "%d/%m/%Y %H:%M:%S")
+    if end_date is not None:
+        end_date = datetime.strptime(end_date, "%d/%m/%Y %H:%M:%S")
+    self_keys = await get_keywords_in_selfs_newsletter()
+    his_keys = await get_keywords_from_search_history(start_date, end_date)
+    self_keys.extend(his_keys)
+    return_data = {}
+    for key in self_keys:
+        if return_data.get(key) is None:
+            return_data[key] = 0
+        return_data[key] += 1
+    result = [ {"label": x[0], "value":x[1]} for x in sorted(return_data.items(), key=lambda item: item[1])[:top]]
+    return result
+
+async def get_top_seven_by_self(start_date, end_date, user_id = ""):
+    # defined ----------------------------
+    query = {}
+    query["$and"] = []
+
+    sub_params = {
+        "text_search": "",
+        "sentiment": "",
+        "language_source": "",
+        "newsletter_id": "",
+        "subject_id": None,
+        "vital": "",
+        "bookmarks": ""
+    }
+
+    # handle date -------------------------        
+    if start_date != "" and end_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+
+        start_date = start_date.replace(hour=0, minute=0, second=0)
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        query["$and"].append({"pub_date": {"$gte": start_date, "$lte": end_date}})
+
+    output_array = []
+    current_date = start_date
+    while current_date <= end_date:
+        response = await statistics_sentiments(query, {
+            "start_date": current_date,
+            "end_date": current_date,
+            "user_id": user_id,
+            "newsletter_type": "selfs",
+
+            **sub_params
+        })
+        output_array.append({"label": current_date.strftime("%d/%m/%Y"), "value": response.get("total_records")})
+        current_date += timedelta(days=1)
+
+    return output_array
+
+async def get_top_five_by_self(start_date, end_date, user_id):
+    newsletter_client = get_collection_client("newsletter")
+    selfs_array = [{"_id": str(record.get("_id")), "title": record.get("title")} for record in await newsletter_client.find({"tag": "selfs"},projection={'_id': 1, "title": 1}).to_list(None)]
+
+    # defined ----------------------------
+    query = {}
+    query["$and"] = []
+
+    sub_params = {
+        "text_search": "",
+        "sentiment": "",
+        "language_source": "",
+        "subject_id": None,
+        "vital": "",
+        "bookmarks": "",
+        "newsletter_type": None
+    }
+
+    sub_params_total = {
+        "text_search": "",
+        "sentiment": "",
+        "language_source": "",
+        "start_date": "",
+        "end_date": "",
+        "newsletter_id": "",
+        "subject_id": None,
+        "vital": "",
+        "bookmarks": "",
+        "newsletter_type": "selfs"
+    }
+
+    # handle date -------------------------        
+    if start_date != "" and end_date != "":
+        start_date = datetime(
+            int(start_date.split("/")[2]),
+            int(start_date.split("/")[1]),
+            int(start_date.split("/")[0]),
+        )
+        end_date = datetime(
+            int(end_date.split("/")[2]),
+            int(end_date.split("/")[1]),
+            int(end_date.split("/")[0]),
+        )
+
+        start_date = start_date.replace(hour=0, minute=0, second=0)
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+        query["$and"].append({"pub_date": {"$gte": start_date, "$lte": end_date}})
 
 
-def unread_ttxvn(news_ids: List[str], user_id):
-    news_ids_list = [ObjectId(news_id) for news_id in news_ids]
-    filter_spec = {"_id": {"$in": news_ids_list}}
-    update_command = {"$pull": {"list_user_read": {"$in": [user_id]}}}
-    collection = "ttxvn"
-    return MongoRepository().update_many(collection, filter_spec, update_command)
+    # calculate --------------------------
+    # response_total = await statistics_sentiments({}, {
+    #     "user_id": user_id,
+    #     **sub_params_total
+    # })
+    # total = response_total.get("total_records")
+
+    output_array = []
+    for record in selfs_array:
+        response = await statistics_sentiments(query, {
+            "start_date": start_date,
+            "end_date": end_date,
+            "user_id": user_id,
+            "newsletter_id": record.get("_id"),
+
+            **sub_params
+        })
+
+        output_array.append({"label": record.get("title"), "value": response.get("total_records")})
+
+    return sorted(output_array, key=lambda x: x['value'], reverse=True)[:5]
