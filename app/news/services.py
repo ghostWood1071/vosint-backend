@@ -534,7 +534,9 @@ async def get_top_seven_by_self(start_date, end_date, user_id = ""):
 
 async def get_top_five_by_self(start_date, end_date, user_id):
     newsletter_client = get_collection_client("newsletter")
-    selfs_array = [{"_id": str(record.get("_id")), "title": record.get("title")} for record in await newsletter_client.find({"tag": "selfs"},projection={'_id': 1, "title": 1}).to_list(None)]
+    selfs_array = [
+        {"_id": str(record.get("_id")), 
+         "title": record.get("title")} for record in await newsletter_client.find({"tag": "selfs", "user_id":ObjectId(user_id)},projection={'_id': 1, "title": 1}).to_list(None)]
 
     # defined ----------------------------
     query = {}

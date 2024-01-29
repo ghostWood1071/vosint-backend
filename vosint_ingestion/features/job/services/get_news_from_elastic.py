@@ -32,6 +32,7 @@ def get_news_from_newsletter_id__(
     query = None
     index_name = settings.ELASTIC_NEWS_INDEX
     user = MongoRepository().get_one(collection_name="users", filter_spec={"_id": ObjectId(user_id)})
+    mongo_news_filter = {}
     ignore_sources = [] if user.get("sources") is None else user.get("sources")
     subject_ids = [] if user.get("subject_ids") is None else user.get("subject_ids")
     # date-------------------------------------------
@@ -46,16 +47,33 @@ def get_news_from_newsletter_id__(
     if language_source is None:
         return []
     
+    #------ build mongo filter -----
+    if len(ignore_sources)>0:
+        mongo_news_filter["source_id"] = {"$nin": ignore_sources}
+    if len(subject_ids)>0:
+        mongo_news_filter["subject_id"] = {"$in": subject_ids}
+    if len(language_source)>0:
+        mongo_news_filter["source_language"] = {"$in": language_source}
+    if sac_thai not in [None, ""]:
+        mongo_news_filter["data:class_sacthai"] = sac_thai
+    if start_date is not None:
+        mongo_news_filter["$and"] = [{"pub_date": {"$gte": start_date}}]
+    if end_date is not None:
+        end_date_filter = {"pub_date": {"$gte": start_date}}
+        if mongo_news_filter.get("$and"):
+            mongo_news_filter["$and"].append(end_date_filter)
+        else:
+            mongo_news_filter["$and"] = [end_date_filter]
     
     # lay tin quan trong ---tin quan trọng -------------------------------------------------
     if vital == "1":
-        result_search = get_news_by_category(text_search, "vital", user)
+        result_search = get_news_by_category(text_search, "vital", user, mongo_news_filter)
         if result_search.get("data") is not None:
             return result_search.get("data")
         list_id = result_search.get("list_id")
     # lay tin danh dau ---tin đánh dấu ---------------------------------------------------
     elif bookmarks == "1":
-        result_search = get_news_by_category(text_search, "bookmark", user)
+        result_search = get_news_by_category(text_search, "bookmark", user, mongo_news_filter)
         if result_search.get("data") is not None:
             return result_search.get("data")
         list_id = result_search.get("list_id")
@@ -85,7 +103,7 @@ def get_news_from_newsletter_id__(
             return []
         if len(news_letters) > 0:
             if news_letters[0].get("tag") == NewsletterTag.ARCHIVE:
-                result_search = get_news_from_cart(news_letters, text_search)
+                result_search = get_news_from_cart(news_letters, text_search, mongo_news_filter)
                 if result_search.get("return_data") is not None:
                     return result_search.get("return_data")
                 list_id = result_search.get("list_id")

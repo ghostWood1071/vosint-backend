@@ -10,10 +10,8 @@ categories = {
 language_dict = {k:f'keyword_{k}' for k in ['vi', 'en', 'ru', 'cn'] }
 
 #---------------- get related things ---------------------
-def get_news_category(_ids, subject_ids=None):
-    filter_spec = {
-        "_id": {"$in": _ids}
-    }
+def get_news_category(_ids, subject_ids=None, filter_spec=None):
+    filter_spec["_id"] = {"$in": _ids}
     if subject_ids:
         filter_spec["subject_id"] = {"$in": subject_ids}
     data, _ = MongoRepository().get_many(
@@ -60,7 +58,7 @@ def get_optimized(result):
             record.pop(key, None)
     return result
 
-def get_news_by_category(text_search:str, category:str, user)->list[str]:
+def get_news_by_category(text_search:str, category:str, user, filter_spec=None)->list[str]:
     subject_ids = [] if user.get("subject_ids") is None else user.get("subject_ids")
     ls = []
     return_data = None
@@ -74,13 +72,13 @@ def get_news_by_category(text_search:str, category:str, user)->list[str]:
     list_id = ls
     if text_search == "" or text_search == None:
         _ids = [ObjectId(item) for item in list_id]
-        return_data = get_news_category(_ids, subject_ids)
+        return_data = get_news_category(_ids, subject_ids, filter_spec)
     return {
         "list_id": list_id, 
         "data": return_data
     }
 
-def get_news_from_cart(news_letters:any, text_search:str):
+def get_news_from_cart(news_letters:any, text_search:str, filter_spec = None):
     # cart is a type of newsletter
     # newsletter has 3 types: gio_tin, linh_vuc, chu_de
     ls = []
@@ -97,7 +95,7 @@ def get_news_from_cart(news_letters:any, text_search:str):
 
     if text_search == "" or text_search == None:
         _ids = [ObjectId(item) for item in list_id]
-        return_data = get_news_category(_ids)
+        return_data = get_news_category(_ids, filter_spec=filter_spec)
     return {
         "list_id": list_id,
         "return_data": return_data
