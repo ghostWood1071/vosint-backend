@@ -148,6 +148,11 @@ def check_type_newsletters(newsletters:list[Any], type_name:str):
     checks = [newsletter.get("tag") == type_name for newsletter in newsletters]
     return all(checks)
 
+async def lol(filter_spec):
+    data = []
+    async for line in client.find(filter_spec):
+        data.append(line)
+    return data
 
 async def statistics_sentiments(filter_spec, params):
     news_letter_id = params.get("newsletter_id")
@@ -225,7 +230,7 @@ async def statistics_sentiments(filter_spec, params):
 
     if news_letter_id not in ["", None] or newsletter_type not in ["", None]:
         news_letter_filter = {"tag": newsletter_type} if newsletter_type not in ["", None] else {"_id": ObjectId(news_letter_id)}
-        news_letter_filter["user_id"] = str(params.get("user_id"))
+        news_letter_filter["user_id"] = ObjectId(params.get("user_id"))
         news_letters, _ = MongoRepository().find(
             collection_name="newsletter", filter_spec=news_letter_filter
         )
@@ -261,7 +266,7 @@ async def statistics_sentiments(filter_spec, params):
             query = text_search
     
        
-    if text_search not in ["", None] or all_selfs:
+    if text_search not in ["", None] or all_selfs or newsletter_type == NewsletterTag.SELFS:
         total_docs = news_es.count_search_main(
             index_name=settings.ELASTIC_NEWS_INDEX,
             query=query,
@@ -306,8 +311,9 @@ async def statistics_sentiments(filter_spec, params):
 
     else:
         # Get total documents
+        
         total_docs = await client.count_documents(filter_spec)
-
+        xxx = await lol(filter_spec)
         # Get total sentiments
         check_array = filter_spec.get("$and") or []
 
