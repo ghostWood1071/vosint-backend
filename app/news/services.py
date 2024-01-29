@@ -216,6 +216,12 @@ async def statistics_sentiments(filter_spec, params):
                 "_id": {"$in": vital_ids}
             })
             news_ids = [str(x) for x in vital_ids]
+        else:
+            return {
+                "total_positive": 0,
+                "total_negative": 0,
+                "total_normal": 0,
+            }
     
     if params.get("bookmarks") == '1':
         bookmarks_ids = [] if user.get("news_bookmarks") is None else user.get("news_bookmarks")
@@ -227,6 +233,12 @@ async def statistics_sentiments(filter_spec, params):
                 "_id": {"$in": bookmarks_ids}
             })
             news_ids = bookmarks_filter
+        else:
+            return {
+                "total_positive": 0,
+                "total_negative": 0,
+                "total_normal": 0,
+            }
 
     if news_letter_id not in ["", None] or newsletter_type not in ["", None]:
         news_letter_filter = {"tag": newsletter_type} if newsletter_type not in ["", None] else {"_id": ObjectId(news_letter_id)}
