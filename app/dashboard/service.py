@@ -429,11 +429,11 @@ async def top_user_read(limit=5):
                 "path": "$headings",
             },
         },
-        {
-            "$unwind": {
-                "path": "$headings.eventIds",
-            },
-        },
+        # {
+        #     "$unwind": {
+        #         "path": "$headings.eventIds",
+        #     },
+        # },
         {
             "$group": {
                 "_id": "$user_id",
@@ -484,8 +484,9 @@ async def top_user_read(limit=5):
         },
     ]
 
-    data = await report_client.aggregate(pipeline).to_list(None)
 
+
+    data = await report_client.aggregate(pipeline).to_list(None)
     return data
 
 
