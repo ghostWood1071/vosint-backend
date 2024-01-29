@@ -19,7 +19,8 @@ from .services import (
     get_keyword_frequences,
     get_top_seven_by_self,
     get_top_five_by_self,
-    get_keywords_from_search_history
+    get_keywords_from_search_history,
+    disable_keyword_history
 )
 from .utils import news_to_json
 from fastapi import Response
@@ -276,3 +277,7 @@ async def get_survey_search_history_route(start_date:str, end_date:str, auth:Aut
     if end_date is not None:
         end_date = datetime.strptime(end_date, "%d/%m/%Y %H:%M:%S")
     return await get_keywords_from_search_history(start_date, end_date, user_id)
+
+@router.get("disable-search-history")
+async def disable_search_history_route(his_id:str):
+    return await disable_keyword_history(his_id)

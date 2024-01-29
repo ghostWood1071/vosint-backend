@@ -225,6 +225,7 @@ async def statistics_sentiments(filter_spec, params):
 
     if news_letter_id not in ["", None] or newsletter_type not in ["", None]:
         news_letter_filter = {"tag": newsletter_type} if newsletter_type not in ["", None] else {"_id": ObjectId(news_letter_id)}
+        news_letter_filter["user_id"] = str(params.get("user_id"))
         news_letters, _ = MongoRepository().find(
             collection_name="newsletter", filter_spec=news_letter_filter
         )
@@ -382,7 +383,8 @@ async def collect_keyword(subject_name:str, keyword:Any, user_id:str, collect_ti
         "subject_name": subject_name,
         "keywords": words,
         "user_id": user_id,
-        "time": collected_time
+        "time": collected_time,
+        "enable": True
     })
     return str(insert_result.inserted_id)
 
@@ -438,6 +440,7 @@ async def get_keywords_from_search_history(start_date, end_date, user_id:str = N
     if user_id is not None:
         key_filter["$and"].append({"user_id": user_id})
         key_filter["$and"].append({"subject_name": {"$ne": ""}})
+        key_filter["$and"].append({"enable": True})
     if start_date is None and end_date is None:
         key_filter.pop("$and")
     if start_date != None:
@@ -453,6 +456,11 @@ async def get_keywords_from_search_history(start_date, end_date, user_id:str = N
         async for line in history_client.find(key_filter):
             keywords.extend(line.get("keywords"))
     return keywords
+
+async def disable_keyword_history(his_id:str):
+    his_client = get_collection_client("search_history")
+    result = await his_client.update_one({"_id": ObjectId(his_id)}, {"$set": {"enable": False}})
+    return result.modified_count
 
 async def get_keyword_frequences(start_date, end_date, top):
     if start_date is not None:
