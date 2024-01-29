@@ -461,7 +461,7 @@ class MyElasticSearch:
             }
             simple_filter["query"]["bool"]["must"].append(lang_filter)
 
-        if list_source_id != None:
+        if list_source_id is not None and len(list_source_id)>0:
             _id_query_source_id = f'NOT ({" OR ".join(list_source_id)})'
             source_filter = {
                 "query_string": {
@@ -572,7 +572,7 @@ class MyElasticSearch:
             "size": size,
             "track_total_hits": True,
         }
-        
+
         if lang != None and lang != "":
             _lang_query = " OR ".join(lang)
             lang_filter = {
@@ -583,7 +583,7 @@ class MyElasticSearch:
             }
             simple_filter["query"]["bool"]["must"].append(lang_filter)
 
-        if list_source_id != None:
+        if list_source_id is not None and len(list_source_id)>0:
             _id_query_source_id = f'NOT ({" OR ".join(list_source_id)})'
             source_filter = {
                 "query_string": {
