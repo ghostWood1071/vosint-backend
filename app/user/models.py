@@ -26,6 +26,7 @@ class UserCreateModel(BaseModel):
     password: str
     full_name: str
     role: Role
+    languages: list[str] = ["en", "cn", "ru", "vi"]
 
 
 class UserUpdateModel(BaseModel):
