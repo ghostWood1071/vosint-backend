@@ -485,20 +485,38 @@ async def disable_keyword_history(his_id:str):
     result = await his_client.update_one({"_id": ObjectId(his_id)}, {"$set": {"enable": False}})
     return result.modified_count
 
+# async def get_keyword_frequences(start_date, end_date, top):
+#     if start_date is not None:
+#         start_date = datetime.strptime(start_date, "%d/%m/%Y %H:%M:%S")
+#     if end_date is not None:
+#         end_date = datetime.strptime(end_date, "%d/%m/%Y %H:%M:%S")
+#     self_keys = await get_keywords_in_selfs_newsletter()
+#     his_keys = await get_keywords_from_search_history(start_date, end_date)
+#     self_keys.extend(his_keys)
+#     return_data = {}
+#     for key in self_keys:
+#         if return_data.get(key) is None:
+#             return_data[key] = 0
+#         return_data[key] += 1
+#     result = [ {"label": x[0], "value":x[1]} for x in sorted(return_data.items(), key=lambda item: item[1])[:top]]
+#     return result
+
+
 async def get_keyword_frequences(start_date, end_date, top):
     if start_date is not None:
         start_date = datetime.strptime(start_date, "%d/%m/%Y %H:%M:%S")
     if end_date is not None:
         end_date = datetime.strptime(end_date, "%d/%m/%Y %H:%M:%S")
-    self_keys = await get_keywords_in_selfs_newsletter()
-    his_keys = await get_keywords_from_search_history(start_date, end_date)
-    self_keys.extend(his_keys)
-    return_data = {}
-    for key in self_keys:
-        if return_data.get(key) is None:
-            return_data[key] = 0
-        return_data[key] += 1
-    result = [ {"label": x[0], "value":x[1]} for x in sorted(return_data.items(), key=lambda item: item[1])[:top]]
+    news_col = get_collection_client("News")
+    keywords = list()
+    async for keys in news_col.find({'keywords': {'$exists':True}}, {"keywords": True}):
+        keywords.extend(keys["keywords"])
+    keydict = {}
+    for key in keywords:
+        if keydict.get(key) is None:
+            keydict[key] = 0
+        keydict[key] += 1
+    result = [ {"label": x[0], "value":x[1]} for x in sorted(keydict.items(), key=lambda item: item[1])[:top]]
     return result
 
 async def get_top_seven_by_self(start_date, end_date, user_id = ""):
