@@ -535,7 +535,7 @@ def get_result_job(
             })
         if news_letter_id != "":
             mongo = MongoRepository().get_one(
-                collection_name="newsletter", filter_spec={"_id": news_letter_id}
+                collection_name="newsletter", filter_spec={"_id": news_letter_id, "user_id": user_id}
             )
             ls = []
             kt_rong = 1
