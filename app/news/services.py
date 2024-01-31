@@ -516,7 +516,7 @@ async def get_keyword_frequences(start_date, end_date, top):
         if keydict.get(key) is None:
             keydict[key] = 0
         keydict[key] += 1
-    result = [ {"label": x[0], "value":x[1]} for x in sorted(keydict.items(), key=lambda item: item[1])[:top]]
+    result = [ {"label": x[0], "value":x[1]} for x in sorted(keydict.items(), key=lambda item: item[1], reverse=True)[:top]]
     return result
 
 async def get_top_seven_by_self(start_date, end_date, user_id = ""):
