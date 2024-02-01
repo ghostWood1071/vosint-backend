@@ -124,6 +124,9 @@ def get_news_from_newsletter_id__(
     if text_search !=None and text_search != "":
             query = f'({query}) + ("{text_search}")'
 
+    if text_search in ["", None] and query == "*":
+        return []
+
     pipeline_dtos = my_es.search_main(
         index_name=index_name,
         query=query,

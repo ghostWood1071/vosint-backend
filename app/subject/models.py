@@ -5,4 +5,5 @@ class Subject(BaseModel):
     sub_id: str = Field(default_factory=ObjectId, alias="_id")
     sort_order:int = 1
     name: str
+    picture:str = ""
     

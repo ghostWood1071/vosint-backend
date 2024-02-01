@@ -48,7 +48,8 @@ from .services import (
     exec_influencer_priority,
     exec_influential_post,
     follow_account,
-    unfollow_account
+    unfollow_account,
+    get_system_user
 )
 from word_exporter import export_social_word
 from datetime import datetime
@@ -220,22 +221,13 @@ async def create_priority(body: CreatePriorityModel):
 @router.post("")
 async def add_social(
     body: CreateSocialModel,
+    auth: AuthJWT = Depends()
 ):
+    auth.jwt_required()
+    sys_user_id = auth.get_jwt_subject()
     social_dict = body.dict()
-    existing_user = await client.find_one(
-        {
-            "$and": [
-                {"account_link": social_dict["account_link"]},
-                {"social_media": social_dict["social_media"]},
-                {"social_type": social_dict["social_type"]},
-            ]
-        }
-    )
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Account already exist"
-        )
-    await create_social_media(social_dict)
+    
+    await create_social_media(social_dict, sys_user_id)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"message": "Social media account created successfully."},
@@ -254,11 +246,16 @@ async def get_social_by_medias(
     social_name: str = "",
     page: int = 0,
     limit: int = 10,
+    auth:AuthJWT = Depends()
 ):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    user = await get_system_user(user_id)
     invalid_combinations = {
         "Twitter": ["Group", "Fanpage"],
         "Tiktok": ["Group", "Fanpage"],
     }
+
     filter_object = {"social_media": social_media}
     if social_type != "All":
         filter_object["social_type"] = social_type
@@ -272,6 +269,13 @@ async def get_social_by_medias(
             status_code=status.HTTP_400_BAD_REQUEST,
             content=f"{social_media} has no {social_type} type",
         )
+    if user.get("role") != "admin":
+        filter_object["$or"] = [
+            {
+                "user_ids": {"$exists": 0}
+            },
+            {"user_ids": user_id}
+        ]
     socials = await find_object_by_filter_and_paginate(filter_object, page, limit)
     count = await count_object(filter_object)
     return JSONResponse(
@@ -281,8 +285,10 @@ async def get_social_by_medias(
 
 
 @router.delete("/delete_social/{id}")
-async def delete_user_social_media(id: str):
-    deleted_social_media = await delete_user_by_id(id)
+async def delete_user_social_media(id: str, auth: AuthJWT = Depends()):
+    auth.jwt_required()
+    sys_user_id = auth.get_jwt_subject()
+    deleted_social_media = await delete_user_by_id(id, sys_user_id)
     if deleted_social_media:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN

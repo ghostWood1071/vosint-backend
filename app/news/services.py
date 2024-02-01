@@ -27,7 +27,7 @@ news_es = MyElasticSearch()
 
 all_punctuation = ['*', '%', '(', ')', '+', '[', '\\', '!', '@', '`', ']', '^', ',', '.', '/', '<', '=', '>', '?', '&', "'", '-', ':', ';', '_', '{', '|', '}', '~', '"', '#', '$']
 punctuation_regex = re.compile(f"[{''.join(re.escape(char) for char in all_punctuation)}]")
-nltk.download('punkt') 
+# nltk.download('punkt') 
 lang_dict = {
     "vi": "vietnamese",
     "cn": "chinese",
@@ -262,6 +262,12 @@ async def statistics_sentiments(filter_spec, params):
                     tmp_phrase_search.append(f'({query_tmp})')
             if len(tmp_phrase_search) > 0:
                 query = " | ".join(tmp_phrase_search)
+            elif text_search in ["", None]:
+                return {
+                    "total_positive": 0,
+                    "total_negative": 0,
+                    "total_normal": 0,
+                }
         all_archives = check_type_newsletters(news_letters, NewsletterTag.ARCHIVE)
         if newsletter_type == NewsletterTag.ARCHIVE or all_archives:
             for newsletter in news_letters:
@@ -275,6 +281,7 @@ async def statistics_sentiments(filter_spec, params):
                 })
             else:
                 news_ids = [str(x) for x in news_ids]
+    
     
     if text_search not in [None, ""]:
         if query !=  "*":
@@ -473,10 +480,10 @@ async def get_keywords_from_search_history(start_date, end_date, user_id:str = N
     history_client = get_collection_client("search_history")
     keywords = []
     if user_id is not None:
-        async for line in history_client.find(key_filter):
+        async for line in history_client.find(key_filter).sort("time", -1):
             keywords.append(line)
     else:
-        async for line in history_client.find(key_filter):
+        async for line in history_client.find(key_filter).sort("time", -1):
             keywords.extend(line.get("keywords"))
     return keywords
 
@@ -516,7 +523,7 @@ async def get_keyword_frequences(start_date, end_date, top):
         if keydict.get(key) is None:
             keydict[key] = 0
         keydict[key] += 1
-    result = [ {"label": x[0], "value":x[1]} for x in sorted(keydict.items(), key=lambda item: item[1])[:top]]
+    result = [ {"label": x[0], "value":x[1]} for x in sorted(keydict.items(), key=lambda item: item[1], reverse=True)[:top]]
     return result
 
 async def get_top_seven_by_self(start_date, end_date, user_id = ""):

@@ -29,28 +29,49 @@ async def exec_create_priority(priority):
     return created_data.inserted_id
 
 
-async def create_social_media(user):
+async def create_social_media(user, sys_user_id):
+    existing_user = await client.find_one(
+        {
+            "$and": [
+                {"account_link": user["account_link"]},
+                {"social_media": user["social_media"]},
+                {"social_type": user["social_type"]},
+            ]
+        }
+    )
+    sys_user_client = get_collection_client("users")
+    sys_user = await sys_user_client.find_one({"_id": ObjectId(sys_user_id)})
+    if existing_user is not None and sys_user.get("role") == "admin":
+        raise Exception("account conflict")
+    if existing_user is not None and sys_user.get("role") != "admin":
+       update_result = await client.update_one({"_id": existing_user.get("_id")},  {"$push": {"user_ids": sys_user_id}})
+       return update_result.modified_count
+    if sys_user.get("role") != "admin":
+        user["user_ids"] = [sys_user_id]
+        user["followed_by"] = [ {"followed_id": str(x["_id"]), "username": str(x["username"])} async for x in client2.find({})]
+    
     created_user = await client.insert_one(user)
     new_user_id = str(created_user.inserted_id)
     filter_result = await client.find_one({"_id": ObjectId(new_user_id)})
     social_name = filter_result["social_name"]
     # update the users_follow list for each follower
     followers = user.get("followed_by", [])
-    await client2.update_many(
-        {
-            "_id": {
-                "$in": [ObjectId(follower.get("followed_id")) for follower in followers]
-            }
-        },
-        {
-            "$push": {
-                "users_follow": {
-                    "follow_id": new_user_id,
-                    "social_name": social_name,
+    if len(followers) > 0:
+        await client2.update_many(
+            {
+                "_id": {
+                    "$in": [ObjectId(follower.get("followed_id")) for follower in followers]
                 }
-            }
-        },
-    )
+            },
+            {
+                "$push": {
+                    "users_follow": {
+                        "follow_id": new_user_id,
+                        "social_name": social_name,
+                    }
+                }
+            },
+        )
     await client.find_one({"id": created_user.inserted_id})
     return created_user.inserted_id
 
@@ -64,9 +85,14 @@ async def exec_delete_priority(id: str):
         return True
 
 
-async def delete_user_by_id(id: str):
+async def delete_user_by_id(id: str, sys_user_id:str):
     str_id = str(id)
+    sys_user_client = get_collection_client("users")
+    sys_user = await sys_user_client.find_one({"_id": ObjectId(sys_user_id)})
+
     user = await client.find_one({"_id": ObjectId(id)})
+    if sys_user.get("role") != "admin" and str(sys_user.get("_id")) not in user.get("user_ids"):
+        raise Exception("not have delete permission")
     social_name = user["social_name"]
     followers = []
     filter_object = user.get("followed_by")
@@ -1371,4 +1397,10 @@ async def unfollow_account(social_id:str, user_id:str):
         }
     )
     return result.modified_count
-    
+
+async def get_system_user(user_id:str):
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)})
+    if user is None:
+        raise Exception('user not found')
+    return user
