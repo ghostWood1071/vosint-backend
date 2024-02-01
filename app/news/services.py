@@ -262,6 +262,12 @@ async def statistics_sentiments(filter_spec, params):
                     tmp_phrase_search.append(f'({query_tmp})')
             if len(tmp_phrase_search) > 0:
                 query = " | ".join(tmp_phrase_search)
+            elif text_search in ["", None]:
+                return {
+                    "total_positive": 0,
+                    "total_negative": 0,
+                    "total_normal": 0,
+                }
         all_archives = check_type_newsletters(news_letters, NewsletterTag.ARCHIVE)
         if newsletter_type == NewsletterTag.ARCHIVE or all_archives:
             for newsletter in news_letters:
@@ -275,6 +281,7 @@ async def statistics_sentiments(filter_spec, params):
                 })
             else:
                 news_ids = [str(x) for x in news_ids]
+    
     
     if text_search not in [None, ""]:
         if query !=  "*":
