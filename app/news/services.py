@@ -27,7 +27,7 @@ news_es = MyElasticSearch()
 
 all_punctuation = ['*', '%', '(', ')', '+', '[', '\\', '!', '@', '`', ']', '^', ',', '.', '/', '<', '=', '>', '?', '&', "'", '-', ':', ';', '_', '{', '|', '}', '~', '"', '#', '$']
 punctuation_regex = re.compile(f"[{''.join(re.escape(char) for char in all_punctuation)}]")
-nltk.download('punkt') 
+# nltk.download('punkt') 
 lang_dict = {
     "vi": "vietnamese",
     "cn": "chinese",
@@ -473,10 +473,10 @@ async def get_keywords_from_search_history(start_date, end_date, user_id:str = N
     history_client = get_collection_client("search_history")
     keywords = []
     if user_id is not None:
-        async for line in history_client.find(key_filter):
+        async for line in history_client.find(key_filter).sort("time", -1):
             keywords.append(line)
     else:
-        async for line in history_client.find(key_filter):
+        async for line in history_client.find(key_filter).sort("time", -1):
             keywords.extend(line.get("keywords"))
     return keywords
 

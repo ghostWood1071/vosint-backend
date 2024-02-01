@@ -36,7 +36,7 @@ class CreateSocialModel(BaseModel):
     avatar_url: str = Field(...)
     profile: str = Field(...)
     is_active: bool = True
-    followed_by: List[AddFollowed]
+    followed_by: List[AddFollowed] = []
 
     class config:
         orm_mode = True
