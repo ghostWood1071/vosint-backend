@@ -620,7 +620,7 @@ async def source_news_lowest_hightest(days: int = 1, user_id:str = None):
 
     if user.get("role") != "admin":
         pipeline[0]["$match"]["source_id"] = {
-            "$nin": user.get("sources")
+            "$nin": [] if user.get("sources") is None else user.get("sources") 
         }
     result = {}
     data = news_client.aggregate(pipeline)
@@ -657,7 +657,7 @@ async def total_news_by_time(days: int = 1, user_id:str = None):
 
     if user.get("role") != "admin":
         pipeline[0]["$match"] = {
-            "source": {"$nin": user.get("sources")}
+            "source_id": {"$nin": [] if user.get("sources") is None else user.get("sources")}
         }
     
     result = {}
