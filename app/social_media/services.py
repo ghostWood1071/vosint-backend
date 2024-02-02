@@ -91,7 +91,7 @@ async def delete_user_by_id(id: str, sys_user_id:str):
     sys_user = await sys_user_client.find_one({"_id": ObjectId(sys_user_id)})
 
     user = await client.find_one({"_id": ObjectId(id)})
-    if sys_user.get("role") != "admin" and str(sys_user.get("_id")) not in user.get("user_ids"):
+    if sys_user.get("role") != "admin" and  user.get("user_ids") is None:
         raise Exception("not have delete permission")
     social_name = user["social_name"]
     followers = []

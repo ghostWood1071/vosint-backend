@@ -586,14 +586,16 @@ async def users_online(user_id: ObjectId):
 """ START EXPERT """
 
 
-async def source_news_lowest_hightest(days: int = 1):
+async def source_news_lowest_hightest(days: int = 1, user_id:str = None):
     now = datetime.now()
     end_of_day = now
     start_of_day = end_of_day - timedelta(days=int(days))
 
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
-
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)}, {"role": True, "sources": True})
+    
     pipeline = [
         {
             "$match": {
@@ -616,6 +618,10 @@ async def source_news_lowest_hightest(days: int = 1):
         {"$project": {"_id": 0, "highest": 1, "lowest": 1}},
     ]
 
+    if user.get("role") != "admin":
+        pipeline[0]["$match"]["source_id"] = {
+            "$nin": user.get("sources")
+        }
     result = {}
     data = news_client.aggregate(pipeline)
 
