@@ -631,7 +631,7 @@ async def source_news_lowest_hightest(days: int = 1, user_id:str = None):
     return result
 
 
-async def total_news_by_time(days: int = 1):
+async def total_news_by_time(days: int = 1, user_id:str = None):
     now = datetime.now()
     end_of_day = now
     start_of_day = end_of_day - timedelta(days=int(days))
@@ -639,6 +639,9 @@ async def total_news_by_time(days: int = 1):
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
+    user_client = get_collection_client("users")
+    user = await user_client.find_one({"_id": ObjectId(user_id)}, {"role": True, "sources":True})
+    
     pipeline = [
         {
             "$match": {
@@ -651,6 +654,11 @@ async def total_news_by_time(days: int = 1):
         {"$count": "source_name"},
         {"$project": {"total": "$source_name"}},
     ]
+
+    if user.get("role") != "admin":
+        pipeline[0]["$match"] = {
+            "source": {"$nin": user.get("sources")}
+        }
 
     result = {}
     data = news_client.aggregate(pipeline)
