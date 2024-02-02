@@ -659,7 +659,7 @@ async def total_news_by_time(days: int = 1, user_id:str = None):
         pipeline[0]["$match"] = {
             "source": {"$nin": user.get("sources")}
         }
-
+    
     result = {}
     data = news_client.aggregate(pipeline)
 
