@@ -92,13 +92,17 @@ async def get_top_user_read(top: int = 5):
 
 # ------- Start expert --------
 @router.get("/get-source-news-lowest-hightest")
-async def get_source_news_lowest_hightest(days=1):
-    return await source_news_lowest_hightest(days)
+async def get_source_news_lowest_hightest(days=1, auth:AuthJWT = Depends()):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await source_news_lowest_hightest(days, user_id)
 
 
 @router.get("/get-total-news-by-time")
-async def get_total_news_by_time(days=1):
-    return await total_news_by_time(days)
+async def get_total_news_by_time(days=1, auth:AuthJWT = Depends()):
+    auth.jwt_required()
+    user_id = auth.get_jwt_subject()
+    return await total_news_by_time(days, user_id)
 
 
 @router.get("/get-news-read-by-user")

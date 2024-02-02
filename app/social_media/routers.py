@@ -303,8 +303,10 @@ async def delete_priority(id: str):
 
 
 @router.delete("/Social/{id}")
-async def delete_user(id: str):
-    deleted_user = await delete_user_by_id(id)
+async def delete_user(id: str, auth:AuthJWT = Depends()):
+    auth.jwt_required()
+    sys_user_id = auth.get_jwt_subject()
+    deleted_user = await delete_user_by_id(id, sys_user_id)
     if deleted_user:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN

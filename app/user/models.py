@@ -8,6 +8,7 @@ class Role(str, Enum):
     admin = "admin"
     expert = "expert"
     leader = "leader"
+    user = "user"
 
 
 class UserModal(BaseModel):

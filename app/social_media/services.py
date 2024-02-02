@@ -48,7 +48,7 @@ async def create_social_media(user, sys_user_id):
        return update_result.modified_count
     if sys_user.get("role") != "admin":
         user["user_ids"] = [sys_user_id]
-        user["followed_by"] = [ {"followed_id": str(x["_id"]), "username": str(x["username"])} async for x in client2.find({})]
+        user["followed_by"] = [ {"followed_id": str(x["_id"]), "username": str(x["username"])} async for x in client2.find({"social": user["social_media"]})]
     
     created_user = await client.insert_one(user)
     new_user_id = str(created_user.inserted_id)
@@ -91,7 +91,7 @@ async def delete_user_by_id(id: str, sys_user_id:str):
     sys_user = await sys_user_client.find_one({"_id": ObjectId(sys_user_id)})
 
     user = await client.find_one({"_id": ObjectId(id)})
-    if sys_user.get("role") != "admin" and str(sys_user.get("_id")) not in user.get("user_ids"):
+    if sys_user.get("role") != "admin" and  user.get("user_ids") is None:
         raise Exception("not have delete permission")
     social_name = user["social_name"]
     followers = []
