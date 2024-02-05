@@ -20,13 +20,10 @@ from vosint_ingestion.db_startup import init_index
 
 app = FastAPI(title=settings.APP_TITLE, root_path=settings.ROOT_PATH)
 
-print(settings.APP_ORIGINS)
 
 if settings.APP_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
-        #allow_origins=[str(origin) for origin in settings.APP_ORIGINS],
-        # allow_origins=["*"],
         allow_origins=settings.APP_ORIGINS,
         allow_credentials=True,
         allow_methods=["*"],
@@ -41,7 +38,6 @@ class Settings(BaseModel):
     authjwt_access_token_expires: datetime.timedelta = expires
     authjwt_refresh_token_expires: datetime.timedelta = expires
     authjwt_token_location: set = {"cookies"}
-    # Disable CSRF Protection for this example. default is True
     authjwt_cookie_csrf_protect: bool = False
 
 
@@ -59,7 +55,6 @@ def auth_exception_handler(request: Request, exc: AuthJWTException):
 async def on_startup():
     Scheduler.instance().add_job_update_error_source()
     Scheduler.instance().add_job_clear_activity()
-    # init_index()
     await init_db.connect_db()
     await start_all_jobs()
 
@@ -91,7 +86,4 @@ for route in ROUTE_LIST:
     app.include_router(route["route"], tags=route["tags"], prefix=route["prefix"])
 
 if __name__ == "__main__":
-    print(settings.APP_PORT)
-    uvicorn.run(
-        "main:app", host=settings.APP_HOST, port=int(settings.APP_PORT)
-    )
+    uvicorn.run("main:app", host=settings.APP_HOST, port=int(settings.APP_PORT), root_path="/api")

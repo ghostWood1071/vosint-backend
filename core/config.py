@@ -39,7 +39,7 @@ class Settings:
 
     ELASTIC_NEWS_INDEX: str = ""
 
-    ROOT_PATH: str = ""  # = ""
+    ROOT_PATH: str = "/api"  # = ""
 
     SUMMARIZE_API: str = ""  # = "http://sumthesis.aiacademy.edu.vn/ext"
 
