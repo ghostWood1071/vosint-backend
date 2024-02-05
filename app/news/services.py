@@ -252,7 +252,7 @@ async def statistics_sentiments(filter_spec, params):
                 "total_negative": 0,
                 "total_normal": 0,
             }
-        # nếu không là giỏ tin
+        # nếu là tin cua toi
         all_selfs = check_type_newsletters(news_letters, NewsletterTag.SELFS)
         if newsletter_type == NewsletterTag.SELFS or all_selfs:
             tmp_phrase_search = []
@@ -268,11 +268,18 @@ async def statistics_sentiments(filter_spec, params):
                     "total_negative": 0,
                     "total_normal": 0,
                 }
+        #neu la gio tin
         all_archives = check_type_newsletters(news_letters, NewsletterTag.ARCHIVE)
         if newsletter_type == NewsletterTag.ARCHIVE or all_archives:
             for newsletter in news_letters:
                 if newsletter.get("news_id") is not None:
                     news_ids.extend(newsletter.get("news_id"))
+            if len(news_ids) == 0:
+                return {
+                    "total_positive": 0,
+                    "total_negative": 0,
+                    "total_normal": 0,
+                }
             if text_search in ["", None]:
                 if filter_spec.get("$and") is None:
                     filter_spec["$and"] = []
