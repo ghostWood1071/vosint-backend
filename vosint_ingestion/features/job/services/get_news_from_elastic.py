@@ -109,6 +109,8 @@ def get_news_from_newsletter_id__(
                 if result_search.get("return_data") is not None:
                     return result_search.get("return_data")
                 list_id = result_search.get("list_id")
+                if len(list_id) == 0:
+                    return []
     #khong phai la gio tin
     for news_letter in news_letters:
         if news_letter["tag"] == NewsletterTag.SELFS:
