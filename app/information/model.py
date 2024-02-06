@@ -23,6 +23,7 @@ class UpdateInfor(BaseModel):
     publishing_country: Optional[str]
     source_type: Optional[str]
     event_detect: bool = True
+    subject_id: str = ""
 
     class config:
         orm_mode = True
