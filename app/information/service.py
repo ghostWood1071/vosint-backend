@@ -119,3 +119,22 @@ def entity(infor) -> dict:
         "publishing_country": infor["publishing_country"],
         "source_type": infor["source_type"],
     }
+
+async def get_source_by_subject(subject_id:str, skip:int, limit:int, text_search:str,):
+    client = get_collection_client("infor")
+    search_filter = {
+        "subject_id": subject_id,
+    }
+    if text_search:
+        search_filter["$or"] = [
+            {"name": {"$regex": text_search, "$options": "i"}},
+            {"host_name": {"$regex": text_search, "$options": "i"}},
+        ]
+    data = [x async for x in client.find(search_filter).skip(skip).limit(limit)]
+    count_data = await client.count_documents(search_filter)
+    return {
+        "data": data,
+        "total_record": count_data
+    }
+    
+

@@ -86,4 +86,4 @@ for route in ROUTE_LIST:
     app.include_router(route["route"], tags=route["tags"], prefix=route["prefix"])
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=settings.APP_HOST, port=int(settings.APP_PORT), root_path="/api")
+    uvicorn.run("main:app", host=settings.APP_HOST, port=int(settings.APP_PORT))

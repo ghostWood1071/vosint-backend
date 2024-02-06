@@ -11,6 +11,7 @@ from app.information.service import (
     find_by_filter_and_paginate,
     search_by_filter_and_paginate,
     update_infor,
+    get_source_by_subject
 )
 from db.init_db import get_collection_client
 
@@ -84,3 +85,7 @@ async def delete(id):
     if deleted_infor:
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
+
+@router.get("/get-source-by-subject")
+async def get_source_by_subject_route(subject_id:str="", skip:int=0, limit:int=10, text_search:str=None):
+    return await get_source_by_subject(subject_id, skip, limit, text_search)

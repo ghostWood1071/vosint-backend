@@ -10,6 +10,7 @@ class CreateInfor(BaseModel):
     publishing_country: str
     source_type: str
     event_detect: bool = True
+    subject_id: str = ""
 
     class config:
         orm_mode = True
