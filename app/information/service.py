@@ -121,7 +121,8 @@ def entity(infor) -> dict:
     }
 
 async def get_source_by_subject(subject_id:str, skip:int, limit:int, text_search:str,):
-    client = get_collection_client("infor")
+    client = get_collection_client("info")
+    offset = (skip - 1) * limit if skip > 0 else 0
     search_filter = {
         "subject_id": subject_id,
     }
@@ -130,7 +131,7 @@ async def get_source_by_subject(subject_id:str, skip:int, limit:int, text_search
             {"name": {"$regex": text_search, "$options": "i"}},
             {"host_name": {"$regex": text_search, "$options": "i"}},
         ]
-    data = [x async for x in client.find(search_filter).skip(skip).limit(limit)]
+    data = [x async for x in client.find(search_filter).skip(offset).limit(limit)]
     count_data = await client.count_documents(search_filter)
     return {
         "data": data,
