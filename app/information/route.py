@@ -57,6 +57,9 @@ async def get_options_pipeline():
     list_info = await aggregate_infor(pipeline)
     return JSONResponse(status_code=status.HTTP_200_OK, content=list_info)
 
+@router.get("/get-source-by-subject")
+async def get_source_by_subject_route(subject_id:str="", skip:int=0, limit:int=10, text_search:str=None):
+    return await get_source_by_subject(subject_id, skip, limit, text_search)
 
 @router.get("/{name}")
 async def search(name, skip=1, limit=10):
@@ -86,6 +89,3 @@ async def delete(id):
         return status.HTTP_200_OK
     return status.HTTP_403_FORBIDDEN
 
-@router.get("/get-source-by-subject")
-async def get_source_by_subject_route(subject_id:str="", skip:int=0, limit:int=10, text_search:str=None):
-    return await get_source_by_subject(subject_id, skip, limit, text_search)
