@@ -25,5 +25,6 @@ class UpdateInfor(BaseModel):
     event_detect: bool = True
     subject_id: str = ""
 
+
     class config:
         orm_mode = True
