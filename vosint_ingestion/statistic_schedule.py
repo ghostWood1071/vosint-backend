@@ -7,6 +7,7 @@ from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
     My_ElasticSearch,
 )
 import pytz
+from vosint_ingestion.features.job.services.get_news_from_elastic import get_news_from_newsletter_id__
 
 
 def status_source_news(day_space: int = 3, start_date=None, end_date=None):
@@ -85,7 +86,9 @@ def status_source_news(day_space: int = 3, start_date=None, end_date=None):
     return result
 
 
-def get_news_from_newsletter_id__(
+
+#def get_news_from_newsletter_id__(
+def get_news_from_newsletter_id__2(
     list_id=None,
     type=None,
     id_nguon_nhom_nguon=None,
@@ -503,3 +506,4 @@ def clear_slave_activity():
         )
     except Exception as e:
         print(e)
+
