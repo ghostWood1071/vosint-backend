@@ -705,29 +705,7 @@ def get_news_from_newsletter_id(
             return []
         list_id = ls
 
-    # print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaâ',a)
-    # query = ''
-    # first_flat = 1
-    # try:
-    #     for i in a['required_keyword']:
-    #         if first_flat == 1:
-    #             first_flat = 0
-    #             query += '('
-    #         else:
-    #             query += '| ('
-    #         j = i.split(',')
-
-    #         for k in j:
-    #             query += '+'+'\"' + k + '\"'
-    #         query += ')'
-    # except:
-    #     pass
-    # try:
-    #     j = a['exclusion_keyword'].split(',')
-    #     for k in j:
-    #         query += '-'+'\"' + k + '\"'
-    # except:
-    #     pass
+    
     if news_letter_id != "" and a["tag"] != "gio_tin":
         if a["is_sample"]:
             query = ""
