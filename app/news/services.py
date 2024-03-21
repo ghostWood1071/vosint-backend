@@ -523,8 +523,9 @@ async def get_keyword_frequences(start_date, end_date, top):
         end_date = datetime.strptime(end_date, "%d/%m/%Y %H:%M:%S")
     news_col = get_collection_client("News")
     keywords = list()
-    async for keys in news_col.find({'keywords': {'$exists':True}}, {"keywords": True}):
+    async for keys in news_col.find({'keywords': {'$exists':True, "$ne": None}}, {"keywords": True}):
         keywords.extend(keys["keywords"])
+
     keydict = {}
     for key in keywords:
         if keydict.get(key) is None:
