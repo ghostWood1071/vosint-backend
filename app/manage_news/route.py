@@ -31,11 +31,11 @@ async def create(data: SourceGroupSchema = Body(...), authorize: AuthJWT = Depen
     user_id = authorize.get_jwt_subject()
     source = data.dict()
     source["user_id"] = user_id
-    exist_source = await db.find_one({"source_name": source["source_name"]})
-    if exist_source:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="source group already exist"
-        )
+    # exist_source = await db.find_one({"source_name": source["source_name"]})
+    # if exist_source:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT, detail="source group already exist"
+    #     )
     created_source_group = await create_source_group(source)
     if created_source_group:
         return status.HTTP_201_CREATED

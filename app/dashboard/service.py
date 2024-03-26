@@ -403,7 +403,7 @@ async def total_users():
     return {"total": len(result)}
 
 
-async def top_user_read(limit=5):
+async def top_user_read(page_index, page_size, status):
     """Get users created most reports"""
     now = datetime.now()
     start_of_day = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -415,6 +415,11 @@ async def top_user_read(limit=5):
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
+    filter_status = { "$expr": {"$eq": ["$_id", {"$toObjectId": "$$id"}]} }
+    if status is not None:
+        filter_status["online"] = status
+
+    
     pipeline = [
         {
             "$match": {
@@ -452,9 +457,7 @@ async def top_user_read(limit=5):
                 "let": {"id": "$_id"},
                 "pipeline": [
                     {
-                        "$match": {
-                            "$expr": {"$eq": ["$_id", {"$toObjectId": "$$id"}]},
-                        },
+                        "$match": filter_status,
                     },
                     {
                         "$project": {
@@ -473,7 +476,13 @@ async def top_user_read(limit=5):
                 "user_id": "$_id",
                 "total": 1,
                 "user": {"$arrayElemAt": ["$users", 0]},
+               
             },
+        },
+        {
+            "$match": {
+                "user": {"$ne": None}
+            }
         },
         {
             "$sort": {
@@ -481,16 +490,30 @@ async def top_user_read(limit=5):
             },
         },
         {
-            "$limit": limit,
-        },
+            "$facet": {
+                "metadata": [  # Stage to compute metadata
+                    {"$count": "totalDocuments"},
+                    {"$addFields": {"totalPages": {"$ceil": {"$divide": ["$totalDocuments", int(page_size)]}}}}
+                ],
+                "data": [  # Stage to get paginated data
+                    {"$sort": {"total": -1}},
+                    {"$skip": int(page_size) * (int(page_index) - 1)},
+                    {"$limit": int(page_size)}
+                ]
+            }
+        }
+        
+        # {"$skip": int(page_size) * (int(page_index) - 1)},
+        # {
+        #     "$limit": int(page_size),
+        # },
     ]
 
     data = await report_client.aggregate(pipeline).to_list(None)
-
     return data
 
 
-async def hot_events_today():
+async def hot_events_today(user_id:str):
     """Get news of current day"""
     now = datetime.now()
     start_of_day = (now - timedelta(days=6, seconds=-1)).replace(
@@ -539,6 +562,7 @@ async def hot_events_today():
                 "sentiment": {"$first": "$sentiment"},
                 "is_event": {"$first": "$is_event"},
                 "date_created": {"$first": "$date_created"},
+                "user_id": {"$first": "$user_id"},
             }
         },
         {
@@ -553,6 +577,17 @@ async def hot_events_today():
                 "sentiment": 1,
                 "date_created": 1,
                 "is_event": 1,
+                'is_event': {
+                    '$cond': {
+                        'if': {
+                            '$eq': [
+                                '$user_id', user_id
+                            ]
+                        }, 
+                        'then': "$is_event", 
+                        'else': None
+                    }
+                }
             }
         },
         {"$sort": {"new_list_length": -1}},
