@@ -83,8 +83,8 @@ async def get_total_users_online(authorize: AuthJWT = Depends()):
 
 
 @router.get("/get-top-user-read")
-async def get_top_user_read(top: int = 5):
-    return await top_user_read(top)
+async def get_top_user_read(page_index: int = 1, page_size:int = 5, status:bool=None):
+    return await top_user_read(page_index, page_size, status)
 
 
 # ------- End leader --------
