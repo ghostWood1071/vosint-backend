@@ -513,7 +513,7 @@ async def top_user_read(page_index, page_size, status):
     return data
 
 
-async def hot_events_today():
+async def hot_events_today(user_id:str):
     """Get news of current day"""
     now = datetime.now()
     start_of_day = (now - timedelta(days=6, seconds=-1)).replace(
@@ -562,6 +562,7 @@ async def hot_events_today():
                 "sentiment": {"$first": "$sentiment"},
                 "is_event": {"$first": "$is_event"},
                 "date_created": {"$first": "$date_created"},
+                "user_id": {"$first": "$user_id"},
             }
         },
         {
@@ -576,6 +577,17 @@ async def hot_events_today():
                 "sentiment": 1,
                 "date_created": 1,
                 "is_event": 1,
+                'is_event': {
+                    '$cond': {
+                        'if': {
+                            '$eq': [
+                                '$user_id', user_id
+                            ]
+                        }, 
+                        'then': "$is_event", 
+                        'else': None
+                    }
+                }
             }
         },
         {"$sort": {"new_list_length": -1}},

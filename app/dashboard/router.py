@@ -27,8 +27,10 @@ router = APIRouter()
 
 
 @router.get("/hot-events-today")
-async def get_hot_events_today():
-    return await hot_events_today()
+async def get_hot_events_today(authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    return await hot_events_today(user_id)
 
 
 @router.get("/news-country-today")
