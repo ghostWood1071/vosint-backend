@@ -419,6 +419,9 @@ async def top_user_read(page_index, page_size, status):
     if status is not None:
         filter_status["online"] = status
 
+    statuses_cond = [True, False]
+    if status:
+        statuses_cond.remove(not status)
     
     pipeline = [
         {
@@ -464,6 +467,7 @@ async def top_user_read(page_index, page_size, status):
                             "hashed_password": 0,
                             "news_bookmarks": 0,
                             "vital_list": 0,
+                            "interested_list": 0
                         },
                     },
                 ],
@@ -485,8 +489,41 @@ async def top_user_read(page_index, page_size, status):
             }
         },
         {
+            "$unionWith": {
+                "coll": "users", 
+                "pipeline": [
+                    { "$set": { "user_id": {"$toString": "$_id"} } },
+                    { "$set": { "total": 0} },
+                    {
+                        "$match": {"online": {"$in": statuses_cond}},
+                    },
+                    {
+                        "$project": {
+                            "_id": 0,
+                            "hashed_password": 0,
+                            "news_bookmarks": 0,
+                            "vital_list": 0,
+                            "interested_list": 0,
+                        }
+                    },
+                    { "$set": { "user": "$$ROOT"} },
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "$user_id",
+                "user": {"$push": "$$ROOT"}
+            }
+        },
+        {
+            "$project": {
+                 "user": {"$arrayElemAt": ["$user", 0]}
+            } 
+        },
+        {
             "$sort": {
-                "total": -1,
+                "user.total": -1,
             },
         },
         {
@@ -510,6 +547,11 @@ async def top_user_read(page_index, page_size, status):
     ]
 
     data = await report_client.aggregate(pipeline).to_list(None)
+    conent = data[0]["data"]
+    formated_content = []
+    for row in conent:
+        formated_content.append(row["user"])
+    data[0]["data"] = formated_content
     return data
 
 
