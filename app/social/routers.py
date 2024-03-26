@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Body, HTTPException, Path, status
+from fastapi import APIRouter, Body, HTTPException, Path, status, UploadFile, File
 from fastapi.responses import JSONResponse
 
 from app.social.models import AddFollow, UpdateAccountMonitor, UserCreateModel
@@ -16,6 +16,7 @@ from app.social.services import (
     update_account_monitor,
     update_follow_user,
     update_username_user,
+    handle_news_files
 )
 from db.init_db import get_collection_client
 
@@ -131,3 +132,10 @@ async def update_social(data: UpdateAccountMonitor = Body(...)):
             content="Successful edit",
         )
     return status.HTTP_403_FORBIDDEN
+
+
+@router.post("/upload-news")
+async def upload_news(file: UploadFile = File(...)):
+    data = await file.read()
+    result = await handle_news_files(data)
+    return result
