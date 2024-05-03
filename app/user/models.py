@@ -55,3 +55,9 @@ class InterestedModel(BaseModel):
 class BaseUser(BaseModel):
     id: str
     online: bool
+
+class ResetPasswordModel(BaseModel):
+    new_password: str
+    new_confirm_password: str
+    username: str
+    token: str
