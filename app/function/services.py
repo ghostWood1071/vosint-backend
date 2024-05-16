@@ -3,6 +3,7 @@ from typing import *
 from .models import Function
 from bson.objectid import ObjectId
 import traceback
+from db.init_db import get_collection_client
 
 def get_functions(text_search:str, page_size:int, page_index:int)->List[Any]:
     try:
@@ -72,6 +73,7 @@ def update_function(function_id:str, update_val:dict[str, Any])->Any:
             }
         }
 
+        # update max child: 3 
         update_params_child = {
             "collection_name": "function",
             "filter_spec": {
@@ -81,9 +83,22 @@ def update_function(function_id:str, update_val:dict[str, Any])->Any:
                 "$set": {"level": update_val["level"] + 1}
             }
         }
-        print("updatedddd _val", update_val)
         update_count = MongoRepository().update_many(**update_params)
         updated_child = MongoRepository().update_many(**update_params_child)
+
+        updated_child_res, _ = MongoRepository().find("function", filter_spec={"parent_id": str(function_id)})
+
+        if(len(updated_child_res) > 0):
+            update_params_child_2 = {
+                "collection_name": "function",
+                "filter_spec": {
+                    "parent_id": str(updated_child_res[0]["_id"])
+                },
+                "action": {
+                    "$set": {"level": updated_child_res[0]["level"] + 1}
+                }
+            }
+            updated_child_2 = MongoRepository().update_many(**update_params_child_2)
 
         return update_count
     except Exception as e:
@@ -96,6 +111,48 @@ def insert_function(doc:dict[Any])->Any:
             doc.pop("function_id")
         inserted_id = MongoRepository().insert_one("function", doc)
         return inserted_id
+    except Exception as e:
+        traceback.print_exc()
+        raise e
+
+async def get_active_functions(role_id: str)->List[Any]:
+    try:
+        # Assuming you have an AsyncIOMotorClient instance named 'client' connected to your MongoDB server
+        function_collection = get_collection_client("function")  # Assuming the collection name is 'function'
+        print("role_idddd", role_id)
+        pipeline = [
+            # Stage 1: Lookup operation to join with role_function table
+            {
+                "$lookup": {
+                    "from": "role_function", 
+                    "let": {"function_id": {"$toObjectId": "$function_id"}},
+                    "pipeline": [
+                        { 
+                            "$match": {"$expr": {"$eq": ["$_id", "$$function_id"]}},
+                        }
+                    ],
+                    "as": "role_functions"         
+                }
+            },
+        ]
+
+        # Perform the aggregation
+        cursor = function_collection.aggregate(pipeline)
+
+        # Initialize result list
+        result = []
+
+        async for document in cursor:
+            print(document)
+            # Convert _id field to string
+            document["_id"] = str(document["_id"])
+            result.append(document)
+
+        # Get the total count of documents
+        total_docs = await function_collection.count_documents({})
+
+        # Return the result
+        return {"data": result, "total_records": total_docs}
     except Exception as e:
         traceback.print_exc()
         raise e
