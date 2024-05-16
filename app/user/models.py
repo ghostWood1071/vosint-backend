@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Optional
-
+from datetime import datetime, date
 from pydantic import BaseModel, Field
-
+from bson import ObjectId
 
 class Role(str, Enum):
     admin = "admin"
@@ -55,3 +55,20 @@ class InterestedModel(BaseModel):
 class BaseUser(BaseModel):
     id: str
     online: bool
+
+class User(BaseModel):
+    user_id: str = Field(default_factory=ObjectId, alias="_id")
+    branch_id: str = ""
+    department_id: str = ""
+    role_id: str = ""
+    username: str
+    hashed_password: str
+    full_name: str
+    avatar_url: str = ""
+    gender: int = 0
+    date_of_birth: str = ""
+    email: str = ""
+    phone: str = ""
+    online: bool = False
+    description: str = ""
+    active: int = 1

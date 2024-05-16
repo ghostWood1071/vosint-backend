@@ -491,9 +491,11 @@ class MongoRepository:
             collection = self.__db[collection_name]
             cur = collection.aggregate(pipeline)
             data = [row for row in cur]
+
+            total_docs = collection.count_documents(pipeline[0]["$match"] or {})
         finally:
             self.__close()
-        return data
+        return data, total_docs
 
     def find(
         self,
@@ -522,9 +524,12 @@ class MongoRepository:
             result = []
             for row in cur:
                 result.append(row)
+            
+            total_docs = collection.count_documents(filter_spec)
+
         finally:
             self.__close()
-        return result
+        return result, total_docs
     
     def create_index(self, collection_name:str,  field_name:str, type, options:Any = None):
         if collection_name is None:

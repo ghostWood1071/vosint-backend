@@ -17,10 +17,17 @@ from app.vnanet.vn_new import router as VNNewRouter
 from vosint_ingestion.features.job.routers import router as Job
 from app.resource_monitor.routers import router as ResourceMonitorRouter
 from app.slave_activity.routers import router as SlaveActivityRouter
-
 # from vosint_ingestion.features.nlp.routers import router as Nlp
 from vosint_ingestion.features.pipeline.routers import router as PipeLine
 from app.nlp.routers import router as NLPRouter
+
+from app.role.routers import router as RoleRouter
+from app.branch.routers import router as BranchRouter
+from app.department.routers import router as DepartmentRouter
+from app.action.routers import router as ActionRouter
+from app.function.routers import router as FunctionRouter
+from app.role_function.routers import router as RoleFunctionRouter
+from app.role_permission.routers import router as RolePermissionRouter
 
 ROUTE_LIST = [
     {"route": AuthRouter, "tags": ["Xác Thực"], "prefix": ""},
@@ -64,4 +71,12 @@ ROUTE_LIST = [
         "prefix": "/slave-activity",
     },
     {"route": DashboardRouter, "tags": ["Dashboard"], "prefix": "/dashboard"},
+
+    {"route": RoleRouter, "tags": ["Role"], "prefix": "/role"},
+    {"route": BranchRouter, "tags": ["Branch"], "prefix": "/branch"},
+    {"route": DepartmentRouter, "tags": ["Department"], "prefix": "/department"},
+    {"route": ActionRouter, "tags": ["Action"], "prefix": "/action"},
+    {"route": FunctionRouter, "tags": ["Function"], "prefix": "/function"},
+    {"route": RoleFunctionRouter, "tags": ["RoleFunction"], "prefix": "/role-function"},
+    {"route": RolePermissionRouter, "tags": ["RolePermission"], "prefix": "/role-permission"},
 ]
