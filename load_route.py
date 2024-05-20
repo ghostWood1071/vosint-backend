@@ -17,6 +17,8 @@ from app.vnanet.vn_new import router as VNNewRouter
 from vosint_ingestion.features.job.routers import router as Job
 from app.resource_monitor.routers import router as ResourceMonitorRouter
 from app.slave_activity.routers import router as SlaveActivityRouter
+from app.email.routers import router as EmailRouter
+
 # from vosint_ingestion.features.nlp.routers import router as Nlp
 from vosint_ingestion.features.pipeline.routers import router as PipeLine
 from app.nlp.routers import router as NLPRouter
@@ -79,4 +81,5 @@ ROUTE_LIST = [
     {"route": FunctionRouter, "tags": ["Function"], "prefix": "/function"},
     {"route": RoleFunctionRouter, "tags": ["RoleFunction"], "prefix": "/role-function"},
     {"route": RolePermissionRouter, "tags": ["RolePermission"], "prefix": "/role-permission"},
+    {"route": EmailRouter, "tags": ["Email"], "prefix": "/email"},
 ]

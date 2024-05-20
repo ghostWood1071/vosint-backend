@@ -72,3 +72,8 @@ class User(BaseModel):
     online: bool = False
     description: str = ""
     active: int = 1
+class ResetPasswordModel(BaseModel):
+    new_password: str
+    new_confirm_password: str
+    username: str
+    token: str

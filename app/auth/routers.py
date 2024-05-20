@@ -5,8 +5,10 @@ from fastapi_jwt_auth import AuthJWT
 from pydash import pick
 
 from app.auth.password import get_password_hash, verify_and_update
-from app.user.models import UserChangePasswordModel, UserLoginModel
+from app.user.models import UserChangePasswordModel, UserLoginModel, ResetPasswordModel
 from app.user.services import read_user_by_username, update_user
+from db.init_db import get_collection_client
+import jwt
 
 router = APIRouter()
 
@@ -44,7 +46,6 @@ async def login(body: UserLoginModel, authorize: AuthJWT = Depends()):
 
     return HTTPException(status_code=status.HTTP_200_OK, detail=detail)
 
-
 @router.put("/change-password")
 async def change_user_password(body: UserChangePasswordModel):
     user = await read_user_by_username(body.username)
@@ -74,7 +75,6 @@ async def change_user_password(body: UserChangePasswordModel):
 
     return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=None)
 
-
 @router.post("/refresh")
 def refresh(authorize: AuthJWT = Depends()):
     authorize.jwt_refresh_token_required()
@@ -85,9 +85,29 @@ def refresh(authorize: AuthJWT = Depends()):
     authorize.set_access_cookies(new_access_token)
     return HTTPException(status_code=status.HTTP_200_OK)
 
-
 @router.delete("/logout")
 def logout(authorize: AuthJWT = Depends()):
     authorize.jwt_required()
     authorize.unset_jwt_cookies()
     return HTTPException(status_code=status.HTTP_200_OK)
+
+@router.post("/reset-password")
+async def reset_password(body: ResetPasswordModel, authorize: AuthJWT = Depends()):
+    users_client = get_collection_client("users")
+    find_user_by_username = await users_client.find_one({"username": body.username})
+    
+    user_id = authorize._verified_token(body.token)['sub']   
+    find_user_by_id = await users_client.find_one({"_id": ObjectId(user_id)})
+
+    if find_user_by_username is None or find_user_by_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Đường dẫn không hợp lệ hoặc đã hết hạn",
+        )
+
+    hashed_password = get_password_hash(body.new_password)
+    find_user_by_id["hashed_password"] = hashed_password
+    await users_client.update_one({"_id": ObjectId(user_id)}, {"$set": find_user_by_id})
+
+    return HTTPException(status_code=status.HTTP_200_OK)
+
