@@ -117,42 +117,21 @@ def insert_function(doc:dict[Any])->Any:
 
 async def get_active_functions(role_id: str)->List[Any]:
     try:
-        # Assuming you have an AsyncIOMotorClient instance named 'client' connected to your MongoDB server
-        function_collection = get_collection_client("function")  # Assuming the collection name is 'function'
-        print("role_idddd", role_id)
-        pipeline = [
-            # Stage 1: Lookup operation to join with role_function table
-            {
-                "$lookup": {
-                    "from": "role_function", 
-                    "let": {"function_id": {"$toObjectId": "$function_id"}},
-                    "pipeline": [
-                        { 
-                            "$match": {"$expr": {"$eq": ["$_id", "$$function_id"]}},
-                        }
-                    ],
-                    "as": "role_functions"         
-                }
-            },
-        ]
+        result, _ = MongoRepository().find("role_function", filter_spec={"role_id": role_id})
+        function_ids = [ObjectId(record["function_id"]) for record in result]
 
-        # Perform the aggregation
-        cursor = function_collection.aggregate(pipeline)
+        search_params = {
+            "collection_name": "function",
+            "filter_spec": {"_id": { "$in" : function_ids }}, 
+            "order": "sort_order",
+        }
 
-        # Initialize result list
-        result = []
+        result, total_docs = MongoRepository().find(**search_params)
+        for line in result:
+            line["_id"] = str(line["_id"])
 
-        async for document in cursor:
-            print(document)
-            # Convert _id field to string
-            document["_id"] = str(document["_id"])
-            result.append(document)
-
-        # Get the total count of documents
-        total_docs = await function_collection.count_documents({})
-
-        # Return the result
-        return {"data": result, "total_records": total_docs}
+        return { "data": result, "total_records": total_docs }
+    
     except Exception as e:
         traceback.print_exc()
         raise e
