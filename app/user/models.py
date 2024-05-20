@@ -63,6 +63,7 @@ class User(BaseModel):
     role_id: str = ""
     username: str
     hashed_password: str
+    password: Optional[str]
     full_name: str
     avatar_url: str = ""
     gender: int = 0

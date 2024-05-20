@@ -8,7 +8,7 @@ from fastapi import Depends
 import urllib.parse
 
 async def exec_forgot_password(req: EmailModel, authorize: AuthJWT = Depends()):
-    base_url = "http://localhost:4200"
+    base_url = "http://localhost:4300"
 
     # find user
     users_client = get_collection_client("users")

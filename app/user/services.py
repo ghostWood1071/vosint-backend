@@ -212,7 +212,7 @@ def get_users(text_search:str, page_size:int, page_index:int, branch_id: str, de
             {
                 "$project": {
                     "_id": {"$toString": "$_id"}, 
-                    "full_name": 1, "username": 1, "phone": 1, "email": 1, "avatar_url": 1,
+                    "full_name": 1, "username": 1, "phone": 1, "email": 1, "avatar_url": 1, "active": 1,
                     "branch_name": "$branch.branch_name",
                     "department_name": "$department.department_name",
                     "role_name": "$role.role_name"
@@ -260,6 +260,10 @@ def delete_users(user_ids:list[str])->Any:
 
 def update_user(user_id:str, update_val:dict[str, Any])->Any:
     try:
+
+        if "password" in update_val and update_val["password"] is not None:
+            update_val["hashed_password"] = get_password_hash(update_val["password"])
+
         update_count = 0
         if update_val.get("user_id"):
             update_val.pop("user_id")
