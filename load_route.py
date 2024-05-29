@@ -30,6 +30,7 @@ from app.action.routers import router as ActionRouter
 from app.function.routers import router as FunctionRouter
 from app.role_function.routers import router as RoleFunctionRouter
 from app.role_permission.routers import router as RolePermissionRouter
+from app.catalog.routers import router as CatalogRouter
 
 ROUTE_LIST = [
     {"route": AuthRouter, "tags": ["Xác Thực"], "prefix": ""},
@@ -82,4 +83,5 @@ ROUTE_LIST = [
     {"route": RoleFunctionRouter, "tags": ["RoleFunction"], "prefix": "/role-function"},
     {"route": RolePermissionRouter, "tags": ["RolePermission"], "prefix": "/role-permission"},
     {"route": EmailRouter, "tags": ["Email"], "prefix": "/email"},
+    {"route": CatalogRouter, "tags": ["Catalog"], "prefix": "/catalog"},
 ]
