@@ -20,12 +20,14 @@ from .services import (
     get_top_seven_by_self,
     get_top_five_by_self,
     get_keywords_from_search_history,
-    disable_keyword_history
+    disable_keyword_history,
+    extract_keywords
 )
 from .utils import news_to_json
 from fastapi import Response
 import re
 from word_exporter import export_news_to_words
+from .models import TextModel
 
 router = APIRouter()
 
@@ -281,3 +283,7 @@ async def get_survey_search_history_route(start_date:str, end_date:str, auth:Aut
 @router.post("/disable-search-history")
 async def disable_search_history_route(his_id:str):
     return await disable_keyword_history(his_id)
+
+@router.post("/test-extract-keyworld")
+async def test_extract_keyword(data:TextModel):
+    return extract_keywords(data.text, data.lang)
