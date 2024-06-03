@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import json
 from typing import *
 from bson.objectid import ObjectId
+import requests
 
 from db.init_db import get_collection_client
 
@@ -654,3 +655,19 @@ async def get_top_five_by_self(start_date, end_date, user_id):
         output_array.append({"label": record.get("title"), "value": response.get("total_records")})
 
     return sorted(output_array, key=lambda x: x['value'], reverse=True)[:5]
+
+
+def extract_keywords(content:str, lang):
+        keywords = []
+        try:
+            extkey_request = requests.post(settings.KEYWORD_EXTRACTION_API, data=json.dumps({
+                "lang": lang,
+                "number_keyword": 6,
+                "text": content
+            }))
+            if not extkey_request.ok:
+                raise Exception()
+            keywords = extkey_request.json().get("translate_text")
+        except:
+            return []
+        return keywords

@@ -11,3 +11,8 @@ class NewsModel(BaseModel):
     data_title: str = Field(alias="data:title")
     data_url: str = Field(alias="data:url")
     modified_at: datetime = Field(alias="modified_at")
+
+
+class TextModel(BaseModel):
+    lang: str = Field(default="string")
+    text: str = Field(default="string")
