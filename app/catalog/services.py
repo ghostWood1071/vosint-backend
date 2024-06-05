@@ -15,6 +15,10 @@ def get_catalogs(text_search:str, page_size:int, page_index:int)->List[Any]:
                 "limit": page_size
             },
             # "order": "sort_order",
+            "order": [
+                ["sort_order", 1],
+                ["created_at", 1],
+            ],
         }
 
 

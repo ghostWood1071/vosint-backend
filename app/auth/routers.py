@@ -78,7 +78,6 @@ async def change_user_password(body: UserChangePasswordModel):
     try:
         result = update_user(user["_id"], {"hashed_password": hashed_password})
     except Exception as e:
-        print("eeeeee", e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Không thể thay đổi mật khẩu. Vui lòng thử lại sau.",
