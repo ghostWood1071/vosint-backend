@@ -377,7 +377,7 @@ class JobController:
 
         try:
             
-            objects = MongoRepository().find("object", {"_id": ObjectId(object_id)}, {"keywords": 1, "news_list":1})
+            objects, _ = MongoRepository().find("object", {"_id": ObjectId(object_id)}, {"keywords": 1, "news_list":1})
 
             if len(objects) == 0:
                 return {"sentiments": {}, "result": [], "total_record": 0}
@@ -414,7 +414,7 @@ class JobController:
                                             }  
                                         }
                                     ]
-                sentiment_count = MongoRepository().aggregate("News",sentiment_pipeline)
+                sentiment_count, _ = MongoRepository().aggregate("News",sentiment_pipeline)
                 sentiment_statistic = {sentiment_label[x["_id"]]:x["count"] for x in sentiment_count}
                 sentiment_statistic["all"] = sum(list(sentiment_statistic.values()))
                 

@@ -571,7 +571,7 @@ def get_event_from_newsletter_list_id(
                     ]
                     relevent_news_ids.extend(tmp)
 
-            news_relevents = MongoRepository().find(
+            news_relevents, _ = MongoRepository().find(
                 "News",
                 filter_spec={"_id": {"$in": relevent_news_ids}},
                 projection={"data:title": 1, "data:url": 1, "_id": 1},
