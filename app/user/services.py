@@ -140,7 +140,7 @@ def user_entity(user) -> dict:
         "_id": str(user["_id"]),
         "username": user["username"],
         "full_name": user["full_name"],
-        "role": user["role"],
+        "role": user.get("role"),
         "news_bookmarks": news_bookmarks,
         "vital_list": vital_list,
         "interested_list": interested_list,

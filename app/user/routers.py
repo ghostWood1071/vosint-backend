@@ -291,7 +291,7 @@ async def update_me(user_data: UserUpdateModel, authorize: AuthJWT = Depends()):
     user_id = ObjectId(authorize.get_jwt_subject())
 
     user_data = {k: v for k, v in user_data.dict().items() if v is not None}
-    updated_user = await update_user(user_id, user_data)
+    updated_user = update_user(user_id, user_data)
     if updated_user is None:
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=None)
 
@@ -366,7 +366,7 @@ async def upload_avatar(file: UploadFile = File(...), authorize: AuthJWT = Depen
     finally:
         await file.close()
 
-    await update_user(user_id, {"avatar_url": f"static/{file.filename}"})
+    update_user(user_id, {"avatar_url": f"static/{file.filename}"})
     return JSONResponse(
         status_code=status.HTTP_202_ACCEPTED, content=f"static/{file.filename}"
     )
@@ -428,5 +428,10 @@ async def route_get_me(authorize: AuthJWT = Depends()):
     if user is None:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=None)
 
+    role_collection = get_collection_client("role")
+    role = await role_collection.find_one({"_id": ObjectId(user["role_id"])})
+
     user["_id"] = str(user["_id"])
+    user["role"] = role["role_code"]
+    
     return JSONResponse(status_code=status.HTTP_200_OK, content=user)
