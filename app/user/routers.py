@@ -429,9 +429,18 @@ async def route_get_me(authorize: AuthJWT = Depends()):
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=None)
 
     role_collection = get_collection_client("role")
-    role = await role_collection.find_one({"_id": ObjectId(user["role_id"])})
+    # role = await role_collection.find_one({"_id": ObjectId(user["role_id"])})
+    role = await role_collection.find_one({
+        "$or": [
+            {"_id": ObjectId(user.get("role_id"))},
+            {"role_code": user.get("role")}
+        ]
+    })
 
     user["_id"] = str(user["_id"])
     user["role"] = role["role_code"]
+
+    if "role_id" not in user:
+        user["role_id"] = str(role["_id"])
     
     return JSONResponse(status_code=status.HTTP_200_OK, content=user)
