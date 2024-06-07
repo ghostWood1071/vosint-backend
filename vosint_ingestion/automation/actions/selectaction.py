@@ -28,6 +28,20 @@ class SelectAction(BaseAction):
                     default_val="",
                     validators=["required"],
                 ),
+                ParamInfo(
+                    name="isframe",
+                    display_name="Is in frame",
+                    val_type="bool",
+                    default_val=False,
+                    validators=["required"],
+                ),
+                ParamInfo(
+                    name="frameSelector",
+                    display_name="Frame Selector",
+                    val_type="str",
+                    default_val="",
+                    validators=["required"],
+                ),
             ],
             z_index=2,
         )
