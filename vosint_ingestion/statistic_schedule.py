@@ -34,7 +34,7 @@ def status_source_news(day_space: int = 3, start_date=None, end_date=None):
     start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
     end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
 
-    list_hist = MongoRepository().aggregate(
+    list_hist, _ = MongoRepository().aggregate(
         "his_log",
         [
             {
@@ -45,7 +45,7 @@ def status_source_news(day_space: int = 3, start_date=None, end_date=None):
         ],
     )
 
-    list_pipelines = MongoRepository().aggregate("pipelines", [])
+    list_pipelines, _ = MongoRepository().aggregate("pipelines", [])
 
     result = {
         "normal": 0,
@@ -458,7 +458,7 @@ def top_news_by_topic():
     start_of_day = start_of_day.strftime("%d/%m/%Y")
     end_of_day = end_of_day.strftime("%d/%m/%Y")
 
-    data_fields = MongoRepository().find(
+    data_fields, _ = MongoRepository().find(
         "newsletter", {"tag": "linh_vuc"}, {"_id": 1, "title": 1}
     )
 

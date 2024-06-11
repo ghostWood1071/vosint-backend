@@ -1305,7 +1305,7 @@ def get_graph_data(object_ids, start_date, end_date):
         _end_date = datetime.strptime(end_date, "%d/%m/%Y")
         pipeline[0]["$match"]["$and"].append({"date_created": {"$lte": _end_date}})
 
-    data = MongoRepository().aggregate("events", pipeline)
+    data,_ = MongoRepository().aggregate("events", pipeline)
 
     result = {"nodes": [], "edges": []}
     for object_name in object_names:
