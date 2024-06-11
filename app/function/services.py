@@ -5,11 +5,12 @@ from bson.objectid import ObjectId
 import traceback
 from db.init_db import get_collection_client
 
-def get_functions(text_search:str, page_size:int, page_index:int)->List[Any]:
+def get_functions(text_search:str, page_size:int, page_index:int, plus: bool = False)->List[Any]:
     try:
+        collection_target = "function_plus" if plus else "function"
         skip = page_size*(page_index-1)
         search_params = {
-            "collection_name": "function",
+            "collection_name": collection_target,
             "filter_spec": {}, 
             "pagination": {
                 "skip": skip,
@@ -35,9 +36,11 @@ def get_functions(text_search:str, page_size:int, page_index:int)->List[Any]:
         traceback.print_exc()
         raise e
 
-def get_function(function_id:str)->Any:
+def get_function(function_id:str, plus: bool = False)->Any:
     try:
-        result, _ = MongoRepository().find("function", filter_spec={"_id": ObjectId(function_id)})
+        collection_target = "function_plus" if plus else "function"
+        
+        result, _ = MongoRepository().find(collection_target, filter_spec={"_id": ObjectId(function_id)})
         if len(result) == 0:
             raise Exception(f"Function {function_id} no found")
 
@@ -47,24 +50,28 @@ def get_function(function_id:str)->Any:
         traceback.print_exc()
         raise e
 
-def delete_functions(function_ids:list[str])->Any:
+def delete_functions(function_ids:list[str], plus: bool = False)->Any:
     try:
+        collection_target = "function_plus" if plus else "function"
+
         del_condition = [ObjectId(x) for x in function_ids]
         del_count = 0
         if len(del_condition) > 0:
-            del_count = MongoRepository().delete_many("function", filter_spec={"_id": {"$in": del_condition}})
+            del_count = MongoRepository().delete_many(collection_target, filter_spec={"_id": {"$in": del_condition}})
         return del_count
     except Exception as e:
         traceback.print_exc()
         raise e
 
-def update_function(function_id:str, update_val:dict[str, Any])->Any:
+def update_function(function_id:str, update_val:dict[str, Any], plus: bool = False)->Any:
     try:
+        collection_target = "function_plus" if plus else "function"
+
         update_count = 0
         if update_val.get("function_id"):
             update_val.pop("function_id")
         update_params = {
-            "collection_name": "function",
+            "collection_name": collection_target,
             "filter_spec": {
                 "_id": ObjectId(function_id)
             },
@@ -75,7 +82,7 @@ def update_function(function_id:str, update_val:dict[str, Any])->Any:
 
         # update max child: 3 
         update_params_child = {
-            "collection_name": "function",
+            "collection_name": collection_target,
             "filter_spec": {
                 "parent_id": str(function_id)
             },
@@ -86,11 +93,11 @@ def update_function(function_id:str, update_val:dict[str, Any])->Any:
         update_count = MongoRepository().update_many(**update_params)
         updated_child = MongoRepository().update_many(**update_params_child)
 
-        updated_child_res, _ = MongoRepository().find("function", filter_spec={"parent_id": str(function_id)})
+        updated_child_res, _ = MongoRepository().find(collection_target, filter_spec={"parent_id": str(function_id)})
 
         if(len(updated_child_res) > 0):
             update_params_child_2 = {
-                "collection_name": "function",
+                "collection_name": collection_target,
                 "filter_spec": {
                     "parent_id": str(updated_child_res[0]["_id"])
                 },
@@ -105,23 +112,27 @@ def update_function(function_id:str, update_val:dict[str, Any])->Any:
         traceback.print_exc()
         raise e
 
-def insert_function(doc:dict[Any])->Any:
+def insert_function(doc:dict[Any], plus: bool = False)->Any:
     try:
+        collection_target = "function_plus" if plus else "function"
+
         if doc.get("function_id"):
             doc.pop("function_id")
-        inserted_id = MongoRepository().insert_one("function", doc)
+        inserted_id = MongoRepository().insert_one(collection_target, doc)
         return inserted_id
     except Exception as e:
         traceback.print_exc()
         raise e
 
-async def get_active_functions(role_id: str)->List[Any]:
+async def get_active_functions(role_id: str, plus: bool = False)->List[Any]:
     try:
+        collection_target = "function_plus" if plus else "function"
+
         result, _ = MongoRepository().find("role_function", filter_spec={"role_id": role_id})
         function_ids = [ObjectId(record["function_id"]) for record in result]
 
         search_params = {
-            "collection_name": "function",
+            "collection_name": collection_target,
             "filter_spec": {"_id": { "$in" : function_ids }}, 
             "order": "sort_order",
         }

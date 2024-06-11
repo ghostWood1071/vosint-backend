@@ -442,5 +442,6 @@ async def route_get_me(authorize: AuthJWT = Depends()):
 
     if "role_id" not in user:
         user["role_id"] = str(role["_id"])
-    
+
+
     return JSONResponse(status_code=status.HTTP_200_OK, content=user)
