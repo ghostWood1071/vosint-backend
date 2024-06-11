@@ -288,7 +288,7 @@ def get_timeline(
         #     print(1)
         # query.insert(0, {"$match": filter_spec})
 
-        data = MongoRepository().aggregate("events", query)
+        data, _ = MongoRepository().aggregate("events", query)
         total_records = data[0]["total"][0]["count"] if data[0]["total"] else 0
         data = data[0]["data"] if data[0]["data"] else []
 

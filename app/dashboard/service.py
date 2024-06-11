@@ -403,94 +403,106 @@ async def total_users():
     return {"total": len(result)}
 
 
-async def top_user_read(limit=5):
+async def top_user_read(page_index, page_size, status):
     """Get users created most reports"""
-    now = datetime.now()
-    start_of_day = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    next_month = now.replace(day=28) + timedelta(days=4)
-    end_of_day = (next_month - timedelta(days=next_month.day)).replace(
-        hour=23, minute=59, second=59
-    )
+    filter_status = {}
 
-    start_of_day = start_of_day.strftime("%Y/%m/%d %H:%M:%S")
-    end_of_day = end_of_day.strftime("%Y/%m/%d %H:%M:%S")
+    if status is not None:
+        if status is False:
+            filter_status["$or"] = [
+                {"online": False},  # Match documents where 'online' is False
+                {"online": {"$exists": False}}  # Match documents where 'online' field does not exist
+            ]
+        else:
+            filter_status["online"] = status
 
     pipeline = [
         {
-            "$match": {
-                "user_id": {"$ne": None},
-                # "created_at": {
-                #     "$gte": start_of_day,
-                #     "$lte": end_of_day,
-                # },
-            },
-        },
-        {
-            "$unwind": {
-                "path": "$headings",
-            },
-        },
-        {
-            "$unwind": {
-                "path": "$headings.eventIds",
-            },
-        },
-        {
-            "$group": {
-                "_id": "$user_id",
-                "headings": {"$push": "$headings"},
-            },
-        },
-        {
-            "$addFields": {
-                "total": {"$size": "$headings"},
-            },
+            "$match": filter_status
         },
         {
             "$lookup": {
-                "from": "users",
-                "let": {"id": "$_id"},
+                "from": "report",
+                "let": {
+                    "id": "$_id",
+                },
                 "pipeline": [
                     {
-                        "$match": {
-                            "$expr": {"$eq": ["$_id", {"$toObjectId": "$$id"}]},
-                        },
-                    },
-                    {
-                        "$project": {
-                            "hashed_password": 0,
-                            "news_bookmarks": 0,
-                            "vital_list": 0,
-                        },
+                        "$match": { "$expr": { "$eq": ["$user_id",{"$toString": "$$id"}]} },
                     },
                 ],
-                "as": "users",
+                "as": "reports",
             },
+        },
+        {
+            "$unwind": {
+                "path": "$reports",
+                "preserveNullAndEmptyArrays": True  # Preserve documents if 'reports' array is empty
+            }
+        },
+        {
+            "$unwind": {
+                "path": "$reports.headings", 
+                "preserveNullAndEmptyArrays": True  # Preserve documents if 'reports' array is empty
+            }
+        },
+        {
+            "$unwind": {
+                "path":"$reports.headings.eventIds", 
+                "preserveNullAndEmptyArrays": True  # Preserve documents if 'reports' array is empty
+            }
+        },
+        {
+            "$group": {
+                "_id": "$_id",
+                "user": { "$first": "$$ROOT" }, 
+                "heading": {"$push": "$reports"}
+            }
+        },
+        {
+            "$addFields": {
+                "total": {"$size": "$heading"}
+            }
         },
         {
             "$project": {
                 "_id": 0,
-                "user_id": "$_id",
+                "user_id": {"$toString": "$_id"},
                 "total": 1,
-                "user": {"$arrayElemAt": ["$users", 0]},
+                "user": {
+                    "_id": {"$toString": "$_id"},
+                    "avatar_url": "$user.avatar_url",
+                    "full_name": "$user.full_name",
+                    "online": "$user.online",
+                    "role": "$user.role",
+                    "username": "$user.username",
+                },
             },
         },
         {
-            "$sort": {
-                "total": -1,
-            },
+            "$facet": {
+                "metadata": [  # Stage to compute metadata
+                    {"$count": "totalDocuments"},
+                    {"$addFields": {"totalPages": {"$ceil": {"$divide": ["$totalDocuments", int(page_size)]}}}}
+                ],
+                "data": [  # Stage to get paginated data
+                    {"$sort": {"total": -1}},
+                    {"$skip": int(page_size) * (int(page_index) - 1)},
+                    {"$limit": int(page_size)}
+                ]
+            }
         },
-        {
-            "$limit": limit,
-        },
+        
     ]
 
-    data = await report_client.aggregate(pipeline).to_list(None)
-
+    users_client = get_collection_client("users")
+    # data = await report_client.aggregate(pipeline).to_list(None)
+    data = await users_client.aggregate(pipeline).to_list(None)
+    print(len(data))
     return data
 
 
-async def hot_events_today():
+async def hot_events_today(user_id:str):
     """Get news of current day"""
     now = datetime.now()
     start_of_day = (now - timedelta(days=6, seconds=-1)).replace(
@@ -539,6 +551,7 @@ async def hot_events_today():
                 "sentiment": {"$first": "$sentiment"},
                 "is_event": {"$first": "$is_event"},
                 "date_created": {"$first": "$date_created"},
+                "user_id": {"$first": "$user_id"},
             }
         },
         {
@@ -553,6 +566,17 @@ async def hot_events_today():
                 "sentiment": 1,
                 "date_created": 1,
                 "is_event": 1,
+                'is_event': {
+                    '$cond': {
+                        'if': {
+                            '$eq': [
+                                '$user_id', user_id
+                            ]
+                        }, 
+                        'then': "$is_event", 
+                        'else': None
+                    }
+                }
             }
         },
         {"$sort": {"new_list_length": -1}},
