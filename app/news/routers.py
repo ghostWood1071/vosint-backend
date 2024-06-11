@@ -247,10 +247,10 @@ async def get_statistics_sentiments(
 
 
 @router.post("/collect-keyword")
-async def collect_keyword_route(subject_name: str = "", keywords:Any=None, collect_time:str = "",auth:AuthJWT = Depends()):
+async def collect_keyword_route(subject_name: str = "", keywords:Any=None, collect_time:str = "", search_text:str= "",auth:AuthJWT = Depends()):
     auth.jwt_required()
     user_id = auth.get_jwt_subject()
-    inserted_id = await collect_keyword(subject_name, keywords, user_id, collect_time)
+    inserted_id = await collect_keyword(subject_name, keywords, user_id, collect_time, search_text)
     return inserted_id
 
 @router.post("/get-keyword-frequences")
