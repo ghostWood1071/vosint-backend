@@ -395,7 +395,7 @@ async def statistics_sentiments(filter_spec, params):
     return {"total_records": total_docs, "total_sentiments": total_sentiments}
 
 
-async def collect_keyword(subject_name:str, keyword:Any, user_id:str, collect_time:str):
+async def collect_keyword(subject_name:str, keyword:Any, user_id:str, collect_time:str, text_search:str=None):
     search_client = get_collection_client("search_history")
     collected_time = datetime.strptime(collect_time, "%d/%m/%Y %H:%M:%S")
     words = []
@@ -421,6 +421,7 @@ async def collect_keyword(subject_name:str, keyword:Any, user_id:str, collect_ti
         "subject_name": subject_name,
         "keywords": words,
         "user_id": user_id,
+        "text_search": text_search,
         "time": collected_time,
         "enable": True
     })
