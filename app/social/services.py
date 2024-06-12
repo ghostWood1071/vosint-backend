@@ -5,6 +5,8 @@ from fastapi import status
 
 from app.social.models import AddFollow, UpdateAccountMonitor
 from db.init_db import get_collection_client
+import json
+from vosint_ingestion.utils import get_time_now_string
 
 client = get_collection_client("socials")
 client2 = get_collection_client("social_media")
@@ -215,3 +217,88 @@ def To_json(media) -> dict:
 
 async def count_object(filter_object):
     return await client.count_documents(filter_object)
+
+async def get_account_dicts(news):
+    account_links = []
+    account_dict = {}
+    for n in news:
+        account_dict[n.get("account_link")] = ""
+    account_links = list(account_dict.keys())
+    accounts = {row.get("account_link"): str(row.get("_id")) async for row in client2.find({"account_link": {"$in": account_links}}, {"account_link": True, "_id": True})}
+    n_exists = {acc:"" for acc in account_links if accounts.get(acc) is None}
+    return accounts, n_exists
+
+
+
+async def get_account_dict(news):
+    news_dict = {}
+    for x in news:
+        news_dict[x.get("account_link")] = {
+            "social_name": x.get("header"),
+            "social_media": x.get("social_media"),
+            "social_type": x.get("social_type"),
+            "account_link": x.get("account_link"),
+            "avatar_url": "",
+            "profile": "",
+            "is_active": True,
+            "followed_by": []
+        }
+    exists, n_exists = await get_account_dicts(news)
+    for link in list(n_exists.keys()):
+        insert_result = await client2.insert_one(news_dict[link])
+        n_exists[link] = str(insert_result.inserted_id)
+    return {**exists, **n_exists}
+    
+        
+
+async def get_not_exists_account(news):
+    account_links = []
+    for n in news:
+        account_links.append(n.get("account_link"))
+    accounts = {row.get("account_link"): 0 async for row in client2.find({"account_link": {"$in": account_links}}, {"account_link": True})}
+    n_exists = {acc:"" for acc in account_links if accounts.get(acc) is None}
+    return n_exists
+
+async def handle_news_files(content):
+    sample = {
+        "social_type": "Object", #loại tài khoản, Object/Fanpage/Group,
+        "social_media": "Facebook", #loai tin mxh
+        "account_link": "", # url trang cá nhân 
+        "header": "", #tên đối tượng
+        "footer_date": "01/02/2024", #ngày đăng dd/mm/yyyy
+        "content": "", # nộid dung bài đăng
+        "link": "", #url bài viết
+        "video_link": [], #link video
+        "image_link": [], #link ảnh
+        "other_link": [], #các đường dẫn khác
+        "like": 0, #số lượng like
+        "comments": "0", #số lượng comment
+        "share": "0", #số lượng share 
+        "id_data_ft": "", #cái này không cần điền
+        "post_id": "", #id bài viết
+        "footer_type": "page",
+        "id_social": "", #object_id id của đối tượng cái này không cần điền
+        "sentiment": "0", #sắc thái tin 0:trung tính, 1:tích cực, 2: tiêu cực
+        "keywords": [], #danh sách từ khóa
+    }
+    data = json.loads(content)
+    account_dict = await get_account_dict(data)
+    social_clients = {
+        "Facebook": get_collection_client("facebook"),
+        "Twitter": get_collection_client("twitter"),
+        "Tiktok": get_collection_client("tiktok"),
+    }
+    index = 0
+    time = get_time_now_string()
+    for row in data:
+        try:
+            row["id_social"] = ObjectId(account_dict.get(row["account_link"]))
+            row["post_id"] = account_dict.get(row["account_link"]) + row["post_id"]
+            row["create_at"] = time
+            social_clients.get(row["social_media"]).insert_one(row)
+            index+=1
+        except Exception as e:
+            raise Exception(f"error occur in record number: {index}-{str(e)}")
+    return f"inserted {index} records"
+    
+    

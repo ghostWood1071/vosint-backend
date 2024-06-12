@@ -486,7 +486,7 @@ async def top_user_read(page_index, page_size, status):
                     {"$addFields": {"totalPages": {"$ceil": {"$divide": ["$totalDocuments", int(page_size)]}}}}
                 ],
                 "data": [  # Stage to get paginated data
-                    {"$sort": {"total": -1}},
+                    {"$sort": {"user.total": -1}},
                     {"$skip": int(page_size) * (int(page_index) - 1)},
                     {"$limit": int(page_size)}
                 ]
