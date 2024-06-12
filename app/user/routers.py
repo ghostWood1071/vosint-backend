@@ -1,5 +1,4 @@
-from typing import List, Optional, Union
-
+from typing import List, Optional, Union, Any
 from bson import ObjectId
 from fastapi import APIRouter, Body, File, HTTPException, Path, UploadFile, status
 from fastapi.params import Depends
@@ -11,22 +10,9 @@ from app.news.services import count_news, find_news_by_filter_and_paginate
 from app.social_media.services import find_object_by_filter
 from db.init_db import get_collection_client
 
-from .models import InterestedModel, Role, UserCreateModel, UserUpdateModel, BaseUser
-from .services import (
-    count_users,
-    create_user,
-    delete_bookmark_user,
-    delete_item_from_interested_list,
-    delete_user,
-    delete_vital_user,
-    find_user_by_id,
-    get_users,
-    update_bookmark_user,
-    update_interested_object,
-    update_user,
-    update_vital_user,
-    user_entity,
-)
+from .models import InterestedModel, Role, UserCreateModel, UserUpdateModel, BaseUser, User
+from .services import *
+from bson.json_util import dumps
 
 router = APIRouter()
 """
@@ -305,7 +291,7 @@ async def update_me(user_data: UserUpdateModel, authorize: AuthJWT = Depends()):
     user_id = ObjectId(authorize.get_jwt_subject())
 
     user_data = {k: v for k, v in user_data.dict().items() if v is not None}
-    updated_user = await update_user(user_id, user_data)
+    updated_user = update_user(user_id, user_data)
     if updated_user is None:
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=None)
 
@@ -380,7 +366,82 @@ async def upload_avatar(file: UploadFile = File(...), authorize: AuthJWT = Depen
     finally:
         await file.close()
 
-    await update_user(user_id, {"avatar_url": f"static/{file.filename}"})
+    update_user(user_id, {"avatar_url": f"static/{file.filename}"})
     return JSONResponse(
         status_code=status.HTTP_202_ACCEPTED, content=f"static/{file.filename}"
     )
+
+########################### PLUS #################################
+@router.get("/get-users")
+def route_get_users(
+    search_text:str="", page_size:int=10, page_index:int=1,
+    branch_id: str="", department_id: str="", role_id: str=""
+)->Any:
+    try: 
+        data = get_users(search_text, page_size, page_index, branch_id, department_id, role_id)
+        return data
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail = str(e))
+
+@router.get("/get-user-by-id")
+def route_get_user_by_id(user_id:str)->User:
+    try: 
+        data = get_user(user_id)
+        return data
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail = str(e))
+
+@router.post("/insert-user")
+def route_insert_user(user: User)->str:
+    try: 
+        data = insert_user(user.dict())
+        return data
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail = str(e))
+
+@router.post("/update-user")
+def route_update_user(user: User)->int:
+    try: 
+        data = update_user(user.user_id, user.dict())
+        return data
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail = str(e))
+
+@router.post("/delete-user")
+def route_delete_user(user_ids:list[str])->int:
+    try: 
+        data = delete_users(user_ids)
+        return data
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail = str(e))
+
+@router.get("/get-me")
+async def route_get_me(authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+    user_id = authorize.get_jwt_subject()
+    user = await find_user_by_id(ObjectId(user_id))
+    if user is None:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=None)
+
+    role_collection = get_collection_client("role")
+    # role = await role_collection.find_one({"_id": ObjectId(user["role_id"])})
+    role = await role_collection.find_one({
+        "$or": [
+            {"_id": ObjectId(user.get("role_id"))},
+            {"role_code": user.get("role")}
+        ]
+    })
+
+    user["_id"] = str(user["_id"])
+    user["role"] = role["role_code"]
+
+    if "role_id" not in user:
+        user["role_id"] = str(role["_id"])
+
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content=user)
