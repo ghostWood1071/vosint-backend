@@ -90,3 +90,30 @@ def insert_action(doc:dict[Any])->Any:
     except Exception as e:
         traceback.print_exc()
         raise e
+
+async def get_actions_by_user(function_id:str, role_function_id:str)->Any:
+    try:
+        search_params = {
+            "collection_name": "role_permission",
+            "filter_spec": {
+                "role_function_id": str(role_function_id)
+            },  
+        }
+        permissions, _ = MongoRepository().find(**search_params)
+
+        search_action_params = {
+            "collection_name": "action",
+            "filter_spec": {
+                "_id": { "$in": [ObjectId(item['action_id']) for item in permissions]}
+            },  
+        }
+
+        result, total_docs = MongoRepository().find(**search_action_params, projection={"action_code": 1})
+        for line in result:
+            line["_id"] = str(line["_id"])
+
+        return { "data": [str(item['action_code']) for item in result], "total_records": total_docs }
+
+    except Exception as e:
+        traceback.print_exc()
+        raise e
