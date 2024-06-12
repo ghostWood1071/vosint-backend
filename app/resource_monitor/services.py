@@ -79,7 +79,7 @@ async def get_average_monitor():
         latest_resource_monitor = await resource_monitors_client.find_one(sort=[("timestamp", pymongo.DESCENDING)])
 
         if latest_resource_monitor is not None:
-            lu_timestamp = latest_resource_monitor['timestamp']
+            lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp']["$date"], "%Y-%m-%dT%H:%M:%S.%fZ")
         else:
             # Trường hợp chưa có bản ghi nào
             lu_timestamp = datetime.utcnow()
