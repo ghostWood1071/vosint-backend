@@ -1,7 +1,10 @@
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
+import requests
+import io
+from core.config import settings
 
 from .pipelinecontroller import PipelineController
 
@@ -56,3 +59,9 @@ def clone_pipeline(from_id: str):
 @router.delete("/api/delete_pipeline/{id}")
 def delete_pipeline_by_id(id: str):
     return JSONResponse(pipeline_controller.delete_pipeline_by_id(id))
+
+@router.get("/api/get-result-image")
+def get_image():
+   res = requests.get(f"{settings.PIPELINE_API}/Job/api/get-img-result")
+   return StreamingResponse(io.BytesIO(res.content), status_code=200, media_type="image/png")
+   
