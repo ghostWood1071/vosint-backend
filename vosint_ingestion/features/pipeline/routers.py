@@ -62,6 +62,7 @@ def delete_pipeline_by_id(id: str):
 
 @router.get("/api/get-result-image")
 def get_image(link:str=""):
+   #get from api
    res = requests.get(f"{settings.PIPELINE_API}/{link}")
    return StreamingResponse(io.BytesIO(res.content), status_code=200, media_type="image/png")
    
