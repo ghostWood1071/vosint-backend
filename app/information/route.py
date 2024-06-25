@@ -15,7 +15,7 @@ from app.information.service import (
 from db.init_db import get_collection_client
 
 router = APIRouter()
-infor_collect = get_collection_client("infor")
+infor_collect = get_collection_client("info")
 
 
 @router.post("")
