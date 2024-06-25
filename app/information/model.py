@@ -10,7 +10,7 @@ class CreateInfor(BaseModel):
     publishing_country: str
     source_type: str
     event_detect: bool = True
-
+    priority: int = Field(default=0, ge=0, le=2)
     class config:
         orm_mode = True
 
@@ -22,6 +22,6 @@ class UpdateInfor(BaseModel):
     publishing_country: Optional[str]
     source_type: Optional[str]
     event_detect: bool = True
-
+    priority: int = Field(default=0, ge=0, le=2)
     class config:
         orm_mode = True
