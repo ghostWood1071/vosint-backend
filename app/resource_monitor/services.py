@@ -82,7 +82,7 @@ async def get_average_monitor():
             try:
                 lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp']["$date"], "%Y-%m-%dT%H:%M:%S.%fZ")
             except TypeError as e:
-                lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
+                lu_timestamp = latest_resource_monitor['timestamp']
             except Exception as e:
                 raise e
         else:
@@ -157,7 +157,7 @@ async def get_server_details():
             try:
                 lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp']["$date"], "%Y-%m-%dT%H:%M:%S.%fZ")
             except TypeError as e:
-                lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
+                lu_timestamp = latest_resource_monitor['timestamp']
             except Exception as e:
                 raise e
         else:
