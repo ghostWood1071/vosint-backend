@@ -34,12 +34,12 @@ class GetUrlsAction(BaseAction):
                     val_type="str",
                     default_val="",
                 ),
-                # ParamInfo(
-                #     name="replace",
-                #     display_name="Delete string address",
-                #     val_type="str",
-                #     default_val="",
-                # ),
+                ParamInfo(
+                    name="input_links",
+                    display_name="Input links",
+                    val_type="str",
+                    default_val="",
+                ),
             ],
             z_index=3,
         )
