@@ -36,7 +36,7 @@ class PipelineService:
             [{"$project": {"_id": 1, "name": 1, "cron_expr": 1}}],
         )
 
-        for row in data:
+        for row in data[0]:    
             row["_id"] = str(row["_id"])
 
         return data

@@ -492,7 +492,7 @@ class MongoRepository:
             cur = collection.aggregate(pipeline)
             data = [row for row in cur]
 
-            total_docs = collection.count_documents(pipeline[0]["$match"] or {})
+            total_docs = collection.count_documents(pipeline[0].get("$match", {}))
         finally:
             self.__close()
         return data, total_docs
