@@ -20,6 +20,7 @@ from vosint_ingestion.scheduler import Scheduler
 app = FastAPI(title=settings.APP_TITLE, root_path=settings.ROOT_PATH)
 
 print(settings.APP_ORIGINS)
+print(settings.DATABASE_NAME)
 
 if settings.APP_ORIGINS:
     app.add_middleware(
