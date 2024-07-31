@@ -456,4 +456,4 @@ async def route_get_me(authorize: AuthJWT = Depends()):
         user["role_id"] = str(role["_id"])
 
 
-    return JSONResponse(status_code=status.HTTP_200_OK, content=user)
+    return JSONResponse(status_code=status.HTTP_200_OK, content=user_entity(user))

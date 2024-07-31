@@ -643,10 +643,10 @@ class My_ElasticSearch:
                     "must": [
                         {"query_string": {"query": _query_string, "fields": _fields}}
                     ],
-                    "filter": {"range": {"PublishDate": {"gte": _gte, "lte": _lte}}},
+                    # "filter": {"range": {"PublishDate": {"gte": _gte, "lte": _lte}}},
                 }
             },
-            "sort": [{"PublishDate": {"order": "desc"}}],
+            # "sort": [{"PublishDate": {"order": "desc"}}],
             "size": size,
             "track_total_hits": True,
         }
@@ -723,10 +723,10 @@ class My_ElasticSearch:
                     "must": [
                         {"query_string": {"query": _query_string, "fields": _fields}}
                     ],
-                    "filter": {"range": {"PublishDate": {"gte": _gte, "lte": _lte}}},
+                    # "filter": {"range": {"PublishDate": {"gte": _gte, "lte": _lte}}},
                 }
             },
-            "sort": [{"PublishDate": {"order": "desc"}}],
+            # "sort": [{"PublishDate": {"order": "desc"}}],
             "size": size,
             "track_total_hits": True,
         }
