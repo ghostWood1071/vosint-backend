@@ -6,6 +6,7 @@ from vosint_ingestion.features.minh.Elasticsearch_main.elastic_main import (
 from db.init_db import get_collection_client
 from bson import ObjectId
 from typing import *
+import json
 
 my_es = My_ElasticSearch()
 
@@ -63,6 +64,23 @@ def get_optimized(result):
             record.pop(key, None)
     return result
 
+
+def process_id(input_id):
+    try:
+        # Try to create an ObjectId directly from the input
+        new_id = ObjectId(input_id)
+        return str(new_id)
+    except Exception:
+        try:
+            # If creating ObjectId fails, assume it's in JSON format
+            # object_id_str = json.loads(input_id)['$oid']
+            object_id_str = input_id['$oid']
+            object_id = ObjectId(object_id_str)
+            return str(object_id)
+        except Exception:
+            # If both attempts fail, return an error message or handle as needed
+            return f"Invalid ObjectId: {input_id}"
+
 def get_news_by_category(user_id:str, text_search:str, category:str)->list[str]:
     mongo = MongoRepository().get_one(
             collection_name="users", filter_spec={"_id": user_id}
@@ -71,7 +89,8 @@ def get_news_by_category(user_id:str, text_search:str, category:str)->list[str]:
     return_data = None
     try:
         for new_id in mongo[categories.get(category)]:
-            ls.append(str(new_id))
+            # ls.append(str(new_id))
+            ls.append(process_id(new_id))
     except:
         pass
     if ls == []:

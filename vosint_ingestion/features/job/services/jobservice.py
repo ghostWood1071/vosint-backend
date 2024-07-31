@@ -374,4 +374,4 @@ class JobService:
                 date
             )
         data = self.__mongo_repo.aggregate("his_log", pipeline)
-        return data
+        return data[0]
