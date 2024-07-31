@@ -79,7 +79,15 @@ async def get_average_monitor():
         latest_resource_monitor = await resource_monitors_client.find_one(sort=[("timestamp", pymongo.DESCENDING)])
 
         if latest_resource_monitor is not None:
-            lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp']["$date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            try:
+                lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp']["$date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            except TypeError as e:
+                try:
+                    lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
+                except Exception as e:
+                    lu_timestamp = latest_resource_monitor['timestamp']
+            except Exception as e:
+                raise e
         else:
             # Trường hợp chưa có bản ghi nào
             lu_timestamp = datetime.utcnow()
@@ -149,7 +157,15 @@ async def get_server_details():
         latest_resource_monitor = await resource_monitors_client.find_one(sort=[("_id", pymongo.DESCENDING)])
 
         if latest_resource_monitor is not None:
-            lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp']["$date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            try:
+                lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp']["$date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            except TypeError as e:
+                try:
+                    lu_timestamp = datetime.strptime(latest_resource_monitor['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
+                except Exception as e:
+                    lu_timestamp = latest_resource_monitor['timestamp']
+            except Exception as e:
+                raise e
         else:
             # Trường hợp chưa có bản ghi nào
             lu_timestamp = datetime.utcnow()
